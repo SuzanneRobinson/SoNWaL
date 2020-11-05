@@ -255,10 +255,10 @@ startYear = 2015
 endYear = 2018
 
 ## Met data
-clm.df.full<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\3pg\\data\\clm_df_full.csv")
+clm.df.full<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\clm_df_full.csv")
 
 ## Read Harwood data for Sitka spruce and mutate timestamp to POSIXct
-data <- read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\3pg\\data\\harwood_data.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
+data <- read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\harwood_data.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
 
 #######################################################
 ## Parameters for Sitka spruce - Minunno et al. 2010 ##
@@ -402,7 +402,7 @@ sitka<-list(weather=clm.df.full,
             latitude = 57.06,
             soilclass = -1,
             ASW = 165,
-            MaxASW = 400,
+            MaxASW = 500,
             MinASW = 0,
             CO2 = 400,
             ## ~~ Parameters ~~ ##
@@ -486,7 +486,7 @@ sitka<-list(weather=clm.df.full,
             pWsbr.sprouts = 0.9,
             cod.pred = "3PG",
             cod.clim = "Month",
-            sigma_2R = 1
+            sigma_2R = 0
 )
 #######################################################
 
@@ -497,9 +497,9 @@ sitka<-list(weather=clm.df.full,
 #NEE - Net ecosystem exchange
 #Rs - soil respiration
 #Reco - ecosystem respiration
-codM<-getSample(out, start = 2000, coda = TRUE)
+codM<-getSample(out3, start = 50, coda = TRUE, thin = 1)
 codM<-as.data.frame(codM[[1]])
-codM<-transpose(data.frame(colMedians(codM)))
+codM<-data.table::transpose(data.frame(colMedians(codM)))
 names(codM)<-nm
 sitka[nm]<-codM
 
@@ -511,7 +511,7 @@ pOut <- plotModel(output)
 
 ## Plot the timeseries of model output vs data
 results<-plotResults(output)
-results[[3]]
+results[[1]]
 ## Calculate yield class from height
 output <- output%>%mutate(
   yct = ((hdom/(1-exp(-0.033329*t.proj))^1.821054)-14.856317)/1.425397,
@@ -807,4 +807,9 @@ egg::ggarrange(gpp,npp,nee,reco,rs,et,et2,
 ## gpp <- apply(m,1,FUN=multiRunModel,par=sitka,names=nm,var="GPP")
 
 ## matplot(gpp,type='l')
+#ASW=c(1:400)
+#SWconst=0.55
+#SWpower=6
+#MaxASW<-400
+#plot(1/(1 + ((1 - (ASW/MaxASW))/SWconst)^SWpower)~ASW)
 

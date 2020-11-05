@@ -39,10 +39,14 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     CanTransp <- Etransp/lambda * h
     Transp <- general.info$daysinmonth[month] * CanTransp
     EvapTransp <- min(Transp + RainIntcptn, ASWrain)
-  # site[["MaxASW"]] <- 200+(parms[["sigma_2R"]]*state[["Wr"]]) # 200 as required min ASW? similar to Almedia et al - need to check conversion ratios
-    MaxASW <- site[["MaxASW"]] # calc from root biomass etc. thus MaxASW = 0.1*rbm*state[["Wr"]]
+   site[["MaxASW"]] <- 400-(parms[["sigma_2R"]]*state[["Wr"]]) 
+     MaxASW <- site[["MaxASW"]] # calc from root biomass etc. thus MaxASW = 0.1*rbm*state[["Wr"]]
     excessSW <- max(ASWrain - EvapTransp - MaxASW, 0)
     state[["ASW"]] <- ASWrain - EvapTransp - excessSW
+    #ASW is rainfall minus evap and excess SW
+    #ASWrain is current ASW + rainfall + irrigation
+    #moisture ratio is ASW/MaxASW
+    #Lower maxASW means moisture ratio is higher (more water available) but max water moisture is lower?
     scaleSW <- EvapTransp/(Transp + RainIntcptn)
     GPP <- state[["GPP"]]
     NPP <- state[["NPP"]]
