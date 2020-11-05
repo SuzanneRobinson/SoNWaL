@@ -39,10 +39,32 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     CanTransp <- Etransp/lambda * h
     Transp <- general.info$daysinmonth[month] * CanTransp
     EvapTransp <- min(Transp + RainIntcptn, ASWrain)
-   site[["MaxASW"]] <- 400-(parms[["sigma_2R"]]*state[["Wr"]]) 
+   #site[["MaxASW"]] <- 400-(parms[["sigma_2R"]]*state[["Wr"]]) 
      MaxASW <- site[["MaxASW"]] # calc from root biomass etc. thus MaxASW = 0.1*rbm*state[["Wr"]]
+     
+     #Almedia equations:
+     sigma_zR=0.5
+     V_nr=10
+     A=20
+     O_nr0= 500
+     O_rz0=state[["ASW"]]
+     K_s =0.1
+     t = 31 #size of time-step?
+     #rooting depth 
+     z_r = (0.1*sigma_zR*state[["Wr"]])
+     
+     V_rz = z_r # not sure if this is equivalent
+     
+     #V_nr = A-z_r # shared area minus root zone?
+     
+     t_s0= (V_rz*V_nr)/(K_s*A*(V_rz+V_nr))
+     
+     O_rz= (((O_rz0*V_nr - O_nr0*V_rz)/(V_rz+V_nr))*exp(-t/t_s0))+
+       ( V_rz/(V_rz+V_nr)*(O_rz0+O_nr0)) #re-arrange equation to get O_nz?
+     
     excessSW <- max(ASWrain - EvapTransp - MaxASW, 0)
-    state[["ASW"]] <- ASWrain - EvapTransp - excessSW
+    state[["ASW"]] <- O_rz + ASWrain - EvapTransp - excessSW
+    print(state[["ASW"]])
     #ASW is rainfall minus evap and excess SW
     #ASWrain is current ASW + rainfall + irrigation
     #moisture ratio is ASW/MaxASW
