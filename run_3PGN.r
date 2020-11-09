@@ -487,11 +487,11 @@ sitka<-list(weather=clm.df.full,
             cod.pred = "3PG",
             cod.clim = "Month",
             K_s=0.1,
-            V_nr=10,
-            sigma_zR =0.5,
+            V_nr=50,
+            sigma_zR =2,
             O_nr0=500,
-            E_S1 =100,
-            E_S2 =0.1
+            E_S1 =150,
+            E_S2 =0.01
 )
 #######################################################
 
