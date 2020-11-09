@@ -42,7 +42,7 @@ UpdateSoil <-
       SWpower <- parms.sw.site[["SWpower"]]
       ASW <- state[["ASW"]]
       MaxASW <- site[["MaxASW"]]
-      MoistRatio <- ASW/MaxASW
+      MoistRatio <- ASW/MaxASW #Need to change to ASW-wiltingpoint/fieldcap-wiltpoint
       Tmin <- parms[["Tmin"]]
       Tmax <- parms[["Tmax"]]
       Topt <- parms[["Topt"]]

@@ -486,7 +486,12 @@ sitka<-list(weather=clm.df.full,
             pWsbr.sprouts = 0.9,
             cod.pred = "3PG",
             cod.clim = "Month",
-            sigma_2R = 0
+            K_s=0.1,
+            V_nr=10,
+            sigma_zR =0.5,
+            O_nr0=500,
+            E_S1 =100,
+            E_S2 =0.1
 )
 #######################################################
 
@@ -511,7 +516,7 @@ pOut <- plotModel(output)
 
 ## Plot the timeseries of model output vs data
 results<-plotResults(output)
-results[[1]]
+results[[5]]
 ## Calculate yield class from height
 output <- output%>%mutate(
   yct = ((hdom/(1-exp(-0.033329*t.proj))^1.821054)-14.856317)/1.425397,
