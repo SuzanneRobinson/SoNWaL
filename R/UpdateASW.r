@@ -40,19 +40,17 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     Transp <- general.info$daysinmonth[month] * CanTransp
     EvapTransp <- min(Transp + RainIntcptn, ASWrain)
     
-    MaxASW<-site[["MaxASW"]] #Also need to switch this to using wilt point and field cap?
 
     
     
     ####Run using water balance sub-models from Almedia et al.####
     if (parms[["waterBalanceSubMods"]] == T) {
       
-      ##Update MaxASW to use wilting point and field capacity - need to check volumetric conversions!
-      theta_wp= parms[["theta_wp"]]/(0.1 * parms[["sigma_zR"]] * state[["Wr"]])
-      theta_fc= parms[["theta_fc"]]/(0.1 * parms[["sigma_zR"]] * state[["Wr"]])
-      MaxASW <- theta_wp+theta_fc
-      site[["MaxASW"]]<-MaxASW
-      
+      ##NEEDS FIXING!!!!!Update MaxASW to use wilting point and field capacity - need to check volumetric conversions!
+      theta_wp= parms[["theta_wp"]]*(0.1 * parms[["sigma_zR"]] * state[["Wr"]])*1000
+      theta_fc= parms[["theta_fc"]]*(0.1 * parms[["sigma_zR"]] * state[["Wr"]])*1000
+      MaxASW <- theta_fc-theta_wp
+
       #Run soil water content function to get root zone SWC
       sigma_rz <- soilWC(parms, weather, state)
       

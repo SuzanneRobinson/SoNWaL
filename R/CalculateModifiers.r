@@ -29,15 +29,31 @@ function (state, weather, site, parms, general.info)
     CoeffCond <- parms[["CoeffCond"]]
     VPD <- weather[["VPD"]]
     fVPD <- exp(-CoeffCond * VPD)
-    MaxASW <- site[["MaxASW"]]
+    
+
+    
     parms.soil <- general.info$parms.soil
     parms.sw.site <- parms.soil[which(parms.soil$soilclass == 
         site[["soilclass"]]), ]
     SWconst <- parms.sw.site[["SWconst"]]
     SWpower <- parms.sw.site[["SWpower"]]
     ASW <- state[["ASW"]]
-    MoistRatio <- ASW/MaxASW
-    fSW <- 1/(1 + ((1 - MoistRatio)/SWconst)^SWpower)
+
+    ##change moistratio and soil water growth mod if using updated sub-models
+    if(parms[["waterBalanceSubMods"]]==T){
+      theta_wp= parms[["theta_wp"]]*(0.1 * parms[["sigma_zR"]] * state[["Wr"]])*1000
+      theta_fc= parms[["theta_fc"]]*(0.1 * parms[["sigma_zR"]] * state[["Wr"]])*1000
+      MaxASW <- theta_fc-theta_wp
+      MoistRatio<- (ASW-theta_wp)/MaxASW
+      fSW<-SWGmod(SWconst,SWpower,MoistRatio)
+    }else
+    {
+      MaxASW <- site[["MaxASW"]]
+      MoistRatio<-ASW/MaxASW
+      fSW <- 1/(1 + ((1 - MoistRatio)/SWconst)^SWpower)
+    }
+    
+    
     PhysMod <- fAge * min(fVPD, fSW)
     ## state[c("fT", "fF", "fCalpha", "fN", "fAge", "fVPD", "fSW", 
     ##     "PhysMod")] <- c(fT, fF, fCalpha, fN, fAge, fVPD, fSW, 

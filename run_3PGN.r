@@ -487,14 +487,14 @@ sitka<-list(weather=clm.df.full,
             cod.pred = "3PG",
             cod.clim = "Month",
             ## ~~ Almedia et al. Parameters ~~ ##
-            waterBalanceSubMods =F, #Whether to run model using updated water balance submodels
-            theta_wp = 0.1, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
-            theta_fc =0.2,#Field capacity
+            waterBalanceSubMods =T, #Whether to run model using updated water balance submodels
+            theta_wp = 0.12, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
+            theta_fc =0.3,#Field capacity
             K_s=0.1, #Soil conductivity
-            V_nr=50, #Volume of non-rooting zone
-            sigma_zR =2, #area/depth explored by 1kg of root biomass
+            V_nr=10, #Volume of non-rooting zone
+            sigma_zR =0.1, #area/depth explored by 1kg of root biomass
             sigma_nr0=500, #SWC of non-rooting zone at time 0
-            E_S1 =150, #Cumulitive evap threshold
+            E_S1 =100, #Cumulitive evap threshold
             E_S2 =0.01 #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
 )
 #######################################################

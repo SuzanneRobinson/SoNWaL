@@ -73,7 +73,7 @@ soilWC<-function(parms,weather,state){
 #   /___/\___/_/_/ /___/|___/\_,_/ .__/\___/_/  \_,_/\__/_/\___/_//_/ # 
 #                               /_/                                   # 
 
-
+#'@description Calculates soil evaporation
 #'@param parms global parameter values
 #'@param weather global weather values
 #'@param site site values
@@ -127,4 +127,12 @@ soilEvap<-function(parms,weather,site){
   
   return(E_S)
   
+}
+
+
+
+##Soil water growth modifier
+SWGmod<-function(SWconst,SWpower,MoistRatio){
+  f_theta<-(1-(1-MoistRatio)^SWpower)/(1+(1-2*SWconst^SWpower)*(1-MoistRatio/SWconst)^SWpower)
+  return(f_theta)
 }

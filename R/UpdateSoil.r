@@ -45,15 +45,22 @@ UpdateSoil <-
       #Currently moistratio only updates at t==0, correct? need to check...
       #If using updated waterbalance submodels moistratio is derived using wilting point and field capacity
       #Values should be related to soil profile depth, calculated from rooting depth?
-      MoistRatio <- ifelse(parms[["waterBalanceSubMods"]]==T,(ASW-theta_wp)/MaxASW,ASW/MaxASW) 
+      MoistRatio <- ASW/MaxASW#ifelse(parms[["waterBalanceSubMods"]]==T,(ASW-parms[["theta_wp"]]*1000)/MaxASW,ASW/MaxASW) 
 
+      
        Tmin <- parms[["Tmin"]]
       Tmax <- parms[["Tmax"]]
       Topt <- parms[["Topt"]]
       Tav <- weather[1,"Tmean"]
       
       dg<-((state[["Wsbr"]]*1000/state[["N"]])/parms[["aS"]])^(1/parms[["nS"]])
-      fSW <- 1/(1 + ((1 - MoistRatio)/SWconst)^SWpower)
+      
+      ##change soil water growth mod if using updated water-balance sub-models
+      if(parms[["waterBalanceSubMods"]]==T){
+        fSW<-SWGmod(SWconst,SWpower,MoistRatio)
+      }else
+      {fSW <- 1/(1 + ((1 - MoistRatio)/SWconst)^SWpower)}
+      
       if (Tav < Tmin | Tav > Tmax) {
         fT <- 0
       }
