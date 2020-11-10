@@ -486,12 +486,16 @@ sitka<-list(weather=clm.df.full,
             pWsbr.sprouts = 0.9,
             cod.pred = "3PG",
             cod.clim = "Month",
-            K_s=0.1,
-            V_nr=50,
-            sigma_zR =2,
-            O_nr0=500,
-            E_S1 =150,
-            E_S2 =0.01
+            ## ~~ Almedia et al. Parameters ~~ ##
+            waterBalanceSubMods =F, #Whether to run model using updated water balance submodels
+            theta_wp = 0.1, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
+            theta_fc =0.2,#Field capacity
+            K_s=0.1, #Soil conductivity
+            V_nr=50, #Volume of non-rooting zone
+            sigma_zR =2, #area/depth explored by 1kg of root biomass
+            sigma_nr0=500, #SWC of non-rooting zone at time 0
+            E_S1 =150, #Cumulitive evap threshold
+            E_S2 =0.01 #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
 )
 #######################################################
 
@@ -502,11 +506,13 @@ sitka<-list(weather=clm.df.full,
 #NEE - Net ecosystem exchange
 #Rs - soil respiration
 #Reco - ecosystem respiration
-codM<-getSample(out3, start = 50, coda = TRUE, thin = 1)
-codM<-as.data.frame(codM[[1]])
-codM<-data.table::transpose(data.frame(colMedians(codM)))
-names(codM)<-nm
-sitka[nm]<-codM
+
+#get some previous run parameter estimates#
+#codM<-getSample(out3, start = 50, coda = TRUE, thin = 1)
+#codM<-as.data.frame(codM[[1]])
+#codM<-data.table::transpose(data.frame(colMedians(codM)))
+#names(codM)<-nm
+#sitka[nm]<-codM
 
 ## Run the 3PGN model using the sitka parameters
 output<-do.call(fr3PGDN,sitka)

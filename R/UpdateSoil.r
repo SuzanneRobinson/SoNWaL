@@ -42,8 +42,12 @@ UpdateSoil <-
       SWpower <- parms.sw.site[["SWpower"]]
       ASW <- state[["ASW"]]
       MaxASW <- site[["MaxASW"]]
-      MoistRatio <- ASW/MaxASW #Need to change to ASW-wiltingpoint/fieldcap-wiltpoint
-      Tmin <- parms[["Tmin"]]
+      #Currently moistratio only updates at t==0, correct? need to check...
+      #If using updated waterbalance submodels moistratio is derived using wilting point and field capacity
+      #Values should be related to soil profile depth, calculated from rooting depth?
+      MoistRatio <- ifelse(parms[["waterBalanceSubMods"]]==T,(ASW-theta_wp)/MaxASW,ASW/MaxASW) 
+
+       Tmin <- parms[["Tmin"]]
       Tmax <- parms[["Tmax"]]
       Topt <- parms[["Topt"]]
       Tav <- weather[1,"Tmean"]

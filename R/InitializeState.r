@@ -15,14 +15,14 @@ function (stand, site, parms, general.info, weather)
                      "Wdl", "Wds", "Wdr","YrC","YlC","OC","YrN","YlN","ON","kl",
                      "kr","ko","hl","hr","hNl","hNr","YrCflx","YlCflx","OCflx",
                      "YrNflx","YlNflx","ONflx","Navflx","totC","totN","Un","Nav",
-                     "Nleach","O_nr0")
+                     "Nleach","sigma_nr0")
     .length.state.vec <- length(names.state)
     state.vector <- rep(NA, .length.state.vec)
     names(state.vector) <- names.state
     state.init <- state.vector
     state.init[names(stand)] <- stand
     state.init["ASW"] <- site[["ASW"]]
-    state.init["O_nr0"] <- site[["O_nr0"]]
+    state.init["sigma_nr0"] <- site[["sigma_nr0"]]
     
     if (state.init[["t"]] == 0) {
         state.init <- CreateNewPlantation(state = state.init, 
