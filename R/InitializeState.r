@@ -15,7 +15,7 @@ function (stand, site, parms, general.info, weather)
                      "Wdl", "Wds", "Wdr","YrC","YlC","OC","YrN","YlN","ON","kl",
                      "kr","ko","hl","hr","hNl","hNr","YrCflx","YlCflx","OCflx",
                      "YrNflx","YlNflx","ONflx","Navflx","totC","totN","Un","Nav",
-                     "Nleach","sigma_nr0")
+                     "Nleach","sigma_nr0","MaxASW_state")
     .length.state.vec <- length(names.state)
     state.vector <- rep(NA, .length.state.vec)
     names(state.vector) <- names.state
@@ -23,6 +23,7 @@ function (stand, site, parms, general.info, weather)
     state.init[names(stand)] <- stand
     state.init["ASW"] <- site[["ASW"]]
     state.init["sigma_nr0"] <- site[["sigma_nr0"]]
+    state.init["MaxASW_state"] <- site[["MaxASW"]]
     
     if (state.init[["t"]] == 0) {
         state.init <- CreateNewPlantation(state = state.init, 

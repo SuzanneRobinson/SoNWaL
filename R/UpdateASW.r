@@ -66,13 +66,18 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       #Calculate any excess soil water
       excessSW <- max(sigma_rz + Rain+ MonthIrrig - EvapTransp - MaxASW - Evaporation, 0)
       
-      state[["sigma_nr0"]]<- max(  state[["sigma_nr0"]] + Rain+ MonthIrrig - excessSW - Evaporation, 0)
-
+      state[["sigma_nr0"]]<- max(state[["sigma_nr0"]] + Rain + MonthIrrig - excessSW - Evaporation, 0)
+      print(paste0("NRZ = ",  state[["sigma_nr0"]]))
+      state[["MaxASW_state"]] <-MaxASW
 
       #Update available soil water -CHECK IF MIN OF 0 NEEDED
       state[["ASW"]] <- sigma_rz + Rain+ MonthIrrig - EvapTransp - excessSW - Evaporation
+      print(paste0("maxASW = ", MaxASW))
+      print(paste0("ASW = ", sigma_rz + Rain+ MonthIrrig - EvapTransp - excessSW - Evaporation))
+      
     } else
     {
+      MaxASW<- site[["MaxASW"]]
       excessSW <- max(ASWrain - EvapTransp - MaxASW, 0)
       state[["ASW"]] <-  max(ASWrain - EvapTransp - excessSW, 0)
     }
