@@ -2,10 +2,8 @@ node_modules/
 
 # History files
 
-.Rhistory
 
 .Rapp.history
-
 
 
 # Session Data files
@@ -89,3 +87,6 @@ docs/
 # translation temp files
 
 po/*~
+
+
+.Rhistory

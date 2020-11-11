@@ -87,7 +87,7 @@ soilWC<-function(parms,weather,state){
 #Calc using penman monteith eq. g_c is infinite - could be better modified by soil dryness etc.
 
 
-soilEvap<-function(parms,weather,site){
+soilEvap<-function(parms,weather,site,netRad){
   
   e20 <- parms[["e20"]]
   rhoAir <- parms[["rhoAir"]]
@@ -97,13 +97,13 @@ soilEvap<-function(parms,weather,site){
   VPD <- weather[["VPD"]]
   E_S1 = parms[["E_S1"]]
   E_S2 = parms[["E_S2"]]
+
   t =  as.numeric(days_in_month(weather[["Month"]])) 
   
   
   #Wet surface evaporation - using Penman Monteith eq.
   e_S1 <- max(((e20 * netRad + rhoAir * lambda * VPDconv * VPD *
                   BLcond) / (1 + e20 + BLcond / Inf)), 0) #not sure about canopy transpiration?
-  
   #E_S0 is E_S minus the amount of rainfall not intercepted and irigation
   #(assumes all rainfall occurs at the start of the month - need to implement finer scale timesteps!)
   E_S0 = max(site[["E_S"]] , 0)
@@ -120,6 +120,7 @@ soilEvap<-function(parms,weather,site){
   
   #Integrate equation A.9 to get value at time t (assuming t is number of days in month)
   #and Calc E_S using t+t0 to get amount of evaporation between t0 and t
+
   E_S = if (t <= t_S1)
     e_S1 * t
   else

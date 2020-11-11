@@ -46,7 +46,7 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     ####Run using water balance sub-models from Almedia et al.####
     if (parms[["waterBalanceSubMods"]] == T) {
       
-      ##NEEDS FIXING!!!!!Update MaxASW to use wilting point and field capacity - need to check volumetric conversions!
+      #derive theta values
       theta_wp= parms[["theta_wp"]]*(0.1 * parms[["sigma_zR"]] * state[["Wr"]])*1000
       theta_fc= parms[["theta_fc"]]*(0.1 * parms[["sigma_zR"]] * state[["Wr"]])*1000
       MaxASW <- theta_fc-theta_wp
@@ -55,7 +55,7 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       sigma_rz <- soilWC(parms, weather, state)
       
       #Calculate accumulated soil evaporation for the month using soilEvap function
-      E_S <- soilEvap(parms, weather, site)
+      E_S <- soilEvap(parms, weather, site,netRad)
       
       #Minus monthly rainfall and irrigation from cumulative E_S value
       E_S <-
@@ -64,10 +64,13 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       site[["E_S"]] = ifelse(E_S <= 0, 0, E_S)
       
       #Calculate any excess soil water
-      excessSW <- max(ASWrain - EvapTransp - MaxASW - Evaporation, 0)
+      excessSW <- max(sigma_rz + Rain+ MonthIrrig - EvapTransp - MaxASW - Evaporation, 0)
       
-      #Update available soil water
-      state[["ASW"]] <- max(sigma_rz + ASWrain - EvapTransp - excessSW - Evaporation, 0)
+      state[["sigma_nr0"]]<- max(  state[["sigma_nr0"]] + Rain+ MonthIrrig - excessSW - Evaporation, 0)
+
+
+      #Update available soil water -CHECK IF MIN OF 0 NEEDED
+      state[["ASW"]] <- sigma_rz + Rain+ MonthIrrig - EvapTransp - excessSW - Evaporation
     } else
     {
       excessSW <- max(ASWrain - EvapTransp - MaxASW, 0)

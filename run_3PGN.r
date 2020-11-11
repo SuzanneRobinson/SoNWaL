@@ -492,10 +492,10 @@ sitka<-list(weather=clm.df.full,
             theta_fc =0.3,#Field capacity
             K_s=0.1, #Soil conductivity
             V_nr=10, #Volume of non-rooting zone
-            sigma_zR =0.1, #area/depth explored by 1kg of root biomass
+            sigma_zR =0.05, #area/depth explored by 1kg of root biomass
             sigma_nr0=500, #SWC of non-rooting zone at time 0
-            E_S1 =100, #Cumulitive evap threshold
-            E_S2 =0.01 #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
+            E_S1 =10, #Cumulitive evap threshold
+            E_S2 =0.001 #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
 )
 #######################################################
 
