@@ -41,13 +41,6 @@ UpdateSoil <-
       SWconst <- parms.sw.site[["SWconst"]]
       SWpower <- parms.sw.site[["SWpower"]]
       ASW <- state[["ASW"]]
-      MaxASW <- site[["MaxASW"]]
-      #Currently moistratio only updates at t==0, correct? need to check...
-      #If using updated waterbalance submodels moistratio is derived using wilting point and field capacity
-      #Values should be related to soil profile depth, calculated from rooting depth?
-      MoistRatio <- ASW/MaxASW#ifelse(parms[["waterBalanceSubMods"]]==T,(ASW-parms[["theta_wp"]]*1000)/MaxASW,ASW/MaxASW) 
-
-      
        Tmin <- parms[["Tmin"]]
       Tmax <- parms[["Tmax"]]
       Topt <- parms[["Topt"]]
@@ -56,10 +49,20 @@ UpdateSoil <-
       dg<-((state[["Wsbr"]]*1000/state[["N"]])/parms[["aS"]])^(1/parms[["nS"]])
       
       ##change soil water growth mod if using updated water-balance sub-models
+      #If using updated waterbalance submodels moistratio is derived using wilting point and field capacity
       if(parms[["waterBalanceSubMods"]]==T){
+        theta_wp= parms[["theta_wp"]]*(0.1 * parms[["sigma_zR"]] * state[["Wr"]])*1000
+        MaxASW<-state[["MaxASW_state"]]
+        MoistRatio<- (ASW-theta_wp)/MaxASW
+        #modify MoistRatio if numerators are above or below certain values (see Landsberg and waring)
+        MoistRatio<-ifelse(ASW-theta_wp>=0,MoistRatio,0)
+        MoistRatio<-ifelse(ASW-theta_wp>MaxASW,1,MoistRatio)
         fSW<-SWGmod(SWconst,SWpower,MoistRatio)
       }else
-      {fSW <- 1/(1 + ((1 - MoistRatio)/SWconst)^SWpower)}
+      {
+        MaxASW <- site[["MaxASW"]]
+        MoistRatio <- ASW/MaxASW
+        fSW <- 1/(1 + ((1 - MoistRatio)/SWconst)^SWpower)}
       
       if (Tav < Tmin | Tav > Tmax) {
         fT <- 0
