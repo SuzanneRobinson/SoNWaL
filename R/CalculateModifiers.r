@@ -49,14 +49,9 @@ function (state, weather, site, parms, general.info)
       MoistRatio<-ifelse(ASW-theta_wp>=0,MoistRatio,0)
       MoistRatio<-ifelse(ASW-theta_wp>MaxASW,1,MoistRatio)
       fSW<-SWGmod(SWconst,SWpower,MoistRatio)
-      print(MaxASW)
-      print(ASW)
-      print(MoistRatio)
     }else
     {
       MaxASW <- site[["MaxASW"]]
-      print(ASW)
-      print(MaxASW)
       MoistRatio<-ASW/MaxASW
       fSW <- 1/(1 + ((1 - MoistRatio)/SWconst)^SWpower)
     }
