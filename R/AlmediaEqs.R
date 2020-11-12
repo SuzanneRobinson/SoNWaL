@@ -76,7 +76,7 @@ soilWC<-function(parms,weather,state){
 #'@description Calculates soil evaporation
 #'@param parms global parameter values
 #'@param weather global weather values
-#'@param site site values
+#'@param state state values
 #'@param t_S1 duration of phase 1 evaporation
 #'@param e_S1 potential rate of evaporation, equal to wet surface evaporation - could be driven by temp?
 #- calc from penman montieth - also see landsdown book and discussion on methods by Choudhury, Zhang etc.
@@ -87,7 +87,7 @@ soilWC<-function(parms,weather,state){
 #Calc using penman monteith eq. g_c is infinite - could be better modified by soil dryness etc.
 
 
-soilEvap<-function(parms,weather,site,netRad){
+soilEvap<-function(parms,weather,state,netRad){
   
   e20 <- parms[["e20"]]
   rhoAir <- parms[["rhoAir"]]
@@ -106,8 +106,9 @@ soilEvap<-function(parms,weather,site,netRad){
                   BLcond) / (1 + e20 + BLcond / Inf)), 0) #not sure about canopy transpiration?
   #E_S0 is E_S minus the amount of rainfall not intercepted and irigation
   #(assumes all rainfall occurs at the start of the month - need to implement finer scale timesteps!)
-  E_S0 = max(site[["E_S"]] , 0)
+  E_S0 = max(state[["E_S"]] , 0)
   
+  print(state[["E_S"]])
   
   #Duration of phase 1 evaporation
   t_S1 = E_S0 / e_S1

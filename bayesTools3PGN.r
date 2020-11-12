@@ -302,12 +302,12 @@ BS3PGDN <- createBayesianSetup(likelihood = NLL, prior = Uprior, names = nm, par
 
 ## Choose the settings for the run
 settings = list(
-    iterations = 50000,
+    iterations = 1000,
     ## Z = NULL,
     startValue = 5, #t(mP),#NULL, ## Use 5 chains instead of 3
     nrChains = 1,
     pSnooker = 0.5,
-    burnin = 1000,
+    burnin = 100,
     ## thin = 1,
     ## f = 2.38,
     ## eps = 0,

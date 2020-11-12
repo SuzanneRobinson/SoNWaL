@@ -56,10 +56,10 @@ function (weather, presc, t = 0, N = 2500, Wl = 0.01, WlDormant = 0, Wr = 0.01, 
                          "rm.sprouts", "nyears", "initial.month")
 
     site.info <- c(latitude, soilclass, ASW, MaxASW, MinASW, 
-                   CO2,sigma_nr0,E_S,MaxASW_state)
+                   CO2,sigma_nr0,E_S,MaxASW_state,E_S)
 
     names(site.info) <- c("latitude", "soilclass", "ASW", 
-                          "MaxASW", "MinASW", "CO2","sigma_nr0","E_S",MaxASW_state)
+                          "MaxASW", "MinASW", "CO2","sigma_nr0","E_S","MaxASW_state")
 
     parms.general <- list(daysinmonth = c(Jan = 31, Feb = 28, 
                                           Mar = 31, Apr = 30,
