@@ -78,6 +78,34 @@ data <- tower %>%
            timestamp = as.POSIXct(paste(sprintf("%02d",year),sprintf("%02d",month),sprintf("%02d",1),sep="-"),tz="GMT"))
 
 
+
+library(dplyr)
+years <- 2010:2012
+clm.df.full<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\clm_df_full.csv")
+
+#Add date
+clm.df.full$date<-as.Date(paste(clm.df.full$Year,"-",clm.df.full$Month,"-01",sep=""))
+
+clm.df.full$week<-week(clm.df.full$date)
+
+#Split into weekly data
+clm.df.fullX<-NULL
+for(i in c(1:nrow(clm.df.full))){
+  reps<-ifelse(clm.df.full$Month[i]!=12,clm.df.full[i+1,"week"]-clm.df.full[i,"week"],4)
+  
+  clm.df.full[i,]$Rain<-clm.df.full[i,]$Rain/reps
+  clm.df.full[i,]$SolarRad<-clm.df.full[i,]$SolarRad/reps
+  
+  clm.df.fullX<-rbind(clm.df.fullX,do.call("rbind",(replicate(reps, clm.df.full[i,], simplify = FALSE))))
+  
+  ifelse(clm.df.full$week[i]!=48,clm.df.fullX$week[clm.df.full[i,"week"]:(clm.df.full[i+1,"week"]-1)]<-c(clm.df.full[i,"week"]:(clm.df.full[i+1,"week"]-1)),
+         clm.df.fullX$week[clm.df.full[i,"week"]:(clm.df.full[i,"week"]+3)]<-48:52)
+}
+
+#update date values
+clm.df.fullX$Month<-as.Date(paste0(clm.df.fullX$Year,"-",clm.df.fullX$week,"-1"),'%Y-%U-%u')
+
+
 ###############################################################
 
 sitka<-list(weather=clm.df.full,
@@ -210,13 +238,13 @@ load("fifth_run_3pgn_all_data/par.Rdata")
 
 sitka[nm]<-ff[which(names(ff)!="fNn"&names(ff)!="fN0")]
 
-f.decrease <- c(0.05,0.1,0.1,2,0.05,10,100,0.01,0.588503613257886,0.752929538228874,0.956131627577964,0.050456035523466,0.384021499609213,0.250229439327847,0.57408236899746,0.909666760291794,0.853276910139941,0.974961101217424,1,0.636422367959785,0.732916669791679,0.443930919848964,0.741758519667562,0.816463641720414,0.221779786451702,0.303779963365252,1,0.00141038795075,0.730688961031379,0.899808741360758,0.024817372196732,0.99632339563598,0.996373181003088,0.999649942946159,0.996388219783102,0.998203040988276,0.998245174258832,0.97983098579238,0.913069476259938,0.961283723717706,0.950056672692535,0.893875965852296,0.991080780202615,0.990457295759556)
+f.decrease <- c(0.1,0.2,0.01,2,0.2,2,0.001,100,0.588503613257886,0.752929538228874,0.956131627577964,0.050456035523466,0.384021499609213,0.250229439327847,0.57408236899746,0.909666760291794,0.853276910139941,0.974961101217424,1,0.636422367959785,0.732916669791679,0.443930919848964,0.741758519667562,0.816463641720414,0.221779786451702,0.303779963365252,1,0.00141038795075,0.730688961031379,0.899808741360758,0.024817372196732,0.99632339563598,0.996373181003088,0.999649942946159,0.996388219783102,0.998203040988276,0.998245174258832,0.97983098579238,0.913069476259938,0.961283723717706,0.950056672692535,0.893875965852296,0.991080780202615,0.990457295759556)
 
-f.increase <- c(0.25,0.4,5,10,1,100,500,5,0.573973679288588,0.235352308855631,1.86098081013281,0.374136113325978,0.231957000781575,0.56202200140032,3.45793787115991,1.30349761255926,0.600615525746093,0.251944939128821,0.768680943537667,0.817888160201076,0.335416651041606,0.668207240453109,0.549448881994627,0.835363582795864,0.03762695139773,0.218385064110809,0.917925202458998,2.5949226033773,1.15448831174897,0.001912586392424,5.82627839462287,6.35320872803933,2.62681899691161,2.50057053840858,2.61178021689853,0.796959011723578,0.754825741168422,1.01690142076198,0.738610474801243,0.935813814114711,0.498299819223935,1.12248068295408,0.783843959477034,0.90854084808886)
+f.increase <- c(0.2,0.4,10,15,0.9,50,0.2,1000,0.573973679288588,0.235352308855631,1.86098081013281,0.374136113325978,0.231957000781575,0.56202200140032,3.45793787115991,1.30349761255926,0.600615525746093,0.251944939128821,0.768680943537667,0.817888160201076,0.335416651041606,0.668207240453109,0.549448881994627,0.835363582795864,0.03762695139773,0.218385064110809,0.917925202458998,2.5949226033773,1.15448831174897,0.001912586392424,5.82627839462287,6.35320872803933,2.62681899691161,2.50057053840858,2.61178021689853,0.796959011723578,0.754825741168422,1.01690142076198,0.738610474801243,0.935813814114711,0.498299819223935,1.12248068295408,0.783843959477034,0.90854084808886)
 
 
-pMaxima <- as.vector(unlist(sitka[nm])*(1+(f.increase*0.2)))
-pMinima <- as.vector(unlist(sitka[nm])*(1-(f.decrease*0.2)))
+pMaxima <- as.vector(unlist(sitka[nm])*(1+(f.increase)))
+pMinima <- as.vector(unlist(sitka[nm])*(1-(f.decrease)))
 pValues <- as.vector(unlist(sitka[nm]))
 
 pMaxima[1:8] <- f.increase[1:8]
@@ -242,12 +270,12 @@ observed <- c(data$gpp,                ## GPP
               2.16                     ## totN, 40 C:N ratio
               )
 
-dev <- c(rep(3,nrow(filter(data,year>=startYear&year<=endYear))),
-         rep(5,nrow(filter(data,year>=startYear&year<=endYear))),
-         rep(5,nrow(filter(data,year>=startYear&year<=endYear))),
-         rep(5,nrow(filter(data,year>=startYear&year<=endYear))),
-         rep(5,nrow(filter(data,year>=startYear&year<=endYear))),
-         rep(10,nrow(filter(data,year>=startYear&year<=endYear))),
+dev <- c(rep(.01,nrow(filter(data,year>=startYear&year<=endYear))),
+         rep(.01,nrow(filter(data,year>=startYear&year<=endYear))),
+         rep(.01,nrow(filter(data,year>=startYear&year<=endYear))),
+         rep(.01,nrow(filter(data,year>=startYear&year<=endYear))),
+         rep(0.1,nrow(filter(data,year>=startYear&year<=endYear))),
+         rep(.1,nrow(filter(data,year>=startYear&year<=endYear))),
          rep(0.05,(nrow(filter(data,year>=startYear&year<=endYear))-1)),
          1.5,1.5,
          100,
@@ -266,8 +294,8 @@ NLL <- function(p){
     sitka[.GlobalEnv$nm]<-p
     output<-do.call(fr3PGDN,sitka)
     modelled <-sampleOutput(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
+
     NlogLik  <- sum(dnorm(.GlobalEnv$observed,mean=modelled,sd=dev,log=T))
-    print(NlogLik)
     return(NlogLik)
 }
 
@@ -281,7 +309,7 @@ NLL <- function(p){
 ## ~~~~~ ##
 
 ## This is a uniform prior distribution
-pMaxima[[27]]<-0.001
+pMaxima[[27]]<-0.1
 Uprior <- createUniformPrior(lower = pMinima, upper = pMaxima)
 
 ## This is a truncated normal distribution prior based on the chain produced
@@ -302,7 +330,7 @@ BS3PGDN <- createBayesianSetup(likelihood = NLL, prior = Uprior, names = nm, par
 
 ## Choose the settings for the run
 settings = list(
-    iterations = 1000,
+    iterations = 25000,
     ## Z = NULL,
     startValue = 5, #t(mP),#NULL, ## Use 5 chains instead of 3
     nrChains = 1,
@@ -311,7 +339,7 @@ settings = list(
     ## thin = 1,
     ## f = 2.38,
     ## eps = 0,
-    parallel = F,
+    parallel = T,
     ## pGamma1 = 0.1,
     ## eps.mult = 0.2,
     ## eps.add = 0,
@@ -329,9 +357,10 @@ settings = list(
 
 
 ##  Run the Monte Carlo Markov Chain
-out3 <- runMCMC(bayesianSetup = BS3PGDN, sampler = "DEzs", settings = settings)
+out <- runMCMC(bayesianSetup = BS3PGDN, sampler = "DEzs", settings = settings)
 
-save(out,file="out.Rdata")
+save(out3,file="out.Rdata")
+
 
 
 ## rM <- function(p){

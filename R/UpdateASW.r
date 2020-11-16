@@ -55,13 +55,13 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       sigma_rz <- soilWC(parms, weather, state)
       
       #Calculate accumulated soil evaporation for the month using soilEvap function
-      E_S <- soilEvap(parms, weather, state,netRad)
+      E_S <- soilEvap(parms, weather, state, netRad)
       
       #Minus monthly rainfall and irrigation from cumulative E_S value
       E_S <-
         E_S + RainIntcptn - Rain - MonthIrrig # rainfall needs ot be added after as biomass allocation function requires months rainfall
      
-       Evaporation = ifelse(E_S <= 0, 0, E_S)
+      Evaporation = ifelse(E_S <= 0, 0, E_S)
       state[["E_S"]] = ifelse(E_S <= 0, 0,  E_S)
       
       #Calculate any excess soil water

@@ -11,7 +11,7 @@ function (state, site, parms, weather) #requires weather too for current month, 
     fN <- state[["fN"]]
     PhysMod <- state[["PhysMod"]]
     m <- m0 + (1 - m0) * fN
-    pR <- pRx * pRn/(pRn + (pRx - pRn) * m * PhysMod)
+    pR <- pRx * pRn/(pRn + (pRx - pRn) * m * PhysMod)# higher value for fn less biomass allocated to roots...
     pFS2 <- parms[["pFS2"]]
     pFS20 <- parms[["pFS20"]]
     pfsPower <- log(pFS20/pFS2)/log(10)

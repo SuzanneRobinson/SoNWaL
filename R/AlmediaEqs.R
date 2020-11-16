@@ -50,10 +50,10 @@ soilWC<-function(parms,weather,state){
   
   V_rz = z_r # not sure if this is equivalent, or whether there needs to be a conversion from depth to volume?
   
-  #Shared area, equal to both volumes combined? Need to check this
-  A = V_nr + V_rz
+  #Shared area, area is in m^2, so area around the tree?
+  A = 5
   
-  #Time constant
+  #Time constant - based on rate of movement soil water between zones
   t_s0 = (V_rz * V_nr) / (K_s * A * (V_rz + V_nr))
   
   #Current state of soil water content in non-rooting zone (at time-0 for month)
@@ -108,8 +108,7 @@ soilEvap<-function(parms,weather,state,netRad){
   #(assumes all rainfall occurs at the start of the month - need to implement finer scale timesteps!)
   E_S0 = max(state[["E_S"]] , 0)
   
-  print(state[["E_S"]])
-  
+
   #Duration of phase 1 evaporation
   t_S1 = E_S0 / e_S1
   

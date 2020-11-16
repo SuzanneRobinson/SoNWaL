@@ -132,7 +132,7 @@ UpdateSoil <-
     }else{
       Nleach <- 0
     }
-    ## Now estimate fN
+    ## Now estimate fN - fertility modifier from Xenakis et al
     fN <- (Nav - Navm) / (Navx - Navm)
     
     ## Calculate ecosystem scale fluxes

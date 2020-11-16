@@ -378,7 +378,7 @@ sitka<-list(weather=clm.df.full,
 #######################################################
 ## Parameters Xenakis 2020 (unpublished) ##
 #######################################################
-sitka<-list(weather=clm.df.full,
+sitka<-list(weather=clm.df.fullX,
             ## ~~ Initial pools ~~ ##
             Wl = 0.01,
             WlDormant = 0,
@@ -488,14 +488,14 @@ sitka<-list(weather=clm.df.full,
             cod.clim = "Month",
             ## ~~ Almedia et al. Parameters ~~ ##
             waterBalanceSubMods =T, #Whether to run model using updated water balance submodels
-            theta_wp = 0.1, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
+            theta_wp = 0.11, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
             theta_fc =0.27,#Field capacity
-            K_s=0.1, #Soil conductivity
-            V_nr=10, #Volume of non-rooting zone
-            sigma_zR =0.3, #area/depth explored by 1kg of root biomass
+            K_s=0.01, #Soil conductivity
+            V_nr=5, #Volume of non-rooting zone
+            sigma_zR =1, #area/depth explored by 1kg of root biomass
             sigma_nr0=500, #SWC of non-rooting zone at time 0
-            E_S1 =20, #Cumulitive evap threshold
-            E_S2 =0.1, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
+            E_S1 =10, #Cumulitive evap threshold
+            E_S2 =0.01, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
             MaxASW_state=50
             )
 #######################################################
@@ -509,11 +509,11 @@ sitka<-list(weather=clm.df.full,
 #Reco - ecosystem respiration
 
 #get some previous run parameter estimates#
-#codM<-getSample(out3, start = 50, coda = TRUE, thin = 1)
-#codM<-as.data.frame(codM[[1]])
-#codM<-data.table::transpose(data.frame(colMedians(codM)))
-#names(codM)<-nm
-#sitka[nm]<-codM
+codM<-getSample(out, start = 1000, coda = TRUE, thin = 1)
+codM<-as.data.frame(codM[[1]])
+codM<-data.table::transpose(data.frame(colMedians(codM)))
+names(codM)<-nm
+sitka[nm]<-codM
 
 ## Run the 3PGN model using the sitka parameters
 output<-do.call(fr3PGDN,sitka)
@@ -523,7 +523,7 @@ pOut <- plotModel(output)
 
 ## Plot the timeseries of model output vs data
 results<-plotResults(output)
-results[[5]]
+results
 ## Calculate yield class from height
 output <- output%>%mutate(
   yct = ((hdom/(1-exp(-0.033329*t.proj))^1.821054)-14.856317)/1.425397,
