@@ -16,7 +16,7 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     latitude <- site[["latitude"]]
     RAD.day <- state[["RAD.day"]]
     h <- GetDayLength(Lat = latitude, month = month)
-    netRad <- Qa + Qb * (RAD.day * 1e+06/h)
+    netRad <- Qa + Qb * (RAD.day * 1e+06/h) # 1e+06 converts mega-joules to joules
     MinCond <- parms[["MinCond"]]
     MaxCond <- parms[["MaxCond"]]
     LAIgcx <- parms[["LAIgcx"]]
@@ -37,7 +37,8 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     Etransp <- (e20 * netRad + rhoAir * lambda * VPDconv * VPD * 
         BLcond)/(1 + e20 + BLcond/CanCond)
     CanTransp <- Etransp/lambda * h
-    Transp <- CanTransp*7#general.info$daysinmonth[month] * CanTransp
+    #less accurate but easier to have flexible time-steps, could include set useable time-steps and use if statements?
+    Transp <- 365*CanTransp/parms[["timeStp"]] #general.info$daysinmonth[month] * CanTransp
     EvapTransp <- min(Transp + RainIntcptn, ASWrain)
     
 

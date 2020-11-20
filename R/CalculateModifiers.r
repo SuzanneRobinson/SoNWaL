@@ -14,7 +14,7 @@ function (state, weather, site, parms, general.info)
     }
     kF <- parms[["kF"]]
     FrostDays <- weather[["FrostDays"]]
-    fF <- 1 - kF * (FrostDays/30)
+    fF <- 1 - kF * (FrostDays/parms[["timeStp"]])
     CO2 <- site[["CO2"]]
     fCalphax <- parms[["fCalphax"]]
     fCalpha <- fCalphax * CO2/(350 * (fCalphax - 1) + CO2)

@@ -68,8 +68,9 @@ function (state, site, parms, weather) #requires weather too for current month, 
       #Now we calculate litterfall and root turnover, because we're not in dormancy:
       #For litterfall:
       t <- state[["t"]]
+      #For info on the litterfall eq. See A.3 in Sands and Landsberg (2002). Parameterisation of 3-PG forplantation grown Eucalyptus globules.
       Littfall <- gammaFx * gammaF0/(gammaF0 + (gammaFx - gammaF0) * 
-                                       exp(-12 * log(1 + gammaFx/gammaF0) * t/tgammaF))
+                                       exp(-parms[["timeStp"]] * log(1 + gammaFx/gammaF0) * t/tgammaF))
       difLitter <- Littfall * Wl
       #For root turnover:
       Wr <- state[["Wr"]]
@@ -100,7 +101,7 @@ function (state, site, parms, weather) #requires weather too for current month, 
       Wl <- state[["Wl"]]
       t <- state[["t"]]
       Littfall <- gammaFx * gammaF0/(gammaF0 + (gammaFx - gammaF0) * 
-                                       exp(-12 * log(1 + gammaFx/gammaF0) * t/tgammaF))
+                                       exp(-parms[["timeStp"]] * log(1 + gammaFx/gammaF0) * t/tgammaF))
       difLitter <- Littfall * Wl
       #For root turnover:
       Wr <- state[["Wr"]]
@@ -143,7 +144,7 @@ function (state, site, parms, weather) #requires weather too for current month, 
       Wl <- state[["Wl"]]
       t <- state[["t"]]
       Littfall <- gammaFx * gammaF0/(gammaF0 + (gammaFx - gammaF0) * 
-                                       exp(-12 * log(1 + gammaFx/gammaF0) * t/tgammaF))
+                                       exp(-parms[["timeStp"]] * log(1 + gammaFx/gammaF0) * t/tgammaF))
       difLitter <- Littfall * Wl
       state[["Wlitt"]] <- state[["Wlitt"]] + difLitter
       #For root turnover:

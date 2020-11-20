@@ -9,9 +9,8 @@ function (state, weather, parms, general.info)
     month <- weather[["Month"]]
     t <- state[["t"]]
     LAI <- state[["LAI"]]
-    RAD <- RAD.day * general.info$daysinmonth[month]
+    RAD <- 365*RAD.day/parms[["timeStp"]] #might be worth writing a function which can do this better
     phi.p <- molPAR_MJ * RAD
-    print(t)
     CanCover <- if (fullCanAge > 0 & t < fullCanAge) 
         (t + 0.01)/fullCanAge
     else 1
