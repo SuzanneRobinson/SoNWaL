@@ -13,7 +13,7 @@ plotResults <- function(df){
   }
  
   df<-df2
-  
+ 
  #need to update grouping, might be aggregating too much?
 
   #Only use last week value in a month
@@ -392,7 +392,7 @@ sitka<-list(weather=clm.df.full,
 #######################################################
 #not sure if monthly rates need to be modified to whatever timestep is being used, depends on how they are used in the model
 #may be easier to adjust them by timestep within the model rather than at proposal to keep things cleaner?
-sitka<-list(weather=clm.df.fullX,
+sitka<-list(weather=clm.df.full,
             ## ~~ Initial pools ~~ ##
             Wl = 0.01,
             WlDormant = 0,
@@ -511,7 +511,7 @@ sitka<-list(weather=clm.df.fullX,
             E_S1 =10, #Cumulitive evap threshold
             E_S2 =0.001, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
             MaxASW_state=50,
-            timeStp = 52 # time step, 52 for weekly, 12 for monthly and 365 for daily
+            timeStp = 12 # time step, 52 for weekly, 12 for monthly and 365 for daily
             )
 #######################################################
 
@@ -538,7 +538,7 @@ pOut <- plotModel(output)
 
 ## Plot the timeseries of model output vs data
 results<-plotResults(output)
-results[1]
+results
 ## Calculate yield class from height
 output <- output%>%mutate(
   yct = ((hdom/(1-exp(-0.033329*t.proj))^1.821054)-14.856317)/1.425397,
