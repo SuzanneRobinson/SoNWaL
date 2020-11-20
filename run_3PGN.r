@@ -4,25 +4,28 @@
 
 ## Function to plot the model against the Harwood data.
 plotResults <- function(df){
-  df <- df[c(2:nrow(df)),] 
+ dt=52
+
+ #need to update grouping, might be aggregating too much?
+
+  #Only use last week value in a month
+  
+  df <- df[c(2:nrow(df)),]
+  df <- df %>% group_by(Year) %>% mutate(cumGPP = cumsum(GPP),
+                                         cumNPP = cumsum(NPP),
+                                         timestamp = as.POSIXct(paste(sprintf("%02d",Year),sprintf("%02d",Month),sprintf("%02d",1),sep="-"),tz="GMT")) 
+
   df2<-NULL
   for(i in c(1:(nrow(df)-1))){
     
     if(df$Month[i]!=df$Month[i+1])
       df2<-rbind(df2,df[i,])
   }
- 
+  
   df<-df2
- 
- #need to update grouping, might be aggregating too much?
-
-  #Only use last week value in a month
   
   
-    df <- df %>% group_by(Year) %>% mutate(cumGPP = cumsum(GPP),
-                                         cumNPP = cumsum(NPP),
-                                         timestamp = as.POSIXct(paste(sprintf("%02d",Year),sprintf("%02d",Month),sprintf("%02d",1),sep="-"),tz="GMT")) 
-  gpp1<-ggplot()+theme_bw()+
+    gpp1<-ggplot()+theme_bw()+
     geom_line(data=df,aes(x=timestamp,y=cumGPP,group=Year),colour="black",size=1)+
     geom_point(data=data,aes(x=timestamp,y=cumGPP),colour="red",size=2)+
     scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+
@@ -98,6 +101,8 @@ plotResults <- function(df){
     labs(x="Year",y=expression(paste("Rs [tDM"," ",ha^-1,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
+  
+
   
   leaf<-data.frame(rbind(
     c(dplyr::filter(df,Year==2015&Month==8)$Year+dplyr::filter(df,Year==2015&Month==8)$Month/dt,dplyr::filter(df,Year==2015&Month==8)$t.proj,5.7),
@@ -392,7 +397,7 @@ sitka<-list(weather=clm.df.full,
 #######################################################
 #not sure if monthly rates need to be modified to whatever timestep is being used, depends on how they are used in the model
 #may be easier to adjust them by timestep within the model rather than at proposal to keep things cleaner?
-sitka<-list(weather=clm.df.full,
+sitka<-list(weather=clm.df.fullX,
             ## ~~ Initial pools ~~ ##
             Wl = 0.01,
             WlDormant = 0,
@@ -511,7 +516,7 @@ sitka<-list(weather=clm.df.full,
             E_S1 =10, #Cumulitive evap threshold
             E_S2 =0.001, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
             MaxASW_state=50,
-            timeStp = 12 # time step, 52 for weekly, 12 for monthly and 365 for daily
+            timeStp = 52 # time step, 52 for weekly, 12 for monthly and 365 for daily
             )
 #######################################################
 
