@@ -11,6 +11,7 @@ function (state, weather, parms, general.info)
     LAI <- state[["LAI"]]
     RAD <- RAD.day * general.info$daysinmonth[month]
     phi.p <- molPAR_MJ * RAD
+    print(t)
     CanCover <- if (fullCanAge > 0 & t < fullCanAge) 
         (t + 0.01)/fullCanAge
     else 1

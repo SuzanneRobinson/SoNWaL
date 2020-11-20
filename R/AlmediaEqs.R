@@ -34,7 +34,12 @@
 soilWC<-function(parms,weather,state){
   
   #size of time-step. This is for monthly time steps
-  t =  as.numeric(days_in_month(weather[["Month"]])) 
+  if (parms[["timeStp"]] ==12) t =   days_in_month(weather[["Month"]]) 
+  if (parms[["timeStp"]] ==52) t =   7
+  if (parms[["timeStp"]] ==365) t =  1
+  if (is.numeric(t)==F) print ("unsupported time step used")
+  
+  #as.numeric(days_in_month(weather[["Month"]])) 
   #Volume of initial non-rooting zone
   V_nr = parms[["V_nr"]]
   
@@ -98,7 +103,12 @@ soilEvap<-function(parms,weather,state,netRad){
   E_S1 = parms[["E_S1"]]
   E_S2 = parms[["E_S2"]]
 
-  t =  as.numeric(days_in_month(weather[["Month"]])) 
+  
+  #size of time-step. This is for monthly time steps
+  if (parms[["timeStp"]] ==12) t =   days_in_month(weather[["Month"]]) 
+  if (parms[["timeStp"]] ==52) t =   7
+  if (parms[["timeStp"]] ==365) t =  1
+  if (is.numeric(t)==F) print ("unsupported time step used")
   
   
   #Wet surface evaporation - using Penman Monteith eq.
@@ -120,12 +130,12 @@ soilEvap<-function(parms,weather,state,netRad){
   
   #Integrate equation A.9 to get value at time t (assuming t is number of days in month)
   #and Calc E_S using t+t0 to get amount of evaporation between t0 and t
-
   E_S = if (t <= t_S1)
     e_S1 * t
   else
     (E_S1 + E_S2 * (sqrt(1 + 2 * (e_S1 / E_S2) * ((t + t0) - t_S1) - 1)))-E_S0
   
+
   return(E_S)
   
 }

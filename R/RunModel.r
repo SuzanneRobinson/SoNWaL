@@ -33,6 +33,9 @@ function (stand.init, weather, site, parms, general.info = parms.general,
         }else if (cod.clim == "Month") {
             weather.i <- weather[i, ]
         }
+      
+      timeStp<-parms[["timeStp"]]
+      
         state.apar <- EstimateAPAR(state = state, weather = weather.i, 
             parms = parms, general.info = general.info)
         state.mods <- CalculateModifiers(state = state.apar, 
@@ -41,19 +44,28 @@ function (stand.init, weather, site, parms, general.info = parms.general,
         state.npp <- EstimateNPP(state = state.mods, parms = parms)
         state.asw <- UpdateASW(state = state.npp, weather = weather.i, 
             site = site, parms = parms, general.info = general.info)
+        
+     
+        #could have biomass allocation only occur at the end of the month?
+        
+      #  wMnth= ifelse(i!=N,weather$Month[i+1],1)
+      #  if(weather$Month[i]!= wMnth || i==1){
         state.walloc <- AllocateBiomass(state = state.asw, site = site, #also requires weather.i, to identify current.month
             parms = parms, weather = weather.i)
         state.mort <- EstimateMortality(state = state.walloc, 
             parms = parms)
-        state.mort[["t"]] <- state.mort[["t"]] + 1/12
+        state.mort[["t"]] <- state.mort[["t"]] + 1/timeStp
+        
         ############ ADD THE NEW SOIL SUBMODULE HERE #################
         state.soil <- UpdateSoil(state = state.mort, parms = parms,
                                  site = site, general.info = general.info,
                                  weather = weather)
         state.end <- PredictVariablesInterest.3PG(state = state.soil, 
             parms = parms, cod.pred = cod.pred, month = weather.i[["Month"]])
+      #  }
+
         if (!missing(presc) && nrow(fma.app) > 0 && ((abs(fma.app$t[1] - 
-            state.end[["t"]]) < 1/24) | (fma.app$t[1] < state.end[["t"]]))) {
+            state.end[["t"]]) < 1/(timeStp*2)) | (fma.app$t[1] < state.end[["t"]]))) {
             state.end <- DoThinning(state = state.end, parms = parms, 
                 fma = fma.app, presc = presc)
             fma.app <- fma.app[-1, ]
@@ -62,7 +74,7 @@ function (stand.init, weather, site, parms, general.info = parms.general,
         }
         if (!missing(presc) && state.end[["N"]] == 0) {
             if (state.end[["cycle"]] > max(presc$cycle)) {
-                t.proj <- t.proj + 1/12
+                t.proj <- t.proj + 1/timeStp
                 proj.results[[i + 1]] <- c(t.proj = t.proj, state.end)
                 break
             }
@@ -92,7 +104,7 @@ function (stand.init, weather, site, parms, general.info = parms.general,
             state.end <- RemoveSprouts(state = state.end, parms = parms, 
                 fma = fma.app)
         }
-        t.proj <- t.proj + 1/12
+        t.proj <- t.proj + 1/timeStp
         proj.results[[i + 1]] <- c(t.proj = t.proj, state.end)
         state <- state.end
         j = j + 1

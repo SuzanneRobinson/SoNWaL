@@ -37,7 +37,7 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     Etransp <- (e20 * netRad + rhoAir * lambda * VPDconv * VPD * 
         BLcond)/(1 + e20 + BLcond/CanCond)
     CanTransp <- Etransp/lambda * h
-    Transp <- general.info$daysinmonth[month] * CanTransp
+    Transp <- CanTransp*7#general.info$daysinmonth[month] * CanTransp
     EvapTransp <- min(Transp + RainIntcptn, ASWrain)
     
 

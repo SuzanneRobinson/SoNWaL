@@ -90,20 +90,18 @@ clm.df.full$week<-week(clm.df.full$date)
 
 #Split into weekly data
 clm.df.fullX<-NULL
+weekCount<-1
 for(i in c(1:nrow(clm.df.full))){
   reps<-ifelse(clm.df.full$Month[i]!=12,clm.df.full[i+1,"week"]-clm.df.full[i,"week"],4)
-  
+  #SOMETHING NOT WORKING HERE! REPEATING WEEKS!
   clm.df.full[i,]$Rain<-clm.df.full[i,]$Rain/reps
-  clm.df.full[i,]$SolarRad<-clm.df.full[i,]$SolarRad/reps
+  clm.df.full[i,]$MonthIrrig<-clm.df.full[i,]$MonthIrrig/reps
   
   clm.df.fullX<-rbind(clm.df.fullX,do.call("rbind",(replicate(reps, clm.df.full[i,], simplify = FALSE))))
-  
-  ifelse(clm.df.full$week[i]!=48,clm.df.fullX$week[clm.df.full[i,"week"]:(clm.df.full[i+1,"week"]-1)]<-c(clm.df.full[i,"week"]:(clm.df.full[i+1,"week"]-1)),
-         clm.df.fullX$week[clm.df.full[i,"week"]:(clm.df.full[i,"week"]+3)]<-48:52)
 }
-
+clm.df.fullX$week<-c(1:51)
 #update date values
-clm.df.fullX$Month<-as.Date(paste0(clm.df.fullX$Year,"-",clm.df.fullX$week,"-1"),'%Y-%U-%u')
+#clm.df.fullX$Date<-as.Date(paste0(clm.df.fullX$Year,"-",clm.df.fullX$week,"-1"),'%Y-%U-%u')
 
 
 ###############################################################
@@ -226,7 +224,8 @@ sitka<-list(weather=clm.df.full,
             sigma_nr0=250, #SWC of non-rooting zone at time 0
             E_S1 =100, #Cumulitive evap threshold
             E_S2 =0.1, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
-            MaxASW_state=50
+            MaxASW_state=50,
+            timeStp = 52
             
 )
 
@@ -275,7 +274,7 @@ dev <- c(rep(.01,nrow(filter(data,year>=startYear&year<=endYear))),
          rep(.01,nrow(filter(data,year>=startYear&year<=endYear))),
          rep(.01,nrow(filter(data,year>=startYear&year<=endYear))),
          rep(0.1,nrow(filter(data,year>=startYear&year<=endYear))),
-         rep(.1,nrow(filter(data,year>=startYear&year<=endYear))),
+         rep(3,nrow(filter(data,year>=startYear&year<=endYear))),
          rep(0.05,(nrow(filter(data,year>=startYear&year<=endYear))-1)),
          1.5,1.5,
          100,
@@ -330,7 +329,7 @@ BS3PGDN <- createBayesianSetup(likelihood = NLL, prior = Uprior, names = nm, par
 
 ## Choose the settings for the run
 settings = list(
-    iterations = 25000,
+    iterations = 10000,
     ## Z = NULL,
     startValue = 5, #t(mP),#NULL, ## Use 5 chains instead of 3
     nrChains = 1,

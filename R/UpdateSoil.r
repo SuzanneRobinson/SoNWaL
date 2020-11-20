@@ -19,9 +19,9 @@ UpdateSoil <-
     dg <- state[["dg"]]
     fT <- state[["fT"]]
     fSW <- state[["fSW"]]
-    klmax <- parms[["klmax"]]
-    krmax <- parms[["krmax"]]
-    komax <- parms[["komax"]]
+    klmax <- parms[["klmax"]]*12/parms[["timeStp"]] # switch from monthly rates to time-step rates
+    krmax <- parms[["krmax"]]*12/parms[["timeStp"]]
+    komax <- parms[["komax"]]*12/parms[["timeStp"]]
     hc <- parms[["hc"]]
     qir <- parms[["qir"]]
     qil <- parms[["qil"]]
@@ -41,29 +41,15 @@ UpdateSoil <-
       SWconst <- parms.sw.site[["SWconst"]]
       SWpower <- parms.sw.site[["SWpower"]]
       ASW <- state[["ASW"]]
-       Tmin <- parms[["Tmin"]]
+      MaxASW <- site[["MaxASW"]]
+      MoistRatio <- ASW/MaxASW
+      Tmin <- parms[["Tmin"]]
       Tmax <- parms[["Tmax"]]
       Topt <- parms[["Topt"]]
       Tav <- weather[1,"Tmean"]
       
       dg<-((state[["Wsbr"]]*1000/state[["N"]])/parms[["aS"]])^(1/parms[["nS"]])
-      
-      ##change soil water growth mod if using updated water-balance sub-models
-      #If using updated waterbalance submodels moistratio is derived using wilting point and field capacity
-      if(parms[["waterBalanceSubMods"]]==T){
-        theta_wp= parms[["theta_wp"]]*(0.1 * parms[["sigma_zR"]] * state[["Wr"]])*1000
-        MaxASW<-state[["MaxASW_state"]]
-        MoistRatio<- (ASW-theta_wp)/MaxASW
-        #modify MoistRatio if numerators are above or below certain values (see Landsberg and waring)
-        MoistRatio<-ifelse(ASW-theta_wp>=0,MoistRatio,0)
-        MoistRatio<-ifelse(ASW-theta_wp>MaxASW,1,MoistRatio)
-        fSW<-SWGmod(SWconst,SWpower,MoistRatio)
-      }else
-      {
-        MaxASW <- site[["MaxASW"]]
-        MoistRatio <- ASW/MaxASW
-        fSW <- 1/(1 + ((1 - MoistRatio)/SWconst)^SWpower)}
-      
+      fSW <- 1/(1 + ((1 - MoistRatio)/SWconst)^SWpower)
       if (Tav < Tmin | Tav > Tmax) {
         fT <- 0
       }
@@ -132,7 +118,7 @@ UpdateSoil <-
     }else{
       Nleach <- 0
     }
-    ## Now estimate fN - fertility modifier from Xenakis et al
+    ## Now estimate fN
     fN <- (Nav - Navm) / (Navx - Navm)
     
     ## Calculate ecosystem scale fluxes

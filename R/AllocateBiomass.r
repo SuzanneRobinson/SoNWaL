@@ -11,7 +11,7 @@ function (state, site, parms, weather) #requires weather too for current month, 
     fN <- state[["fN"]]
     PhysMod <- state[["PhysMod"]]
     m <- m0 + (1 - m0) * fN
-    pR <- pRx * pRn/(pRn + (pRx - pRn) * m * PhysMod)# higher value for fn less biomass allocated to roots...
+    pR <- pRx * pRn/(pRn + (pRx - pRn) * m * PhysMod)
     pFS2 <- parms[["pFS2"]]
     pFS20 <- parms[["pFS20"]]
     pfsPower <- log(pFS20/pFS2)/log(10)
@@ -24,10 +24,12 @@ function (state, site, parms, weather) #requires weather too for current month, 
     difWl <- NPP * pF
     difWr <- NPP * pR
     difWsbr <- NPP * pS
-    gammaFx <- parms[["gammaFx"]]
-    gammaF0 <- parms[["gammaF0"]]
-    tgammaF <- parms[["tgammaF"]]
+    gammaFx <- parms[["gammaFx"]]*12/parms[["timeStp"]] #adjust to get time step rates from monthly rates?
+    gammaF0 <- parms[["gammaF0"]]*12/parms[["timeStp"]]
+    tgammaF <- parms[["tgammaF"]]*12/parms[["timeStp"]]
     
+    
+    ##Problem here for shorter time steps, as litterfall is updated based on the previous month, so weekly or daily time-steps may cause issues?
     
     #1st case: we're currently in dormancy (i.e. no W increments) and we need to check if the previous month was dormant or not, to calculate any litterfall
     if (isTRUE(isDormantSeason(current.month, leaf.grow, leaf.fall))) { #if this is true, then there can be no W increments, but there might still be litterfall
