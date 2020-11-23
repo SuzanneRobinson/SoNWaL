@@ -9,10 +9,10 @@ function (state, parms, newsprouts)
     Wsbr <- state[["Wsbr"]]
     N0 <- N
     if (newsprouts == 1) {
-        N <- 4.26831 * Nharv + 285.96252 * (1/12)
+        N <- 4.26831 * Nharv + 285.96252 * (1/parms[["timeStp"]])
     }
     else {
-        N <- N + 285.96252 * (1/12)
+        N <- N + 285.96252 * (1/parms[["timeStp"]])
     }
     Wl <- Wl + (N - N0) * Wl.s/1000
     Wsbr <- Wsbr + (N - N0) * Wsbr.s/1000

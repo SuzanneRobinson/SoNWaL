@@ -15,6 +15,9 @@ plotResults <- function(df){
                                          cumNPP = cumsum(NPP),
                                          timestamp = as.POSIXct(paste(sprintf("%02d",Year),sprintf("%02d",Month),sprintf("%02d",1),sep="-"),tz="GMT")) 
 
+  
+  dfRS<-aggregate(df$Rs~ df$Month+df$Year,FUN=sum)
+  
   df2<-NULL
   for(i in c(1:(nrow(df)-1))){
     
@@ -90,6 +93,8 @@ plotResults <- function(df){
     labs(x="Year",y=expression(paste("Reco [tDM"," ",ha^-1,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
+  
+  
   
   rs<-ggplot()+theme_bw()+
     geom_line(data=df,aes(x=timestamp,y=Rs,group=Year),colour="black",size=1)+
