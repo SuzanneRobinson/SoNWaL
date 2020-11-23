@@ -18,23 +18,23 @@ plotResults <- function(df){
   
   dfRS<-aggregate(df$Rs~ df$Month+df$Year,FUN=sum)
   
-  df2<-NULL
-  for(i in c(1:(nrow(df)-1))){
-    
-    if(df$Month[i]!=df$Month[i+1])
-      df2<-rbind(df2,df[i,])
-  }
+#  df2<-NULL
+#  for(i in c(1:(nrow(df)-1))){
+#    
+#    if(df$Month[i]!=df$Month[i+1])
+#      df2<-rbind(df2,df[i,])
+#  }
   
   
-  df2$GPP<-aggregate(df$GPP~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
-  df2$NPP<-aggregate(df$NPP~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
-  df2$EvapTransp<-aggregate(df$EvapTransp~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
-  df2$NEE<-aggregate(df$NEE~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
-  df2$Reco<-aggregate(df$Reco~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
-  df2$Rs<-aggregate(df$Rs~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+#  df2$GPP<-aggregate(df$GPP~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+#  df2$NPP<-aggregate(df$NPP~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+#  df2$EvapTransp<-aggregate(df$EvapTransp~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+#  df2$NEE<-aggregate(df$NEE~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+#  df2$Reco<-aggregate(df$Reco~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+#  df2$Rs<-aggregate(df$Rs~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
   
   
-  df<-df2
+ # df<-df2
   
   
     gpp1<-ggplot()+theme_bw()+
@@ -411,7 +411,7 @@ sitka<-list(weather=clm.df.full,
 #######################################################
 #not sure if monthly rates need to be modified to whatever timestep is being used, depends on how they are used in the model
 #may be easier to adjust them by timestep within the model rather than at proposal to keep things cleaner?
-sitka<-list(weather=clm.df.fullX,
+sitka<-list(weather=clm.df.full,
             ## ~~ Initial pools ~~ ##
             Wl = 0.01,
             WlDormant = 0,
@@ -520,17 +520,17 @@ sitka<-list(weather=clm.df.fullX,
             cod.pred = "3PG",
             cod.clim = "Month",
             ## ~~ Almedia et al. Parameters ~~ ##
-            waterBalanceSubMods =F, #Whether to run model using updated water balance submodels
-            theta_wp = 0.11, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
-            theta_fc =0.27,#Field capacity
+            waterBalanceSubMods =T, #Whether to run model using updated water balance submodels
+            theta_wp = 0.1, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
+            theta_fc =0.3,#Field capacity
             K_s=0.01, #Soil conductivity
             V_nr=5, #Volume of non-rooting zone
-            sigma_zR =1, #area/depth explored by 1kg of root biomass
+            sigma_zR =0.9, #area/depth explored by 1kg of root biomass
             sigma_nr0=500, #SWC of non-rooting zone at time 0
             E_S1 =10, #Cumulitive evap threshold
             E_S2 =0.001, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
             MaxASW_state=50,
-            timeStp = 52 # time step, 52 for weekly, 12 for monthly and 365 for daily
+            timeStp = 12 # time step, 52 for weekly, 12 for monthly and 365 for daily
             )
 #######################################################
 
@@ -557,7 +557,7 @@ pOut <- plotModel(output)
 
 ## Plot the timeseries of model output vs data
 results<-plotResults(output)
-results
+results[2]
 
 ## Calculate yield class from height
 output <- output%>%mutate(

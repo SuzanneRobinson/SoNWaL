@@ -68,12 +68,17 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       #Calculate any excess soil water
       excessSW <- max(sigma_rz + Rain+ MonthIrrig - EvapTransp - MaxASW - Evaporation, 0)
       
-      state[["sigma_nr0"]]<- max(state[["sigma_nr0"]] + Rain + MonthIrrig - excessSW - Evaporation, 0)
+      #Update here, to have soil water go from rooting zone to non-rooting zone, use K_s and rooting zone depth?
+    #  state[["sigma_nr0"]]<- max(state[["sigma_nr0"]] + Rain + MonthIrrig - excessSW - Evaporation, 0)
       state[["MaxASW_state"]] <-MaxASW
 
+      #Update value for non-rooting zone SWC - assuming rainfall, evaporation and evapotranspiration occurs in the rooting zone
+      state[["sigma_nr0"]] <-soilWC_NRZ(parms, weather, state)
+      
       #Update available soil water -CHECK IF MIN OF 0 NEEDED
       state[["ASW"]] <- sigma_rz + Rain+ MonthIrrig - EvapTransp - excessSW - Evaporation
   
+
       
     } else
     {

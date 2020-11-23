@@ -14,7 +14,7 @@
 #   _\ \/ _ \/ / /  | |/ |/ / _ `/ __/ -_) __/ / /__/ _ \/ _ \/ __/ -_) _ \/ __/  #
 #  /___/\___/_/_/   |__/|__/\_,_/\__/\__/_/    \___/\___/_//_/\__/\__/_//_/\__/   #
 
-#'@description Calculates soil water content for rooting and non-rooting zones
+#'@description Calculates soil water content for rooting zone
 #'@param parms global 3PG parameter values
 #'@param weather global weather values
 #'@param state state values
@@ -58,19 +58,72 @@ soilWC<-function(parms,weather,state){
   #Shared area, area is in m^2, so area around the tree?
   A = 5
   
+  #Non-root zone decreases as root zone increases, V_nr is max non-root zone volume
+  V_nrx<-max(V_nr-V_rz,0)
+  
   #Time constant - based on rate of movement soil water between zones
-  t_s0 = (V_rz * V_nr) / (K_s * A * (V_rz + V_nr))
+  t_s0 = (V_rz * V_nrx) / (K_s * A * (V_rz + V_nrx))
   
   #Current state of soil water content in non-rooting zone (at time-0 for month)
   sigma_nr0 = state[["sigma_nr0"]]# should be dynamic? but not sure how to implement just yet...
   
-  #State of soil water content in rooting zone at the end of the time step
-  sigma_rz = (((sigma_rz0 * V_nr - sigma_nr0 * V_rz) / (V_rz + V_nr)) * exp(-t /t_s0)) +
-    (V_rz / (V_rz + V_nr) * (sigma_rz0 + sigma_nr0)) #re-arrange equation to get sigma_nz?
   
+  #State of soil water content in rooting zone at the end of the time step
+  sigma_rz = (((sigma_rz0 * V_nrx - sigma_nr0 * V_rz) / (V_rz + V_nrx)) * exp(-t /t_s0)) +
+    (V_rz / (V_rz + V_nrx) * (sigma_rz0 + sigma_nr0)) #re-arrange equation to get sigma_nz?
+ 
   return(sigma_rz)
 }
 
+
+
+#'@description Calculates soil water content for non-rooting zones
+#'@param parms global 3PG parameter values
+#'@param weather global weather values
+#'@param state state values
+
+#Internal function variable descriptions
+#'@param t length of time-step
+#'@param V_nr volume of non-rooting zone
+#'@param V_rz volume of rooting zone
+#'@param A shared area
+#'@param z_r depth (or volume?) of rooting zone
+#'@param sigma_zR area/depth explored by 1kg of root biomass
+#'@param sigma_nr0 SWC of non-rooting zone at time 0
+#'@param sigma_rz0 SWC of rooting zone at time 0
+
+#'@return soilWC_NRZ SWC of non-rooting zone
+
+soilWC_NRZ<-function(parms,weather,state){
+  #size of time-step. This is for monthly time steps
+  if (parms[["timeStp"]] ==12) t =   days_in_month(weather[["Month"]]) 
+  if (parms[["timeStp"]] ==52) t =   7
+  if (parms[["timeStp"]] ==365) t =  1
+  if (is.numeric(t)==F) print ("unsupported time step used")
+  
+  #as.numeric(days_in_month(weather[["Month"]])) 
+  #Volume of initial non-rooting zone
+  V_nr = parms[["V_nr"]]
+  #soil water in rooting zone at t0, equiv ASW? depends if rain is assumed to occur at begining or end of month,
+  #need to be careful so as not to mess up biomass allocation function which comes in after in the same time step (see RunModel.r)
+  sigma_rz0 = state[["ASW"]]
+  #Soil conductivity - see Landsberg book for more details on this
+  K_s = parms[["K_s"]]
+  #rooting depth / volume - Almedia describes this as depth, but sigma_zR could also be used to derive volume from root biomass?
+  z_r = (0.1 * parms[["sigma_zR"]] * state[["Wr"]])
+  V_rz = z_r # not sure if this is equivalent, or whether there needs to be a conversion from depth to volume?
+  #Shared area, area is in m^2, so area around the tree?
+  A = 5
+  #Non-root zone decreases as root zone increases, V_nr is max non-root zone volume
+  V_nrx<-max(V_nr-V_rz,0)
+  
+  # Re-arrange equation A.14 to get value for non-rooting zone
+  t_s0 = (V_rz * V_nrx) / (K_s * A * (V_rz + V_nrx))
+  sigma_nr0 =max(((state[["ASW"]]*V_rz)+(state[["ASW"]]*V_nrx)-(exp(-t/t_s0)*sigma_rz0*V_nrx)-(sigma_rz0*V_rz))/((1-exp(-t/t_s0))*V_rz),0)
+
+  
+  return(sigma_nr0)
+}
 
 #      ____     _ __  ____                             __  _          # 
 #     / __/__  (_) / / __/  _____ ____  ___  _______ _/ /_(_)__  ___  # 
