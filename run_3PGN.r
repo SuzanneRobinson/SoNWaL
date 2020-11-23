@@ -25,6 +25,15 @@ plotResults <- function(df){
       df2<-rbind(df2,df[i,])
   }
   
+  
+  df2$GPP<-aggregate(df$GPP~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+  df2$NPP<-aggregate(df$NPP~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+  df2$EvapTransp<-aggregate(df$EvapTransp~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+  df2$NEE<-aggregate(df$NEE~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+  df2$Reco<-aggregate(df$Reco~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+  df2$Rs<-aggregate(df$Rs~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+  
+  
   df<-df2
   
   
@@ -37,7 +46,7 @@ plotResults <- function(df){
           axis.text=element_text(size=14))
   
   gpp2<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=timestamp,y=GPP,group=Year),colour="black",size=1)+
+    geom_line(data=df,aes(x=timestamp,y=aggregate(df$GPP~ df$Month+df$Year,FUN=sum)[,3],group=Year),colour="black",size=1)+
     geom_point(data=data,aes(x=timestamp,y=gpp),colour="red",size=2)+
     ## geom_ribbon(data=data,aes(x=timestamp,ymin=gpp-gpp.sd,ymax=gpp+gpp.sd),alpha=0.3)+
     scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
@@ -549,6 +558,7 @@ pOut <- plotModel(output)
 ## Plot the timeseries of model output vs data
 results<-plotResults(output)
 results
+
 ## Calculate yield class from height
 output <- output%>%mutate(
   yct = ((hdom/(1-exp(-0.033329*t.proj))^1.821054)-14.856317)/1.425397,

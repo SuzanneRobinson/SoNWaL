@@ -8,6 +8,8 @@ options(warn=-1)
 
 ## Custom function to sample the modelled data frame
 sampleOutput<-function(df,sY,eY){
+
+
     m<-c(filter(df,Year>=sY&Year<=eY)$GPP,
          filter(df,Year>=sY&Year<=eY)$NPP,
          filter(df,Year>=sY&Year<=eY)$NEE,
@@ -23,8 +25,45 @@ sampleOutput<-function(df,sY,eY){
          filter(df,Year==2015&Month==7)$totC,
          filter(df,Year==2015&Month==7)$totN
          )
+    
+    m
+    
     return(m)
 }
+
+
+
+
+## Custom function to sample the modelled data frame for shorter time-steps
+sampleOutputTS<-function(df,sY,eY){
+  
+ df<- filter(df,Year>=sY&Year<=eY)
+  
+ df$week<- rep(1:51,4)
+  
+ aggregate(df$GPP~ df$Month+df$Year,FUN=sum)[,3]
+ 
+  m<-c(aggregate(df$GPP~ df$Month+df$Year,FUN=sum)[,3],
+       aggregate(df$NPP~ df$Month+df$Year,FUN=sum)[,3],
+       aggregate(df$NEE~ df$Month+df$Year,FUN=sum)[,3],
+       aggregate(df$Reco~ df$Month+df$Year,FUN=sum)[,3],
+       aggregate(df$Rs~ df$Month+df$Year,FUN=sum)[,3],
+       aggregate(df$Etransp~ df$Month+df$Year,FUN=mean)[,3],
+       filter(df,Year==2015&Month==8)$LAI[1],
+       filter(df,Year==2018&Month==8)$LAI[1],
+       filter(df,Year==2018&Month==8)$N[1],
+       filter(df,Year==2018&Month==8)$dg[1],
+       filter(df,Year==2015&Month==7)$Wr[1],
+       filter(df,Year==2015&Month==7)$difRoots[1],
+       filter(df,Year==2015&Month==7)$totC[1],
+       filter(df,Year==2015&Month==7)$totN[1]
+  )
+  
+  m
+  
+  return(m)
+}
+
 
 ## Custom function to get the percentage accepted in a chain
 acPerc<-function(chain){
@@ -88,6 +127,14 @@ clm.df.full$date<-as.Date(paste(clm.df.full$Year,"-",clm.df.full$Month,"-01",sep
 
 clm.df.full$week<-week(clm.df.full$date)
 
+
+clm.df.daily<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\met_basfor.csv")
+
+clm.df.daily$Date<-as.Date(clm.df.daily$DOY, origin = paste0(clm.df.daily$Year,"-01-01"))
+
+
+clm.df.daily$week<-week(clm.df.daily$Date)
+
 #Split into weekly data
 clm.df.fullX<-NULL
 weekCount<-1
@@ -99,6 +146,9 @@ for(i in c(1:nrow(clm.df.full))){
   clm.df.fullX<-rbind(clm.df.fullX,do.call("rbind",(replicate(reps, clm.df.full[i,], simplify = FALSE))))
 }
 clm.df.fullX$week<-c(1:51)
+
+
+
 #update date values
 #clm.df.fullX$Date<-as.Date(paste0(clm.df.fullX$Year,"-",clm.df.fullX$week,"-1"),'%Y-%U-%u')
 
@@ -290,7 +340,7 @@ dev <- c(rep(.01,nrow(filter(data,year>=startYear&year<=endYear))),
 
 NLL <- function(p){
     sitka[.GlobalEnv$nm]<-p
-    output<-do.call(fr3PGDN,sitka)
+    output<-do.call(fr3PGDN,sitka2)
     modelled <-sampleOutput(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
 
     NlogLik  <- sum(dnorm(.GlobalEnv$observed,mean=modelled,sd=dev,log=T))
