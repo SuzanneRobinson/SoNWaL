@@ -3,8 +3,7 @@
 ##########################################
 
 ## Function to plot the model against the Harwood data.
-plotResults <- function(df){
- dt=52
+plotResults <- function(df,ShortTS=F){
 
  #need to update grouping, might be aggregating too much?
 
@@ -16,26 +15,21 @@ plotResults <- function(df){
                                          timestamp = as.POSIXct(paste(sprintf("%02d",Year),sprintf("%02d",Month),sprintf("%02d",1),sep="-"),tz="GMT")) 
 
   
-  dfRS<-aggregate(df$Rs~ df$Month+df$Year,FUN=sum)
+if(ShortTS==T){
+df2<-NULL
+for(i in c(1:(nrow(df)-1))){
   
-#  df2<-NULL
-#  for(i in c(1:(nrow(df)-1))){
-#    
-#    if(df$Month[i]!=df$Month[i+1])
-#      df2<-rbind(df2,df[i,])
-#  }
-  
-  
-#  df2$GPP<-aggregate(df$GPP~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
-#  df2$NPP<-aggregate(df$NPP~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
-#  df2$EvapTransp<-aggregate(df$EvapTransp~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
-#  df2$NEE<-aggregate(df$NEE~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
-#  df2$Reco<-aggregate(df$Reco~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
-#  df2$Rs<-aggregate(df$Rs~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
-  
-  
- # df<-df2
-  
+  if(df$Month[i]!=df$Month[i+1])
+    df2<-rbind(df2,df[i,])
+}
+df2$GPP<-aggregate(df$GPP~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+df2$NPP<-aggregate(df$NPP~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+df2$EvapTransp<-aggregate(df$EvapTransp~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+df2$NEE<-aggregate(df$NEE~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+df2$Reco<-aggregate(df$Reco~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+df2$Rs<-aggregate(df$Rs~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+ df<-df2
+}  
   
     gpp1<-ggplot()+theme_bw()+
     geom_line(data=df,aes(x=timestamp,y=cumGPP,group=Year),colour="black",size=1)+
@@ -411,7 +405,7 @@ sitka<-list(weather=clm.df.full,
 #######################################################
 #not sure if monthly rates need to be modified to whatever timestep is being used, depends on how they are used in the model
 #may be easier to adjust them by timestep within the model rather than at proposal to keep things cleaner?
-sitka<-list(weather=clm.df.full,
+sitka<-list(weather=clm.df.fullX,
             ## ~~ Initial pools ~~ ##
             Wl = 0.01,
             WlDormant = 0,
@@ -522,15 +516,15 @@ sitka<-list(weather=clm.df.full,
             ## ~~ Almedia et al. Parameters ~~ ##
             waterBalanceSubMods =T, #Whether to run model using updated water balance submodels
             theta_wp = 0.1, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
-            theta_fc =0.3,#Field capacity
+            theta_fc =0.29,#Field capacity
             K_s=0.01, #Soil conductivity
-            V_nr=5, #Volume of non-rooting zone
-            sigma_zR =0.9, #area/depth explored by 1kg of root biomass
-            sigma_nr0=500, #SWC of non-rooting zone at time 0
-            E_S1 =10, #Cumulitive evap threshold
-            E_S2 =0.001, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
+            V_nr=2, #Volume of non-rooting zone
+            sigma_zR =0.7, #area/depth explored by 1kg of root biomass
+            sigma_nr0=100, #SWC of non-rooting zone at time 0
+            E_S1 =15, #Cumulitive evap threshold
+            E_S2 =.001, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
             MaxASW_state=50,
-            timeStp = 12 # time step, 52 for weekly, 12 for monthly and 365 for daily
+            timeStp = 52 # time step, 52 for weekly, 12 for monthly and 365 for daily
             )
 #######################################################
 
@@ -544,20 +538,26 @@ sitka<-list(weather=clm.df.full,
 
 #get some previous run parameter estimates#
 codM<-getSample(out, start = 1000, coda = TRUE, thin = 1)
-codM<-as.data.frame(codM[[1]])
+codM<-tail(as.data.frame(codM[[5]]),5)
 codM<-data.table::transpose(data.frame(colMedians(codM)))
 names(codM)<-nm
 sitka[nm]<-codM
 
 ## Run the 3PGN model using the sitka parameters
-output<-do.call(fr3PGDN,sitka)
+#.GlobalEnv$interRad<-0
+output<-do.call(fr3PGDN,sitka) # NEED TO UPDATE HOW RADIATION AND EVAPORATION IS OCCURING!
+plot(output$sigma_nr0[c(300:2347)]~output$t[c(300:2347)],col="white")
+lines(output$ASW[c(300:2347)]~output$t[c(300:2347)],col="red")
+lines(output$sigma_nr0[c(300:2347)]~output$t[c(300:2347)],col="blue")
 
+plot(.GlobalEnv$interRad[c(2300:2347)]~output$t[c(2300:2347)],col="white")
+lines(.GlobalEnv$interRad[c(2300:2347)]~output$t[c(2300:2347)],col="red")
 ## Plot model outputs
 pOut <- plotModel(output)
 
 ## Plot the timeseries of model output vs data
-results<-plotResults(output)
-results[2]
+results<-plotResults(output,ShortTS=T)
+results[5]
 
 ## Calculate yield class from height
 output <- output%>%mutate(

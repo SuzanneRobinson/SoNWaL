@@ -16,7 +16,7 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     latitude <- site[["latitude"]]
     RAD.day <- state[["RAD.day"]]
     h <- GetDayLength(Lat = latitude, month = month)
-    netRad <- Qa + Qb * (RAD.day * 1e+06/h) # 1e+06 converts mega-joules to joules
+    netRad <- Qa + Qb * (RAD.day * 1e+06/h)*(1-exp(-parms[["k"]]*LAI)) # 1e+06 converts mega-joules to joules
     MinCond <- parms[["MinCond"]]
     MaxCond <- parms[["MaxCond"]]
     LAIgcx <- parms[["LAIgcx"]]
@@ -38,29 +38,33 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
         BLcond)/(1 + e20 + BLcond/CanCond)
     CanTransp <- Etransp/lambda * h
     #less accurate but easier to have flexible time-steps, could include set useable time-steps and use if statements?
-    Transp <- 365*CanTransp/parms[["timeStp"]] #general.info$daysinmonth[month] * CanTransp
+    Transp <- CanTransp*365/parms[["timeStp"]] #general.info$daysinmonth[month] * CanTransp
     EvapTransp <- min(Transp + RainIntcptn, ASWrain)
     
+   
 
+
+    #non-Intercepted radiation
+    interRad<-(RAD.day * 1e+06/h)-netRad
     
+   # .GlobalEnv$interRad <- rbind(.GlobalEnv$interRad,interRad)
     
     ####Run using water balance sub-models from Almedia et al.####
     if (parms[["waterBalanceSubMods"]] == T) {
       
-      #derive theta values
-      theta_wp= parms[["theta_wp"]]*(0.1 * parms[["sigma_zR"]] * state[["Wr"]])*1000
-      theta_fc= parms[["theta_fc"]]*(0.1 * parms[["sigma_zR"]] * state[["Wr"]])*1000
+      #derive theta values, rooting zone can't be larger than non-rooting zone
+      theta_wp= parms[["theta_wp"]]*min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["V_nr"]])*1000
+      theta_fc= parms[["theta_fc"]]*min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["V_nr"]])*1000
       MaxASW <- theta_fc-theta_wp
 
       #Run soil water content function to get root zone SWC
       sigma_rz <- soilWC(parms, weather, state)
       
       #Calculate accumulated soil evaporation for the month using soilEvap function
-      E_S <- soilEvap(parms, weather, state, netRad)
+      E_S <- soilEvap(parms, weather, state, interRad)
       
       #Minus monthly rainfall and irrigation from cumulative E_S value
-      E_S <-
-        E_S + RainIntcptn - Rain - MonthIrrig # rainfall needs ot be added after as biomass allocation function requires months rainfall
+      E_S <- E_S + RainIntcptn - Rain - MonthIrrig # rainfall needs ot be added after as biomass allocation function requires months rainfall
      
       Evaporation = ifelse(E_S <= 0, 0, E_S)
       state[["E_S"]] = ifelse(E_S <= 0, 0,  E_S)
@@ -76,9 +80,10 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       state[["sigma_nr0"]] <-soilWC_NRZ(parms, weather, state)
       
       #Update available soil water -CHECK IF MIN OF 0 NEEDED
-      state[["ASW"]] <- sigma_rz + Rain+ MonthIrrig - EvapTransp - excessSW - Evaporation
+      state[["ASW"]] <- max(sigma_rz + Rain+ MonthIrrig - EvapTransp - excessSW - Evaporation,0)
   
 
+      
       
     } else
     {

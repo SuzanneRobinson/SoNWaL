@@ -74,7 +74,7 @@ function (state, site, parms, weather) #requires weather too for current month, 
       difLitter <- Littfall * Wl
       #For root turnover:
       Wr <- state[["Wr"]]
-      Rttover <- parms[["Rttover"]]
+      Rttover <- parms[["Rttover"]]*12/parms[["timeStp"]]
       difRoots <- Rttover * Wr
       #Now we can recalculate biomass increments for the first month after dormancy:
       if (NPPDebt > 0) { #there can be some growth
@@ -105,7 +105,7 @@ function (state, site, parms, weather) #requires weather too for current month, 
       difLitter <- Littfall * Wl
       #For root turnover:
       Wr <- state[["Wr"]]
-      Rttover <- parms[["Rttover"]]
+      Rttover <- parms[["Rttover"]]*12/parms[["timeStp"]]
       difRoots <- Rttover * Wr
       
       #We check if we have any NPPDebt to pay before any new growth can occur:
@@ -149,7 +149,7 @@ function (state, site, parms, weather) #requires weather too for current month, 
       state[["Wlitt"]] <- state[["Wlitt"]] + difLitter
       #For root turnover:
       Wr <- state[["Wr"]]
-      Rttover <- parms[["Rttover"]]
+      Rttover <- parms[["Rttover"]]*12/parms[["timeStp"]]
       difRoots <- Rttover * Wr
       
       #Now we calculate end-of-month W:
@@ -173,7 +173,7 @@ function (state, site, parms, weather) #requires weather too for current month, 
       }
       #browser()
     }
-    
+
 #Now we complete the output with the state variables caclulated in the script:
     state[c("pR", "pFS", "pS", "pF", "difWl", "difWr", "difWsbr", 
             "Littfall", "difLitter", "difRoots", "TotalLitter")] <- c(pR, 

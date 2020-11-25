@@ -33,7 +33,7 @@
 
 soilWC<-function(parms,weather,state){
   
-  #size of time-step. This is for monthly time steps
+  #size of time-step. 
   if (parms[["timeStp"]] ==12) t =   days_in_month(weather[["Month"]]) 
   if (parms[["timeStp"]] ==52) t =   7
   if (parms[["timeStp"]] ==365) t =  1
@@ -47,20 +47,18 @@ soilWC<-function(parms,weather,state){
   #need to be careful so as not to mess up biomass allocation function which comes in after in the same time step (see RunModel.r)
   sigma_rz0 = state[["ASW"]]
   
-  #Soil conductivity - see Landsberg book for more details on this
+  #Soil conductivity - see Landsberg book for more details on this 
   K_s = parms[["K_s"]]
   
   #rooting depth / volume - Almedia describes this as depth, but sigma_zR could also be used to derive volume from root biomass?
-  z_r = (0.1 * parms[["sigma_zR"]] * state[["Wr"]])
+  z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),V_nr) # can't go deeper than non-rooting zone
   
   V_rz = z_r # not sure if this is equivalent, or whether there needs to be a conversion from depth to volume?
-  
   #Shared area, area is in m^2, so area around the tree?
   A = 5
   
   #Non-root zone decreases as root zone increases, V_nr is max non-root zone volume
   V_nrx<-max(V_nr-V_rz,0)
-  
   #Time constant - based on rate of movement soil water between zones
   t_s0 = (V_rz * V_nrx) / (K_s * A * (V_rz + V_nrx))
   
@@ -110,7 +108,7 @@ soilWC_NRZ<-function(parms,weather,state){
   #Soil conductivity - see Landsberg book for more details on this
   K_s = parms[["K_s"]]
   #rooting depth / volume - Almedia describes this as depth, but sigma_zR could also be used to derive volume from root biomass?
-  z_r = (0.1 * parms[["sigma_zR"]] * state[["Wr"]])
+  z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),V_nr) # can't go deeper than non-rooting zone
   V_rz = z_r # not sure if this is equivalent, or whether there needs to be a conversion from depth to volume?
   #Shared area, area is in m^2, so area around the tree?
   A = 5
@@ -121,7 +119,7 @@ soilWC_NRZ<-function(parms,weather,state){
   t_s0 = (V_rz * V_nrx) / (K_s * A * (V_rz + V_nrx))
   sigma_nr0 =max(((state[["ASW"]]*V_rz)+(state[["ASW"]]*V_nrx)-(exp(-t/t_s0)*sigma_rz0*V_nrx)-(sigma_rz0*V_rz))/((1-exp(-t/t_s0))*V_rz),0)
 
-  
+
   return(sigma_nr0)
 }
 
@@ -145,16 +143,18 @@ soilWC_NRZ<-function(parms,weather,state){
 #Calc using penman monteith eq. g_c is infinite - could be better modified by soil dryness etc.
 
 
-soilEvap<-function(parms,weather,state,netRad){
+soilEvap<-function(parms,weather,state,interRad){
   
   e20 <- parms[["e20"]]
   rhoAir <- parms[["rhoAir"]]
   lambda <- parms[["lambda"]]
   VPDconv <- parms[["VPDconv"]]
-  BLcond <- parms[["BLcond"]]
+  soilCond <- 0.01 #lower than canopy conductivity
   VPD <- weather[["VPD"]]
   E_S1 = parms[["E_S1"]]
   E_S2 = parms[["E_S2"]]
+
+
 
   
   #size of time-step. This is for monthly time steps
@@ -164,29 +164,34 @@ soilEvap<-function(parms,weather,state,netRad){
   if (is.numeric(t)==F) print ("unsupported time step used")
   
   
-  #Wet surface evaporation - using Penman Monteith eq.
-  e_S1 <- max(((e20 * netRad + rhoAir * lambda * VPDconv * VPD *
-                  BLcond) / (1 + e20 + BLcond / Inf)), 0) #not sure about canopy transpiration?
+
+  
+  #Wet surface evaporation - using Penman Monteith eq. mm per day loss
+  e0 <- max(((e20 * interRad + rhoAir * lambda * VPDconv * VPD *
+                  soilCond) / (1 + e20 + soilCond / Inf)), 0) 
+  
+
   #E_S0 is E_S minus the amount of rainfall not intercepted and irigation
   #(assumes all rainfall occurs at the start of the month - need to implement finer scale timesteps!)
+
   E_S0 = max(state[["E_S"]] , 0)
   
 
   #Duration of phase 1 evaporation
-  t_S1 = E_S0 / e_S1
+  t_S1 = E_S1 / e0
   
   #Solved for t equation A.10 in Almedia, to get equivalent t for E_S0 value
   t0 = as.numeric(round(((-2 * E_S0 * E_S1) + (E_S0 ^ 2) + (2 * E_S0) +
-                           (E_S1 ^ 2) - (2 * E_S1) + 1 + (2 * e_S1 * E_S2 * t_S1) - (E_S2 ^ 2)
-  ) / (2 * e_S1 * E_S2)))
+                           (E_S1 ^ 2) - (2 * E_S1) + 1 + (2 * e0 * E_S2 * t_S1) - (E_S2 ^ 2)
+  ) / (2 * e0 * E_S2)))
   
   
   #Integrate equation A.9 to get value at time t (assuming t is number of days in month)
   #and Calc E_S using t+t0 to get amount of evaporation between t0 and t
   E_S = if (t <= t_S1)
-    e_S1 * t
+    e0 * t
   else
-    (E_S1 + E_S2 * (sqrt(1 + 2 * (e_S1 / E_S2) * ((t + t0) - t_S1) - 1)))-E_S0
+    (E_S1 + E_S2 * (sqrt(1 + 2 * (e0 / E_S2) * ((t + t0) - t_S1) - 1)))-E_S0
   
 
   return(E_S)
