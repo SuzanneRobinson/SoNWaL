@@ -39,12 +39,10 @@ soilWC<-function(parms,weather,state){
   if (parms[["timeStp"]] ==365) t =  1
   if (is.numeric(t)==F) print ("unsupported time step used")
   
-  #as.numeric(days_in_month(weather[["Month"]])) 
   #Volume of initial non-rooting zone
   V_nr = parms[["V_nr"]]
   
-  #soil water in rooting zone at t0, equiv ASW? depends if rain is assumed to occur at begining or end of month,
-  #need to be careful so as not to mess up biomass allocation function which comes in after in the same time step (see RunModel.r)
+  #soil water in rooting zone at t0 (start of time-step)
   sigma_rz0 = state[["ASW"]]
   
   #Soil conductivity - see Landsberg book for more details on this 
@@ -68,7 +66,7 @@ soilWC<-function(parms,weather,state){
   
   #State of soil water content in rooting zone at the end of the time step
   sigma_rz = (((sigma_rz0 * V_nrx - sigma_nr0 * V_rz) / (V_rz + V_nrx)) * exp(-t /t_s0)) +
-    (V_rz / (V_rz + V_nrx) * (sigma_rz0 + sigma_nr0)) #re-arrange equation to get sigma_nz?
+    (V_rz / (V_rz + V_nrx) * (sigma_rz0 + sigma_nr0)) 
  
   return(sigma_rz)
 }
@@ -99,7 +97,6 @@ soilWC_NRZ<-function(parms,weather,state){
   if (parms[["timeStp"]] ==365) t =  1
   if (is.numeric(t)==F) print ("unsupported time step used")
   
-  #as.numeric(days_in_month(weather[["Month"]])) 
   #Volume of initial non-rooting zone
   V_nr = parms[["V_nr"]]
   #soil water in rooting zone at t0, equiv ASW? depends if rain is assumed to occur at begining or end of month,
@@ -110,7 +107,7 @@ soilWC_NRZ<-function(parms,weather,state){
   #rooting depth / volume - Almedia describes this as depth, but sigma_zR could also be used to derive volume from root biomass?
   z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),V_nr) # can't go deeper than non-rooting zone
   V_rz = z_r # not sure if this is equivalent, or whether there needs to be a conversion from depth to volume?
-  #Shared area, area is in m^2, so area around the tree?
+  #Shared area
   A = 5
   #Non-root zone decreases as root zone increases, V_nr is max non-root zone volume
   V_nrx<-max(V_nr-V_rz,0)

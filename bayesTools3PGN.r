@@ -39,7 +39,7 @@ sampleOutputTS<-function(df,sY,eY){
   
  df<- filter(df,Year>=sY&Year<=eY)
   
- df$week<- rep(1:51,4)
+ df$week<- rep(1:52,4)
   
  aggregate(df$GPP~ df$Month+df$Year,FUN=sum)[,3]
  
@@ -125,9 +125,19 @@ clm.df.full<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Docu
 #Add date
 clm.df.full$date<-as.Date(paste(clm.df.full$Year,"-",clm.df.full$Month,"-01",sep=""))
 clm.df.full$week<-week(clm.df.full$date)
-clm.df.daily<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\met_basfor.csv")
+clm.df.daily<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\weather_day.csv")
 clm.df.daily$Date<-as.Date(clm.df.daily$DOY, origin = paste0(clm.df.daily$Year,"-01-01"))
 clm.df.daily$week<-week(clm.df.daily$Date)
+
+clm.df.dailyX<-clm.df.daily[!duplicated(clm.df.daily[c(1,12)]),]
+
+weeklyRfall<-aggregate(clm.df.daily$Rain~clm.df.daily$week+clm.df.daily$Year,FUN=sum)
+names(weeklyRfall)<-c("week","Year","Rain")
+
+weeklyRfall$Month<-month(clm.df.dailyX$Date)
+weeklyRfall<-cbind(weeklyRfall,clm.df.dailyX[c(3:5,7)])
+weeklyRfall$FrostDays<-(aggregate(clm.df.daily$FrostHours~clm.df.daily$week+clm.df.daily$Year,FUN=sum)[,3])/24
+weeklyRfall$MonthIrrig<-0
 
 #Split into weekly data
 clm.df.fullX<-NULL
@@ -142,6 +152,7 @@ for(i in c(1:nrow(clm.df.full))){
 }
 clm.df.fullX$week<-c(1:51)
 
+weeklyRfall<-weeklyRfall[,c(names(clm.df.fullX[,c(1:9)]))]
 
 
 #update date values
@@ -150,7 +161,7 @@ clm.df.fullX$week<-c(1:51)
 
 ###############################################################
 
-sitka<-list(weather=clm.df.fullX,
+sitka<-list(weather=weeklyRfall,
             ## ~~ Initial pools ~~ ##
             Wl = 0.01,
             WlDormant = 0,
@@ -313,20 +324,20 @@ observed <- c(data$gpp,                ## GPP
               2.16                     ## totN, 40 C:N ratio
               )
 
-dev <- c(rep(.01,nrow(filter(data,year>=startYear&year<=endYear))),
+dev <- c(rep(.001,nrow(filter(data,year>=startYear&year<=endYear))),
+         rep(.001,nrow(filter(data,year>=startYear&year<=endYear))),
          rep(.01,nrow(filter(data,year>=startYear&year<=endYear))),
          rep(.01,nrow(filter(data,year>=startYear&year<=endYear))),
-         rep(.01,nrow(filter(data,year>=startYear&year<=endYear))),
-         rep(0.1,nrow(filter(data,year>=startYear&year<=endYear))),
-         rep(1,nrow(filter(data,year>=startYear&year<=endYear))),
-         rep(0.05,(nrow(filter(data,year>=startYear&year<=endYear))-1)),
+         rep(0.01,nrow(filter(data,year>=startYear&year<=endYear))),
+         rep(0.01,nrow(filter(data,year>=startYear&year<=endYear))),
+         rep(0.5,(nrow(filter(data,year>=startYear&year<=endYear))-1)),
          1.5,1.5,
-         100,
-         3.0,
-         2.0,
-         1.0,
-         30.0,
-         1.0
+         1,
+         3,
+         2,
+         1,
+         5,
+         1
          )
 
 
@@ -352,7 +363,7 @@ NLL <- function(p){
 ## ~~~~~ ##
 
 ## This is a uniform prior distribution
-pMaxima[[27]]<-0.1
+pMaxima[[27]]<-0.01
 Uprior <- createUniformPrior(lower = pMinima, upper = pMaxima)
 
 ## This is a truncated normal distribution prior based on the chain produced

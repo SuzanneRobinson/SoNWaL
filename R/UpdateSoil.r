@@ -53,7 +53,6 @@ UpdateSoil <-
       
       ##change moistratio and soil water growth mod if using updated sub-models
       if(parms[["waterBalanceSubMods"]]==T){
-        
         theta_wp= parms[["theta_wp"]]*min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["V_nr"]])*1000
         MaxASW<-state[["MaxASW_state"]]
         MoistRatio<- (ASW-theta_wp)/MaxASW

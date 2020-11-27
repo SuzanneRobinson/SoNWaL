@@ -405,7 +405,7 @@ sitka<-list(weather=clm.df.full,
 #######################################################
 #not sure if monthly rates need to be modified to whatever timestep is being used, depends on how they are used in the model
 #may be easier to adjust them by timestep within the model rather than at proposal to keep things cleaner?
-sitka<-list(weather=clm.df.fullX,
+sitka<-list(weather=weeklyRfall,
             ## ~~ Initial pools ~~ ##
             Wl = 0.01,
             WlDormant = 0,
@@ -518,11 +518,11 @@ sitka<-list(weather=clm.df.fullX,
             theta_wp = 0.1, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
             theta_fc =0.29,#Field capacity
             K_s=0.01, #Soil conductivity
-            V_nr=2, #Volume of non-rooting zone
+            V_nr=3, #Volume of non-rooting zone
             sigma_zR =0.7, #area/depth explored by 1kg of root biomass
             sigma_nr0=100, #SWC of non-rooting zone at time 0
-            E_S1 =15, #Cumulitive evap threshold
-            E_S2 =.001, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
+            E_S1 =10, #Cumulitive evap threshold
+            E_S2 =.01, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
             MaxASW_state=50,
             timeStp = 52 # time step, 52 for weekly, 12 for monthly and 365 for daily
             )
@@ -538,7 +538,7 @@ sitka<-list(weather=clm.df.fullX,
 
 #get some previous run parameter estimates#
 codM<-getSample(out, start = 1000, coda = TRUE, thin = 1)
-codM<-tail(as.data.frame(codM[[5]]),5)
+codM<-tail(as.data.frame(codM[[1]]),5)
 codM<-data.table::transpose(data.frame(colMedians(codM)))
 names(codM)<-nm
 sitka[nm]<-codM
@@ -546,9 +546,9 @@ sitka[nm]<-codM
 ## Run the 3PGN model using the sitka parameters
 #.GlobalEnv$interRad<-0
 output<-do.call(fr3PGDN,sitka) # NEED TO UPDATE HOW RADIATION AND EVAPORATION IS OCCURING!
-plot(output$sigma_nr0[c(300:2347)]~output$t[c(300:2347)],col="white")
-lines(output$ASW[c(300:2347)]~output$t[c(300:2347)],col="red")
-lines(output$sigma_nr0[c(300:2347)]~output$t[c(300:2347)],col="blue")
+plot(output$ASW[c(2300:2393)]~output$t[c(2300:2393)],col="white")
+lines(output$ASW[c(2300:2393)]~output$t[c(2300:2393)],col="red")
+lines(output$sigma_nr0[c(2300:2393)]~output$t[c(2300:2393)],col="blue")
 
 plot(.GlobalEnv$interRad[c(2300:2347)]~output$t[c(2300:2347)],col="white")
 lines(.GlobalEnv$interRad[c(2300:2347)]~output$t[c(2300:2347)],col="red")
@@ -557,7 +557,7 @@ pOut <- plotModel(output)
 
 ## Plot the timeseries of model output vs data
 results<-plotResults(output,ShortTS=T)
-results[5]
+results[1]
 
 ## Calculate yield class from height
 output <- output%>%mutate(
