@@ -3,14 +3,35 @@
 ##########################################
 
 ## Function to plot the model against the Harwood data.
-plotResults <- function(df){
+plotResults <- function(df,ShortTS=F){
+dt=12
+ #need to update grouping, might be aggregating too much?
+
+  #Only use last week value in a month
   
   df <- df[c(2:nrow(df)),]
   df <- df %>% group_by(Year) %>% mutate(cumGPP = cumsum(GPP),
                                          cumNPP = cumsum(NPP),
                                          timestamp = as.POSIXct(paste(sprintf("%02d",Year),sprintf("%02d",Month),sprintf("%02d",1),sep="-"),tz="GMT")) 
+
   
-  gpp1<-ggplot()+theme_bw()+
+if(ShortTS==T){
+df2<-NULL
+for(i in c(1:(nrow(df)-1))){
+  
+  if(df$Month[i]!=df$Month[i+1])
+    df2<-rbind(df2,df[i,])
+}
+df2$GPP<-aggregate(df$GPP~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+df2$NPP<-aggregate(df$NPP~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+df2$EvapTransp<-aggregate(df$EvapTransp~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+df2$NEE<-aggregate(df$NEE~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+df2$Reco<-aggregate(df$Reco~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+df2$Rs<-aggregate(df$Rs~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+ df<-df2
+}  
+  
+    gpp1<-ggplot()+theme_bw()+
     geom_line(data=df,aes(x=timestamp,y=cumGPP,group=Year),colour="black",size=1)+
     geom_point(data=data,aes(x=timestamp,y=cumGPP),colour="red",size=2)+
     scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+
@@ -19,7 +40,7 @@ plotResults <- function(df){
           axis.text=element_text(size=14))
   
   gpp2<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=timestamp,y=GPP,group=Year),colour="black",size=1)+
+    geom_line(data=df,aes(x=timestamp,y=aggregate(df$GPP~ df$Month+df$Year,FUN=sum)[,3],group=Year),colour="black",size=1)+
     geom_point(data=data,aes(x=timestamp,y=gpp),colour="red",size=2)+
     ## geom_ribbon(data=data,aes(x=timestamp,ymin=gpp-gpp.sd,ymax=gpp+gpp.sd),alpha=0.3)+
     scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
@@ -76,6 +97,8 @@ plotResults <- function(df){
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
+  
+  
   rs<-ggplot()+theme_bw()+
     geom_line(data=df,aes(x=timestamp,y=Rs,group=Year),colour="black",size=1)+
     geom_point(data=data,aes(x=timestamp,y=rs),colour="red",size=2)+
@@ -87,93 +110,95 @@ plotResults <- function(df){
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
+
+  
   leaf<-data.frame(rbind(
-    c(dplyr::filter(df,Year==2015&Month==8)$Year+dplyr::filter(df,Year==2015&Month==8)$Month/12,dplyr::filter(df,Year==2015&Month==8)$t.proj,5.7),
-    c(dplyr::filter(df,Year==2018&Month==8)$Year+dplyr::filter(df,Year==2018&Month==8)$Month/12,dplyr::filter(df,Year==2018&Month==8)$t.proj,5.56)
+    c(dplyr::filter(df,Year==2015&Month==8)$Year+dplyr::filter(df,Year==2015&Month==8)$Month/dt,dplyr::filter(df,Year==2015&Month==8)$t.proj,5.7),
+    c(dplyr::filter(df,Year==2018&Month==8)$Year+dplyr::filter(df,Year==2018&Month==8)$Month/dt,dplyr::filter(df,Year==2018&Month==8)$t.proj,5.56)
   )
   )
   names(leaf)<-c("year","age","lai")
   
   stemNo<-data.frame(rbind(
-    c(dplyr::filter(df,Year==2018&Month==8)$Year+dplyr::filter(df,Year==2018&Month==8)$Month/12,dplyr::filter(df,Year==2018&Month==8)$t.proj,1348)
+    c(dplyr::filter(df,Year==2018&Month==8)$Year+dplyr::filter(df,Year==2018&Month==8)$Month/dt,dplyr::filter(df,Year==2018&Month==8)$t.proj,1348)
   )
   )
   names(stemNo)<-c("year","age","stem")
   
   DBH<-data.frame(rbind(
-    c(dplyr::filter(df,Year==2018&Month==8)$Year+dplyr::filter(df,Year==2018&Month==8)$Month/12,dplyr::filter(df,Year==2018&Month==8)$t.proj,24.1)
+    c(dplyr::filter(df,Year==2018&Month==8)$Year+dplyr::filter(df,Year==2018&Month==8)$Month/dt,dplyr::filter(df,Year==2018&Month==8)$t.proj,24.1)
   )
   )
   names(DBH)<-c("year","age","dbh")
   
   Wr<-data.frame(rbind(
-    c(dplyr::filter(df,Year==2015&Month==8)$Year+dplyr::filter(df,Year==2015&Month==8)$Month/12,dplyr::filter(df,Year==2015&Month==8)$t.proj,4.88)
+    c(dplyr::filter(df,Year==2015&Month==8)$Year+dplyr::filter(df,Year==2015&Month==8)$Month/dt,dplyr::filter(df,Year==2015&Month==8)$t.proj,4.88)
   )
   )
   names(Wr)<-c("year","age","wr")
   
   difRoots<-data.frame(rbind(
-    c(dplyr::filter(df,Year==2015&Month==8)$Year+dplyr::filter(df,Year==2015&Month==8)$Month/12,dplyr::filter(df,Year==2015&Month==8)$t.proj,0.53)
+    c(dplyr::filter(df,Year==2015&Month==8)$Year+dplyr::filter(df,Year==2015&Month==8)$Month/dt,dplyr::filter(df,Year==2015&Month==8)$t.proj,0.53)
   )
   )
   names(difRoots)<-c("year","age","difroots")
   
   totC<-data.frame(rbind(
-    c(dplyr::filter(df,Year==2018&Month==7)$Year+dplyr::filter(df,Year==2018&Month==7)$Month/12,dplyr::filter(df,Year==2018&Month==7)$t.proj,86.7)
+    c(dplyr::filter(df,Year==2018&Month==7)$Year+dplyr::filter(df,Year==2018&Month==7)$Month/dt,dplyr::filter(df,Year==2018&Month==7)$t.proj,86.7)
   )
   )
   names(totC)<-c("year","age","totC")
   
   totN<-data.frame(rbind(
-    c(dplyr::filter(df,Year==2018&Month==7)$Year+dplyr::filter(df,Year==2018&Month==7)$Month/12,dplyr::filter(df,Year==2018&Month==7)$t.proj,2.16)
+    c(dplyr::filter(df,Year==2018&Month==7)$Year+dplyr::filter(df,Year==2018&Month==7)$Month/dt,dplyr::filter(df,Year==2018&Month==7)$t.proj,2.16)
   )
   )
   names(totN)<-c("year","age","totN")
   
   pLAI<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=Year+Month/12,y=LAI))+
+    geom_line(data=df,aes(x=Year+Month/dt,y=LAI))+
     geom_point(data=leaf,aes(x=year,y=lai),shape=16,size=3,colour="red")+
     labs(x="Year",y=expression(paste("L"," ","[",m^-2," ",m^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
   pStemNo<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=Year+Month/12,y=N))+
+    geom_line(data=df,aes(x=Year+Month/dt,y=N))+
     geom_point(data=stemNo,aes(x=year,y=stem),shape=16,size=3,colour="red")+
     labs(x="Year",y=expression(paste("N"," ","[",ha^-1,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
   pDBH<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=Year+Month/12,y=dg))+
+    geom_line(data=df,aes(x=Year+Month/dt,y=dg))+
     geom_point(data=DBH,aes(x=year,y=dbh),shape=16,size=3,colour="red")+
     labs(x="Year",y="DBH [cm]")+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
   pWr<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=Year+Month/12,y=Wr))+
+    geom_line(data=df,aes(x=Year+Month/dt,y=Wr))+
     geom_point(data=Wr,aes(x=year,y=wr),shape=16,size=3,colour="red")+
     labs(x="Year",y="Wr [tDM/ha]")+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
   pdifRoots<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=Year+Month/12,y=difRoots))+
+    geom_line(data=df,aes(x=Year+Month/dt,y=difRoots))+
     geom_point(data=difRoots,aes(x=year,y=difroots),shape=16,size=3,colour="red")+
     labs(x="Year",y="difRoots [tDM/ha]")+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))    
   
   ptotC<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=Year+Month/12,y=totC))+
+    geom_line(data=df,aes(x=Year+Month/dt,y=totC))+
     geom_point(data=totC,aes(x=year,y=totC),shape=16,size=3,colour="red")+
     labs(x="Year",y="totC [t/ha]")+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
   ptotN<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=Year+Month/12,y=totN))+
+    geom_line(data=df,aes(x=Year+Month/dt,y=totN))+
     geom_point(data=totN,aes(x=year,y=totN),shape=16,size=3,colour="red")+
     labs(x="Year",y="totN [t/ha]")+
     theme(axis.title=element_text(size=14),
@@ -378,7 +403,9 @@ sitka<-list(weather=clm.df.full,
 #######################################################
 ## Parameters Xenakis 2020 (unpublished) ##
 #######################################################
-sitka<-list(weather=clm.df.full,
+#not sure if monthly rates need to be modified to whatever timestep is being used, depends on how they are used in the model
+#may be easier to adjust them by timestep within the model rather than at proposal to keep things cleaner?
+sitka<-list(weather=weeklyRfall,
             ## ~~ Initial pools ~~ ##
             Wl = 0.01,
             WlDormant = 0,
@@ -486,8 +513,19 @@ sitka<-list(weather=clm.df.full,
             pWsbr.sprouts = 0.9,
             cod.pred = "3PG",
             cod.clim = "Month",
-            sigma_2R = 0
-)
+            ## ~~ Almedia et al. Parameters ~~ ##
+            waterBalanceSubMods =T, #Whether to run model using updated water balance submodels
+            theta_wp = 0.1, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
+            theta_fc =0.29,#Field capacity
+            K_s=0.01, #Soil conductivity
+            V_nr=3, #Volume of non-rooting zone
+            sigma_zR =0.7, #area/depth explored by 1kg of root biomass
+            sigma_nr0=100, #SWC of non-rooting zone at time 0
+            E_S1 =10, #Cumulitive evap threshold
+            E_S2 =.01, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
+            MaxASW_state=50,
+            timeStp = 52 # time step, 52 for weekly, 12 for monthly and 365 for daily
+            )
 #######################################################
 
 
@@ -497,21 +535,52 @@ sitka<-list(weather=clm.df.full,
 #NEE - Net ecosystem exchange
 #Rs - soil respiration
 #Reco - ecosystem respiration
-codM<-getSample(out3, start = 50, coda = TRUE, thin = 1)
-codM<-as.data.frame(codM[[1]])
+
+#get some previous run parameter estimates#
+codM<-getSample(out, start = 1000, coda = TRUE, thin = 1)
+codM<-tail(as.data.frame(codM[[1]]),5)
 codM<-data.table::transpose(data.frame(colMedians(codM)))
 names(codM)<-nm
 sitka[nm]<-codM
 
 ## Run the 3PGN model using the sitka parameters
-output<-do.call(fr3PGDN,sitka)
+#.GlobalEnv$interRad<-0
+output<-do.call(fr3PGDN,sitka) 
+plot(output$ASW[c(1:2393)]~output$t[c(1:2393)],col="white")
+lines(output$ASW[c(1:2393)]~output$t[c(1:2393)],col="red")
+lines(output$sigma_nr0[c(1:2393)]~output$t[c(1:2393)],col="blue")
+
+plot(.GlobalEnv$interRad[c(1:2347)]~output$t[c(1:2347)],col="white")
+lines(.GlobalEnv$interRad[c(1:2347)]~output$t[c(1:2347)],col="red")
+lines(.GlobalEnv$Rad[c(1:2347)]~output$t[c(1:2347)],col="blue")
+
+outVals<-as.data.frame(cbind(.GlobalEnv$Rad,.GlobalEnv$interRad))
+names(outVals)<-c("Rad","interRad")
+
+g1<-ggplot(outVals,aes(y=interRad,x=output$t[-1]))+
+  geom_line(col="red",alpha=0.7)+
+  ggtitle("Solar radiation reaching soil")+
+  ylab(expression(Solar~radiation~varphi))+
+  xlab("Time (years)")+
+  theme_bw()
+
+
+g2<-ggplot(outVals,aes(y=Rad,x=output$t[-1]))+
+  geom_line(col="red",alpha=0.7)+
+  ggtitle("Solar radiation")+
+  ylab(expression(Solar~radiation~varphi))+
+  xlab("Time (years)")+
+  theme_bw()
+
+ggarrange(g2,g1)
 
 ## Plot model outputs
 pOut <- plotModel(output)
 
 ## Plot the timeseries of model output vs data
-results<-plotResults(output)
-results[[1]]
+results<-plotResults(output,ShortTS=T)
+results
+
 ## Calculate yield class from height
 output <- output%>%mutate(
   yct = ((hdom/(1-exp(-0.033329*t.proj))^1.821054)-14.856317)/1.425397,

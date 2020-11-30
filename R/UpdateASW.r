@@ -16,7 +16,7 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     latitude <- site[["latitude"]]
     RAD.day <- state[["RAD.day"]]
     h <- GetDayLength(Lat = latitude, month = month)
-    netRad <- Qa + Qb * (RAD.day * 1e+06/h)
+    netRad <- Qa + Qb * (RAD.day * 1e+06/h)*(1-exp(-parms[["k"]]*LAI)) # 1e+06 converts mega-joules to joules
     MinCond <- parms[["MinCond"]]
     MaxCond <- parms[["MaxCond"]]
     LAIgcx <- parms[["LAIgcx"]]
@@ -37,16 +37,61 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     Etransp <- (e20 * netRad + rhoAir * lambda * VPDconv * VPD * 
         BLcond)/(1 + e20 + BLcond/CanCond)
     CanTransp <- Etransp/lambda * h
-    Transp <- general.info$daysinmonth[month] * CanTransp
+    #less accurate but easier to have flexible time-steps, could include set useable time-steps and use if statements?
+    Transp <- CanTransp*365/parms[["timeStp"]] #general.info$daysinmonth[month] * CanTransp
     EvapTransp <- min(Transp + RainIntcptn, ASWrain)
-   site[["MaxASW"]] <- 400-(parms[["sigma_2R"]]*state[["Wr"]]) 
-     MaxASW <- site[["MaxASW"]] # calc from root biomass etc. thus MaxASW = 0.1*rbm*state[["Wr"]]
-    excessSW <- max(ASWrain - EvapTransp - MaxASW, 0)
-    state[["ASW"]] <- ASWrain - EvapTransp - excessSW
-    #ASW is rainfall minus evap and excess SW
-    #ASWrain is current ASW + rainfall + irrigation
-    #moisture ratio is ASW/MaxASW
-    #Lower maxASW means moisture ratio is higher (more water available) but max water moisture is lower?
+    
+   
+
+
+    #non-Intercepted radiation
+    interRad<-(RAD.day * 1e+06/h)-max(netRad,0)
+    print(RAD.day * 1e+06/h)
+    .GlobalEnv$interRad <- rbind(.GlobalEnv$interRad,interRad)
+    .GlobalEnv$Rad <- rbind(.GlobalEnv$Rad,(RAD.day * 1e+06/h))
+    
+    ####Run using water balance sub-models from Almedia et al.####
+    if (parms[["waterBalanceSubMods"]] == T) {
+      
+      #derive theta values, rooting zone can't be larger than non-rooting zone
+      theta_wp= parms[["theta_wp"]]*min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["V_nr"]])*1000
+      theta_fc= parms[["theta_fc"]]*min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["V_nr"]])*1000
+      MaxASW <- theta_fc-theta_wp
+
+      
+      #Run soil water content function to get root zone SWC
+      sigma_rz <- soilWC(parms, weather, state)
+      
+      #Calculate accumulated soil evaporation for the month using soilEvap function
+      E_S <- soilEvap(parms, weather, state, interRad)
+      
+      #Minus monthly rainfall and irrigation from cumulative E_S value
+      E_S <- E_S + RainIntcptn - Rain - MonthIrrig # rainfall needs ot be added after as biomass allocation function requires months rainfall
+     
+      Evaporation = ifelse(E_S <= 0, 0, E_S)
+      state[["E_S"]] = ifelse(E_S <= 0, 0,  E_S)
+      
+      #Calculate any excess soil water
+      excessSW <- max(sigma_rz + Rain + MonthIrrig - EvapTransp - MaxASW - Evaporation, 0)
+      
+      #Update here, to have soil water go from rooting zone to non-rooting zone, use K_s and rooting zone depth?
+      #state[["sigma_nr0"]]<- max(state[["sigma_nr0"]] + Rain + MonthIrrig - excessSW - Evaporation, 0)
+      state[["MaxASW_state"]] <-MaxASW
+
+      #Update value for non-rooting zone SWC - assuming rainfall, evaporation and evapotranspiration occurs in the rooting zone
+      state[["sigma_nr0"]] <-soilWC_NRZ(parms, weather, state)
+      
+      #Update available soil water -CHECK IF MIN OF 0 NEEDED
+      state[["ASW"]] <- max(sigma_rz + Rain + MonthIrrig - EvapTransp - excessSW - Evaporation, 0)
+      
+    } else
+    {
+      MaxASW<- site[["MaxASW"]]
+      excessSW <- max(ASWrain - EvapTransp - MaxASW, 0)
+      state[["ASW"]] <-  max(ASWrain - EvapTransp - excessSW, 0)
+    }
+    
+    
     scaleSW <- EvapTransp/(Transp + RainIntcptn)
     GPP <- state[["GPP"]]
     NPP <- state[["NPP"]]

@@ -14,7 +14,7 @@ function (state, weather, site, parms, general.info)
     }
     kF <- parms[["kF"]]
     FrostDays <- weather[["FrostDays"]]
-    fF <- 1 - kF * (FrostDays/30)
+    fF <- 1 - kF * (FrostDays/parms[["timeStp"]])
     CO2 <- site[["CO2"]]
     fCalphax <- parms[["fCalphax"]]
     fCalpha <- fCalphax * CO2/(350 * (fCalphax - 1) + CO2)
@@ -29,15 +29,34 @@ function (state, weather, site, parms, general.info)
     CoeffCond <- parms[["CoeffCond"]]
     VPD <- weather[["VPD"]]
     fVPD <- exp(-CoeffCond * VPD)
-    MaxASW <- site[["MaxASW"]]
+    
+
+    
     parms.soil <- general.info$parms.soil
     parms.sw.site <- parms.soil[which(parms.soil$soilclass == 
         site[["soilclass"]]), ]
     SWconst <- parms.sw.site[["SWconst"]]
     SWpower <- parms.sw.site[["SWpower"]]
     ASW <- state[["ASW"]]
-    MoistRatio <- ASW/MaxASW
-    fSW <- 1/(1 + ((1 - MoistRatio)/SWconst)^SWpower)
+
+    ##change moistratio and soil water growth mod if using updated sub-models
+    if(parms[["waterBalanceSubMods"]]==T){
+
+      theta_wp= parms[["theta_wp"]]*(0.1 * parms[["sigma_zR"]] * state[["Wr"]])*1000
+      MaxASW<-state[["MaxASW_state"]]
+      MoistRatio<- (ASW-theta_wp)/MaxASW
+      #modify MoistRatio if numerators are above or below certain values (see Landsberg and waring)
+      MoistRatio<-ifelse(ASW-theta_wp>=0,MoistRatio,0)
+      MoistRatio<-ifelse(ASW-theta_wp>MaxASW,1,MoistRatio)
+      fSW<-SWGmod(SWconst,SWpower,MoistRatio)
+    }else
+    {
+      MaxASW <- site[["MaxASW"]]
+      MoistRatio<-ASW/MaxASW
+      fSW <- 1/(1 + ((1 - MoistRatio)/SWconst)^SWpower)
+    }
+    
+    
     PhysMod <- fAge * min(fVPD, fSW)
     ## state[c("fT", "fF", "fCalpha", "fN", "fAge", "fVPD", "fSW", 
     ##     "PhysMod")] <- c(fT, fF, fCalpha, fN, fAge, fVPD, fSW, 

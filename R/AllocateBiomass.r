@@ -24,10 +24,12 @@ function (state, site, parms, weather) #requires weather too for current month, 
     difWl <- NPP * pF
     difWr <- NPP * pR
     difWsbr <- NPP * pS
-    gammaFx <- parms[["gammaFx"]]
-    gammaF0 <- parms[["gammaF0"]]
-    tgammaF <- parms[["tgammaF"]]
+    gammaFx <- parms[["gammaFx"]]*12/parms[["timeStp"]] #adjust to get time step rates from monthly rates?
+    gammaF0 <- parms[["gammaF0"]]*12/parms[["timeStp"]]
+    tgammaF <- parms[["tgammaF"]]*12/parms[["timeStp"]]
     
+    
+    ##Problem here for shorter time steps, as litterfall is updated based on the previous month, so weekly or daily time-steps may cause issues?
     
     #1st case: we're currently in dormancy (i.e. no W increments) and we need to check if the previous month was dormant or not, to calculate any litterfall
     if (isTRUE(isDormantSeason(current.month, leaf.grow, leaf.fall))) { #if this is true, then there can be no W increments, but there might still be litterfall
@@ -66,12 +68,13 @@ function (state, site, parms, weather) #requires weather too for current month, 
       #Now we calculate litterfall and root turnover, because we're not in dormancy:
       #For litterfall:
       t <- state[["t"]]
+      #For info on the litterfall eq. See A.3 in Sands and Landsberg (2002). Parameterisation of 3-PG forplantation grown Eucalyptus globules.
       Littfall <- gammaFx * gammaF0/(gammaF0 + (gammaFx - gammaF0) * 
-                                       exp(-12 * log(1 + gammaFx/gammaF0) * t/tgammaF))
+                                       exp(-parms[["timeStp"]] * log(1 + gammaFx/gammaF0) * t/tgammaF))
       difLitter <- Littfall * Wl
       #For root turnover:
       Wr <- state[["Wr"]]
-      Rttover <- parms[["Rttover"]]
+      Rttover <- parms[["Rttover"]]*12/parms[["timeStp"]]
       difRoots <- Rttover * Wr
       #Now we can recalculate biomass increments for the first month after dormancy:
       if (NPPDebt > 0) { #there can be some growth
@@ -98,11 +101,11 @@ function (state, site, parms, weather) #requires weather too for current month, 
       Wl <- state[["Wl"]]
       t <- state[["t"]]
       Littfall <- gammaFx * gammaF0/(gammaF0 + (gammaFx - gammaF0) * 
-                                       exp(-12 * log(1 + gammaFx/gammaF0) * t/tgammaF))
+                                       exp(-parms[["timeStp"]] * log(1 + gammaFx/gammaF0) * t/tgammaF))
       difLitter <- Littfall * Wl
       #For root turnover:
       Wr <- state[["Wr"]]
-      Rttover <- parms[["Rttover"]]
+      Rttover <- parms[["Rttover"]]*12/parms[["timeStp"]]
       difRoots <- Rttover * Wr
       
       #We check if we have any NPPDebt to pay before any new growth can occur:
@@ -141,12 +144,12 @@ function (state, site, parms, weather) #requires weather too for current month, 
       Wl <- state[["Wl"]]
       t <- state[["t"]]
       Littfall <- gammaFx * gammaF0/(gammaF0 + (gammaFx - gammaF0) * 
-                                       exp(-12 * log(1 + gammaFx/gammaF0) * t/tgammaF))
+                                       exp(-parms[["timeStp"]] * log(1 + gammaFx/gammaF0) * t/tgammaF))
       difLitter <- Littfall * Wl
       state[["Wlitt"]] <- state[["Wlitt"]] + difLitter
       #For root turnover:
       Wr <- state[["Wr"]]
-      Rttover <- parms[["Rttover"]]
+      Rttover <- parms[["Rttover"]]*12/parms[["timeStp"]]
       difRoots <- Rttover * Wr
       
       #Now we calculate end-of-month W:
@@ -170,7 +173,7 @@ function (state, site, parms, weather) #requires weather too for current month, 
       }
       #browser()
     }
-    
+
 #Now we complete the output with the state variables caclulated in the script:
     state[c("pR", "pFS", "pS", "pF", "difWl", "difWr", "difWsbr", 
             "Littfall", "difLitter", "difRoots", "TotalLitter")] <- c(pR, 

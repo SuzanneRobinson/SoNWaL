@@ -8,6 +8,8 @@ options(warn=-1)
 
 ## Custom function to sample the modelled data frame
 sampleOutput<-function(df,sY,eY){
+
+
     m<-c(filter(df,Year>=sY&Year<=eY)$GPP,
          filter(df,Year>=sY&Year<=eY)$NPP,
          filter(df,Year>=sY&Year<=eY)$NEE,
@@ -23,8 +25,45 @@ sampleOutput<-function(df,sY,eY){
          filter(df,Year==2015&Month==7)$totC,
          filter(df,Year==2015&Month==7)$totN
          )
+    
+    m
+    
     return(m)
 }
+
+
+
+
+## Custom function to sample the modelled data frame for shorter time-steps
+sampleOutputTS<-function(df,sY,eY){
+  
+ df<- filter(df,Year>=sY&Year<=eY)
+  
+ df$week<- rep(1:52,4)
+  
+ aggregate(df$GPP~ df$Month+df$Year,FUN=sum)[,3]
+ 
+  m<-c(aggregate(df$GPP~ df$Month+df$Year,FUN=sum)[,3],
+       aggregate(df$NPP~ df$Month+df$Year,FUN=sum)[,3],
+       aggregate(df$NEE~ df$Month+df$Year,FUN=sum)[,3],
+       aggregate(df$Reco~ df$Month+df$Year,FUN=sum)[,3],
+       aggregate(df$Rs~ df$Month+df$Year,FUN=sum)[,3],
+       aggregate(df$Etransp~ df$Month+df$Year,FUN=mean)[,3],
+       filter(df,Year==2015&Month==8)$LAI[1],
+       filter(df,Year==2018&Month==8)$LAI[1],
+       filter(df,Year==2018&Month==8)$N[1],
+       filter(df,Year==2018&Month==8)$dg[1],
+       filter(df,Year==2015&Month==7)$Wr[1],
+       filter(df,Year==2015&Month==7)$difRoots[1],
+       filter(df,Year==2015&Month==7)$totC[1],
+       filter(df,Year==2015&Month==7)$totN[1]
+  )
+  
+  m
+  
+  return(m)
+}
+
 
 ## Custom function to get the percentage accepted in a chain
 acPerc<-function(chain){
@@ -78,9 +117,51 @@ data <- tower %>%
            timestamp = as.POSIXct(paste(sprintf("%02d",year),sprintf("%02d",month),sprintf("%02d",1),sep="-"),tz="GMT"))
 
 
+
+library(dplyr)
+years <- 2010:2012
+clm.df.full<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\clm_df_full.csv")
+
+#Add date
+clm.df.full$date<-as.Date(paste(clm.df.full$Year,"-",clm.df.full$Month,"-01",sep=""))
+clm.df.full$week<-week(clm.df.full$date)
+clm.df.daily<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\weather_day.csv")
+clm.df.daily$Date<-as.Date(clm.df.daily$DOY, origin = paste0(clm.df.daily$Year,"-01-01"))
+clm.df.daily$week<-week(clm.df.daily$Date)
+
+clm.df.dailyX<-clm.df.daily[!duplicated(clm.df.daily[c(1,12)]),]
+
+weeklyRfall<-aggregate(clm.df.daily$Rain~clm.df.daily$week+clm.df.daily$Year,FUN=sum)
+names(weeklyRfall)<-c("week","Year","Rain")
+
+weeklyRfall$Month<-month(clm.df.dailyX$Date)
+weeklyRfall<-cbind(weeklyRfall,clm.df.dailyX[c(3:5,7)])
+weeklyRfall$FrostDays<-(aggregate(clm.df.daily$FrostHours~clm.df.daily$week+clm.df.daily$Year,FUN=sum)[,3])/24
+weeklyRfall$MonthIrrig<-0
+
+#Split into weekly data
+clm.df.fullX<-NULL
+weekCount<-1
+clm_df<-clm.df.full
+for(i in c(1:nrow(clm.df.full))){
+  reps<-ifelse(clm.df.full$Month[i]!=12,clm.df.full[i+1,"week"]-clm.df.full[i,"week"],4)
+  clm_df[i,]$Rain<-clm_df[i,]$Rain/reps
+  clm_df[i,]$MonthIrrig<-clm_df[i,]$MonthIrrig/reps
+  
+  clm.df.fullX<-rbind(clm.df.fullX,do.call("rbind",(replicate(reps, clm_df[i,], simplify = FALSE))))
+}
+clm.df.fullX$week<-c(1:51)
+
+weeklyRfall<-weeklyRfall[,c(names(clm.df.fullX[,c(1:9)]))]
+
+
+#update date values
+#clm.df.fullX$Date<-as.Date(paste0(clm.df.fullX$Year,"-",clm.df.fullX$week,"-1"),'%Y-%U-%u')
+
+
 ###############################################################
 
-sitka<-list(weather=clm.df.full,
+sitka<-list(weather=weeklyRfall,
             ## ~~ Initial pools ~~ ##
             Wl = 0.01,
             WlDormant = 0,
@@ -188,26 +269,40 @@ sitka<-list(weather=clm.df.full,
             pWsbr.sprouts = 0.9,
             cod.pred = "3PG",
             cod.clim = "Month",
-            sigma_2R = 1
+            ##Water balance submodel
+            waterBalanceSubMods =T, #Whether to run model using updated water balance submodels
+            theta_wp = 0.1, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
+            theta_fc =0.29,#Field capacity
+            K_s=1, #Soil conductivity
+            V_nr=10, #Volume of non-rooting zone
+            sigma_zR =0.2, #area/depth explored by 1kg of root biomass
+            sigma_nr0=250, #SWC of non-rooting zone at time 0
+            E_S1 =100, #Cumulitive evap threshold
+            E_S2 =0.1, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
+            MaxASW_state=50,
+            timeStp = 52
             
 )
 
 
-nm<-c("pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR","mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond","Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","sigma_2R")
+nm<-c("theta_wp","theta_fc","K_s","V_nr","sigma_zR","E_S1","E_S2","sigma_nr0","pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR","mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond","Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
 
 ## Load the parameter set from the fifth calibration run to use as starting values
 load("fifth_run_3pgn_all_data/par.Rdata")
 
 sitka[nm]<-ff[which(names(ff)!="fNn"&names(ff)!="fN0")]
 
-f.decrease <- c(0.588503613257886,0.752929538228874,0.956131627577964,0.050456035523466,0.384021499609213,0.250229439327847,0.57408236899746,0.909666760291794,0.853276910139941,0.974961101217424,1,0.636422367959785,0.732916669791679,0.443930919848964,0.741758519667562,0.816463641720414,0.221779786451702,0.303779963365252,1,0.00141038795075,0.730688961031379,0.899808741360758,0.024817372196732,0.99632339563598,0.996373181003088,0.999649942946159,0.996388219783102,0.998203040988276,0.998245174258832,0.97983098579238,0.913069476259938,0.961283723717706,0.950056672692535,0.893875965852296,0.991080780202615,0.990457295759556,5)
+f.decrease <- c(0.1,0.2,0.001,1,0.2,1,0.001,100,0.588503613257886,0.752929538228874,0.956131627577964,0.050456035523466,0.384021499609213,0.250229439327847,0.57408236899746,0.909666760291794,0.853276910139941,0.974961101217424,1,0.636422367959785,0.732916669791679,0.443930919848964,0.741758519667562,0.816463641720414,0.221779786451702,0.303779963365252,1,0.00141038795075,0.730688961031379,0.899808741360758,0.024817372196732,0.99632339563598,0.996373181003088,0.999649942946159,0.996388219783102,0.998203040988276,0.998245174258832,0.97983098579238,0.913069476259938,0.961283723717706,0.950056672692535,0.893875965852296,0.991080780202615,0.990457295759556)
 
-f.increase <- c(0.573973679288588,0.235352308855631,1.86098081013281,0.374136113325978,0.231957000781575,0.56202200140032,3.45793787115991,1.30349761255926,0.600615525746093,0.251944939128821,0.768680943537667,0.817888160201076,0.335416651041606,0.668207240453109,0.549448881994627,0.835363582795864,0.03762695139773,0.218385064110809,0.917925202458998,2.5949226033773,1.15448831174897,0.001912586392424,5.82627839462287,6.35320872803933,2.62681899691161,2.50057053840858,2.61178021689853,0.796959011723578,0.754825741168422,1.01690142076198,0.738610474801243,0.935813814114711,0.498299819223935,1.12248068295408,0.783843959477034,0.90854084808886,20)
+f.increase <- c(0.16,0.4,10,5,0.9,25,0.2,1000,0.573973679288588,0.235352308855631,1.86098081013281,0.374136113325978,0.231957000781575,0.56202200140032,3.45793787115991,1.30349761255926,0.600615525746093,0.251944939128821,0.768680943537667,0.817888160201076,0.335416651041606,0.668207240453109,0.549448881994627,0.835363582795864,0.03762695139773,0.218385064110809,0.917925202458998,2.5949226033773,1.15448831174897,0.001912586392424,5.82627839462287,6.35320872803933,2.62681899691161,2.50057053840858,2.61178021689853,0.796959011723578,0.754825741168422,1.01690142076198,0.738610474801243,0.935813814114711,0.498299819223935,1.12248068295408,0.783843959477034,0.90854084808886)
 
 
-pMaxima <- as.vector(unlist(sitka[nm])*(1+(f.increase*0.2)))
-pMinima <- as.vector(unlist(sitka[nm])*(1-(f.decrease*0.2)))
+pMaxima <- as.vector(unlist(sitka[nm])*(1+(f.increase)))
+pMinima <- as.vector(unlist(sitka[nm])*(1-(f.decrease)))
 pValues <- as.vector(unlist(sitka[nm]))
+
+pMaxima[1:8] <- f.increase[1:8]
+pMinima[1:8] <- f.decrease[1:8]
 
 output<-do.call(fr3PGDN,sitka)
 
@@ -229,20 +324,20 @@ observed <- c(data$gpp,                ## GPP
               2.16                     ## totN, 40 C:N ratio
               )
 
-dev <- c(rep(3,nrow(filter(data,year>=startYear&year<=endYear))),
-         rep(5,nrow(filter(data,year>=startYear&year<=endYear))),
-         rep(5,nrow(filter(data,year>=startYear&year<=endYear))),
-         rep(5,nrow(filter(data,year>=startYear&year<=endYear))),
-         rep(5,nrow(filter(data,year>=startYear&year<=endYear))),
-         rep(10,nrow(filter(data,year>=startYear&year<=endYear))),
-         rep(0.05,(nrow(filter(data,year>=startYear&year<=endYear))-1)),
+dev <- c(rep(.001,nrow(filter(data,year>=startYear&year<=endYear))),
+         rep(.001,nrow(filter(data,year>=startYear&year<=endYear))),
+         rep(.01,nrow(filter(data,year>=startYear&year<=endYear))),
+         rep(.01,nrow(filter(data,year>=startYear&year<=endYear))),
+         rep(0.01,nrow(filter(data,year>=startYear&year<=endYear))),
+         rep(0.01,nrow(filter(data,year>=startYear&year<=endYear))),
+         rep(0.5,(nrow(filter(data,year>=startYear&year<=endYear))-1)),
          1.5,1.5,
-         100,
-         3.0,
-         2.0,
-         1.0,
-         30.0,
-         1.0
+         1,
+         3,
+         2,
+         1,
+         5,
+         1
          )
 
 
@@ -252,9 +347,9 @@ dev <- c(rep(3,nrow(filter(data,year>=startYear&year<=endYear))),
 NLL <- function(p){
     sitka[.GlobalEnv$nm]<-p
     output<-do.call(fr3PGDN,sitka)
-    modelled <-sampleOutput(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
+    modelled <-sampleOutputTS(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
+
     NlogLik  <- sum(dnorm(.GlobalEnv$observed,mean=modelled,sd=dev,log=T))
-    print(NlogLik)
     return(NlogLik)
 }
 
@@ -268,7 +363,7 @@ NLL <- function(p){
 ## ~~~~~ ##
 
 ## This is a uniform prior distribution
-pMaxima[[19]]<-0.001
+pMaxima[[27]]<-0.01
 Uprior <- createUniformPrior(lower = pMinima, upper = pMaxima)
 
 ## This is a truncated normal distribution prior based on the chain produced
@@ -289,16 +384,16 @@ BS3PGDN <- createBayesianSetup(likelihood = NLL, prior = Uprior, names = nm, par
 
 ## Choose the settings for the run
 settings = list(
-    iterations = 50000,
+    iterations = 10000,
     ## Z = NULL,
     startValue = 5, #t(mP),#NULL, ## Use 5 chains instead of 3
     nrChains = 1,
     pSnooker = 0.5,
-    burnin = 1000,
+    burnin = 100,
     ## thin = 1,
     ## f = 2.38,
     ## eps = 0,
-    parallel = F,
+    parallel = T,
     ## pGamma1 = 0.1,
     ## eps.mult = 0.2,
     ## eps.add = 0,
@@ -316,9 +411,10 @@ settings = list(
 
 
 ##  Run the Monte Carlo Markov Chain
-out3 <- runMCMC(bayesianSetup = BS3PGDN, sampler = "DEzs", settings = settings)
+out <- runMCMC(bayesianSetup = BS3PGDN, sampler = "DEzs", settings = settings)
 
-save(out,file="out.Rdata")
+save(out3,file="out.Rdata")
+
 
 
 ## rM <- function(p){
