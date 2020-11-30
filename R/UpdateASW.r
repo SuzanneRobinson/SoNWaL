@@ -45,9 +45,10 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
 
 
     #non-Intercepted radiation
-    interRad<-(RAD.day * 1e+06/h)-netRad
-    
-   # .GlobalEnv$interRad <- rbind(.GlobalEnv$interRad,interRad)
+    interRad<-(RAD.day * 1e+06/h)-max(netRad,0)
+    print(RAD.day * 1e+06/h)
+    .GlobalEnv$interRad <- rbind(.GlobalEnv$interRad,interRad)
+    .GlobalEnv$Rad <- rbind(.GlobalEnv$Rad,(RAD.day * 1e+06/h))
     
     ####Run using water balance sub-models from Almedia et al.####
     if (parms[["waterBalanceSubMods"]] == T) {
@@ -71,7 +72,7 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       state[["E_S"]] = ifelse(E_S <= 0, 0,  E_S)
       
       #Calculate any excess soil water
-      excessSW <- max(FV + Rain + MonthIrrig - EvapTransp - MaxASW - Evaporation, 0)
+      excessSW <- max(sigma_rz + Rain + MonthIrrig - EvapTransp - MaxASW - Evaporation, 0)
       
       #Update here, to have soil water go from rooting zone to non-rooting zone, use K_s and rooting zone depth?
       #state[["sigma_nr0"]]<- max(state[["sigma_nr0"]] + Rain + MonthIrrig - excessSW - Evaporation, 0)
@@ -81,7 +82,7 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       state[["sigma_nr0"]] <-soilWC_NRZ(parms, weather, state)
       
       #Update available soil water -CHECK IF MIN OF 0 NEEDED
-      state[["ASW"]] <- max(sigma_rz + Rain+ MonthIrrig - EvapTransp - excessSW - Evaporation,0)
+      state[["ASW"]] <- max(sigma_rz + Rain + MonthIrrig - EvapTransp - excessSW - Evaporation, 0)
       
     } else
     {

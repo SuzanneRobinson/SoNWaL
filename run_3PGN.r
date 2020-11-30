@@ -4,7 +4,7 @@
 
 ## Function to plot the model against the Harwood data.
 plotResults <- function(df,ShortTS=F){
-
+dt=12
  #need to update grouping, might be aggregating too much?
 
   #Only use last week value in a month
@@ -545,19 +545,41 @@ sitka[nm]<-codM
 
 ## Run the 3PGN model using the sitka parameters
 #.GlobalEnv$interRad<-0
-output<-do.call(fr3PGDN,sitka) # NEED TO UPDATE HOW RADIATION AND EVAPORATION IS OCCURING!
-plot(output$ASW[c(2300:2393)]~output$t[c(2300:2393)],col="white")
-lines(output$ASW[c(2300:2393)]~output$t[c(2300:2393)],col="red")
-lines(output$sigma_nr0[c(2300:2393)]~output$t[c(2300:2393)],col="blue")
+output<-do.call(fr3PGDN,sitka) 
+plot(output$ASW[c(1:2393)]~output$t[c(1:2393)],col="white")
+lines(output$ASW[c(1:2393)]~output$t[c(1:2393)],col="red")
+lines(output$sigma_nr0[c(1:2393)]~output$t[c(1:2393)],col="blue")
 
-plot(.GlobalEnv$interRad[c(2300:2347)]~output$t[c(2300:2347)],col="white")
-lines(.GlobalEnv$interRad[c(2300:2347)]~output$t[c(2300:2347)],col="red")
+plot(.GlobalEnv$interRad[c(1:2347)]~output$t[c(1:2347)],col="white")
+lines(.GlobalEnv$interRad[c(1:2347)]~output$t[c(1:2347)],col="red")
+lines(.GlobalEnv$Rad[c(1:2347)]~output$t[c(1:2347)],col="blue")
+
+outVals<-as.data.frame(cbind(.GlobalEnv$Rad,.GlobalEnv$interRad))
+names(outVals)<-c("Rad","interRad")
+
+g1<-ggplot(outVals,aes(y=interRad,x=output$t[-1]))+
+  geom_line(col="red",alpha=0.7)+
+  ggtitle("Solar radiation reaching soil")+
+  ylab(expression(Solar~radiation~varphi))+
+  xlab("Time (years)")+
+  theme_bw()
+
+
+g2<-ggplot(outVals,aes(y=Rad,x=output$t[-1]))+
+  geom_line(col="red",alpha=0.7)+
+  ggtitle("Solar radiation")+
+  ylab(expression(Solar~radiation~varphi))+
+  xlab("Time (years)")+
+  theme_bw()
+
+ggarrange(g2,g1)
+
 ## Plot model outputs
 pOut <- plotModel(output)
 
 ## Plot the timeseries of model output vs data
 results<-plotResults(output,ShortTS=T)
-results[1]
+results
 
 ## Calculate yield class from height
 output <- output%>%mutate(

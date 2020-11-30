@@ -163,14 +163,12 @@ soilEvap<-function(parms,weather,state,interRad){
   
 
   
-  #Wet surface evaporation - using Penman Monteith eq. mm per day loss
+  #Potential wet surface evaporation rate - using Penman Monteith eq. mm per day loss
   e0 <- max(((e20 * interRad + rhoAir * lambda * VPDconv * VPD *
                   soilCond) / (1 + e20 + soilCond / Inf)), 0) 
   
 
-  #E_S0 is E_S minus the amount of rainfall not intercepted and irigation
-  #(assumes all rainfall occurs at the start of the month - need to implement finer scale timesteps!)
-
+  #E_S0 is E_S at the start of the time-step
   E_S0 = max(state[["E_S"]] , 0)
   
 
