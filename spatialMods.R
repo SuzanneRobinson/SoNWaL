@@ -8,9 +8,9 @@ library(dplyr)
 library(future)
 
 
-##Using the spatial sweedish data - testing spatial analysis using the FR3pg model and calibrated parameters
+##Using the spatial Swiss data - testing spatial analysis using the FR3pg model and calibrated parameters
 
-#Load in sweedish data - taken from Trotsiuk et al. (2020)
+#Load in Swiss data - taken from Trotsiuk et al. (2020)
 load('C:\\R-Packages\\r3PG\\data\\grid_sim.rda')
 load('C:\\R-Packages\\r3PG\\data\\grid_input.rda')
 load('C:\\R-Packages\\r3PG\\data\\mcmc.rda')
@@ -48,8 +48,8 @@ sim.grid <- inner_join(site.grid, climate.grid, by = 'grid_id')%>%
 
 #Spatial run function which takes a single 1x1km grid cell and associated climate variables, runs simulations for a range of MCMC posterior values
 #Calculates the average and a 95% credible interval
-#Currently there is some data manipulation going on so the sweedish data plays nicely with the FR3PG model
-# - in particular the sweedish data just has as set of 12 average monthly climate variables, one for each month. 
+#Currently there is some data manipulation going on so the Swish data plays nicely with the FR3PG model
+# - in particular the Swish data just has as set of 12 average monthly climate variables, one for each month. 
 FR3PG_spat_run <- function(site, forc){
   FR3pgRun<-function(params){
     
@@ -98,7 +98,9 @@ FR3PG_spat_run <- function(site, forc){
   
   
   #Plot results
-  out %>%
+  library(viridis)
+  
+  sim.grid %>%
     mutate( range = q95 - q05) %>%
     select( grid_id, mean = value, range) %>%
     gather( variable, value, -grid_id) %>%
@@ -106,9 +108,18 @@ FR3PG_spat_run <- function(site, forc){
     ggplot( aes(x, y, fill = value) ) +
     geom_raster()+
     facet_wrap(~variable)+
-    theme_void()+
+    theme_bw()+
+    theme(axis.title.x=element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank(),
+          axis.title.y=element_blank(),
+          axis.text.y=element_blank(),
+          axis.ticks.y=element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank())+
+    ggtitle("Spatial analysis of 3PG model - Switzerland")+
     coord_equal() +
-    scale_fill_distiller( '', palette = 'Spectral', limits = c(0, 250))
+    scale_fill_viridis_c( '', limits = c(0, 250),option = "B")
 
 
   
