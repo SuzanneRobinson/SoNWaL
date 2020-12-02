@@ -1,6 +1,8 @@
 node_modules/
 
+._*
 
+R/._*
 
 # History files
 

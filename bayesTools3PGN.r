@@ -119,6 +119,7 @@ data <- tower %>%
 
 
 library(dplyr)
+library(lubridate)
 years <- 2010:2012
 clm.df.full<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\clm_df_full.csv")
 

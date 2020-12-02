@@ -405,6 +405,7 @@ sitka<-list(weather=clm.df.full,
 #######################################################
 #not sure if monthly rates need to be modified to whatever timestep is being used, depends on how they are used in the model
 #may be easier to adjust them by timestep within the model rather than at proposal to keep things cleaner?
+getParms<-function(){
 sitka<-list(weather=weeklyRfall,
             ## ~~ Initial pools ~~ ##
             Wl = 0.01,
@@ -526,6 +527,7 @@ sitka<-list(weather=weeklyRfall,
             MaxASW_state=50,
             timeStp = 52 # time step, 52 for weekly, 12 for monthly and 365 for daily
             )
+}
 #######################################################
 
 
@@ -545,7 +547,7 @@ sitka[nm]<-codM
 
 ## Run the 3PGN model using the sitka parameters
 #.GlobalEnv$interRad<-0
-output<-do.call(fr3PGDN,sitka) 
+output<-do.call(fr3PGDN,sitka)
 plot(output$ASW[c(1:2393)]~output$t[c(1:2393)],col="white")
 lines(output$ASW[c(1:2393)]~output$t[c(1:2393)],col="red")
 lines(output$sigma_nr0[c(1:2393)]~output$t[c(1:2393)],col="blue")

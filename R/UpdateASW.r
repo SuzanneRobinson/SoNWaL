@@ -46,9 +46,8 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
 
     #non-Intercepted radiation
     interRad<-(RAD.day * 1e+06/h)-max(netRad,0)
-    print(RAD.day * 1e+06/h)
-    .GlobalEnv$interRad <- rbind(.GlobalEnv$interRad,interRad)
-    .GlobalEnv$Rad <- rbind(.GlobalEnv$Rad,(RAD.day * 1e+06/h))
+#    .GlobalEnv$interRad <- rbind(.GlobalEnv$interRad,interRad)
+#    .GlobalEnv$Rad <- rbind(.GlobalEnv$Rad,(RAD.day * 1e+06/h))
     
     ####Run using water balance sub-models from Almedia et al.####
     if (parms[["waterBalanceSubMods"]] == T) {
