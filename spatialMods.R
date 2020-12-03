@@ -48,8 +48,8 @@ sim.grid <- inner_join(site.grid, climate.grid, by = 'grid_id')%>%
 
 #Spatial run function which takes a single 1x1km grid cell and associated climate variables, runs simulations for a range of MCMC posterior values
 #Calculates the average and a 95% credible interval
-#Currently there is some data manipulation going on so the Swish data plays nicely with the FR3PG model
-# - in particular the Swish data just has as set of 12 average monthly climate variables, one for each month. 
+#Currently there is some data manipulation going on so the Swiss data plays nicely with the FR3PG model
+# - in particular the Swiss data just has as set of 12 average monthly climate variables, one for each month. 
 FR3PG_spat_run <- function(site, forc){
   FR3pgRun<-function(params){
     
