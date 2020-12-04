@@ -406,7 +406,7 @@ sitka<-list(weather=clm.df.full,
 #not sure if monthly rates need to be modified to whatever timestep is being used, depends on how they are used in the model
 #may be easier to adjust them by timestep within the model rather than at proposal to keep things cleaner?
 getParms<-function(){
-sitka<-list(weather=weeklyRfall,
+sitka<-list(weather=clm.df.full,
             ## ~~ Initial pools ~~ ##
             Wl = 0.01,
             WlDormant = 0,
@@ -525,7 +525,7 @@ sitka<-list(weather=weeklyRfall,
             E_S1 =10, #Cumulitive evap threshold
             E_S2 =.01, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
             MaxASW_state=50,
-            timeStp = 52 # time step, 52 for weekly, 12 for monthly and 365 for daily
+            timeStp = 12 # time step, 52 for weekly, 12 for monthly and 365 for daily
             )
 }
 #######################################################
