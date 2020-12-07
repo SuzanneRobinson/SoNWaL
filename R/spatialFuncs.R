@@ -82,6 +82,8 @@ names(simDat)<-c("grid_id","clm")
 simDat$x<-coordinates(hadUKRast)[,1]
 simDat$y<-coordinates(hadUKRast)[,2]
 
+hadUKRast<<-hadUKRast
+
 return(simDat)
 }
 
@@ -90,9 +92,9 @@ return(simDat)
 #'@param from takes a random date between this value and +10 years as plantation establishment
 #'@param to takes a random date between this value and +10 years for the end of plantation growth
 genRandSiteDat<-function(from,to){
-genSite<- list(data.frame(from=(paste0( round(runif(1, from, from+10)),"-01")),to=paste0( round(runif(1, to, to+10)),"-12")))
+genSite<- list(data.frame(from=(paste0( round(runif(1, from, from+10)),"-01-01")),to=paste0( round(runif(1, to, to+10)),"-30-12")))
 for(i in c(1:nrow(coordinates(hadUKRast)))) {
-  genSite[[i]] <- data.frame(from=(paste0( round(runif(1, from, from+10)),"-01")),to=paste0( round(runif(1, to, to+10)),"-12"))
+  genSite[[i]] <- data.frame(from=(paste0( round(runif(1, from, from+10)),"-01-01")),to=paste0( round(runif(1, to, to+10)),"-30-12"))
 }
 
 genSiteTb <- tibble(grid_id = c(1:nrow(coordinates(hadUKRast))),
@@ -107,17 +109,18 @@ return(genSiteTb)
 #Currently there is some data manipulation going on to spread a single years data over multiple years until all data is downloaded
 #' @param site site data
 #' @param clm climate data
-FR3PG_spat_run <- function(site, clm){
+FR3PG_spat_run <- function(site, clm,param.draw){
   
-  if(is.na(clm$tasmax[1])==T) return (as_tibble(data.frame(q05=NA,q95=NA,value=NA)) ) else
+  if(is.na(clm$tasmax[1])==T) return (tibble::as_tibble(data.frame(q05=NA,q95=NA,value=NA)) ) else
     
     
     FR3pgRun<-function(params){
+      
       #get default parameters
       sitka<- getParms()
       
       #Update parameters with proposals - In this data might be missing parameters which are named differently??
-      sitka[names(sitka) %in% params$parameter]<-params$piab[params$parameter %in%  names(sitka)]
+      sitka[names(sitka) %in% names(params)]<-params[names(params) %in%  names(sitka)]
       #convert monthly averages to 45 years of data for sweden
       clmDat<-as.data.frame(clm[,c(6,5,4,2,3,1)])
       names(clmDat)<-c("Tmin","Tmax","Tmean","Rain","SolarRad","FrostDays")
@@ -130,9 +133,9 @@ FR3PG_spat_run <- function(site, clm){
       clmDat$SolarRad<-clmDat$SolarRad/days_in_month(clmDat$Month)#######
       ###################################################################
       
-      sqLength<-year(as.Date(paste0(site$to,"-01")))-year(as.Date(paste0(site$from,"-01")))+1
+      sqLength<-year(as.Date(site$to,"%Y-%d-%m"))-year(as.Date(site$from,"%Y-%d-%m"))+1
       weatherDat<-as.data.frame(purrr::map_dfr(seq_len(sqLength), ~clmDat))
-      weatherDat$Year<-rep(year(as.Date(paste0(site$from,"-01"))):year(as.Date(paste0(site$to,"-01"))),each=12) 
+      weatherDat$Year<-rep(year(as.Date(site$from,"%Y-%d-%m")):year(as.Date(site$to,"%Y-%d-%m")),each=12) 
       weatherDat<-weatherDat[,c(names(clm.df.full[,c(1:9)]))]
       sitka$weather<-weatherDat
       #run model and output data
@@ -144,8 +147,8 @@ FR3PG_spat_run <- function(site, clm){
   site_out <- param.draw %>%
     dplyr::mutate( sim = map(pars, FR3pgRun)) %>%
     dplyr::select(mcmc_id, sim) %>%
-    unnest_legacy() %>%
-    summarise(
+    tidyr::unnest_legacy() %>%
+    dplyr::summarise(
       q05 = quantile(Wsbr, 0.05, na.rm = T),
       q95 = quantile(Wsbr, 0.95, na.rm = T),
       value = quantile(Wsbr, 0.5, na.rm = T))
@@ -173,10 +176,11 @@ swissParams<-function(MCMCfile,numSamps=10){
   
   par_def.df <- dplyr::select(param_solling, parameter = param_name, piab = default)
   
+  load('C:\\R-Packages\\r3PG\\data\\mcmc.rda')
   #Take a sample of parameter sets from the MCMC chains to get 95% credible intervals - currently MCMC chains from sweden calibrations, will update for UK
   param.draw <- getSample(mcmc_out, numSamples = numSamps, coda = F, whichParameters = 1:20) %>%
     as.data.frame() %>%
-    mutate(mcmc_id = 1:n()) %>%
+    dplyr::mutate(mcmc_id = 1:n()) %>%
     nest_legacy(-mcmc_id, .key = 'pars')   %>%
     mutate( 
       pars = map(pars, unlist),

@@ -1,6 +1,7 @@
 library(multidplyr)
 library(r3PG)
 library(tidyr)
+library(tidyverse)
 library(purrr)
 library(BayesianTools)
 library(sensitivity)
@@ -13,6 +14,10 @@ library(ggplot2)
 library(httr)
 library(furrr)
 library(viridis)
+library(fr3PGDN)
+library(plyr)
+library(tibble)
+library(BayesianTools)
 
 #Get UK spatial data - needs updating to web scraping
 simDat<-spatDatUK(dataDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\monthly")
@@ -20,18 +25,23 @@ simDat<-spatDatUK(dataDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\
 #Load in Swiss MCMC data to get a range of parameters - taken from Trotsiuk et al. (2020)
 param.draw<-swissParams('C:\\R-Packages\\r3PG\\data\\solling.rda',numSamps=10)
 
+#load('C:\\R-Packages\\r3PG\\data\\solling.rda')
+
 #Create some random forests to match with the spatial climate data (will use actual forest data in future)
-genSiteTb<-genRandSiteDat(from="1950-01",to="2009-01")
+genSiteTb<-genRandSiteDat(from=1950,to=2009)
 
 #take a sample of the spatial data (else it'll take a really long time to run not on a cluster)
-spatSimDat <- inner_join(genSiteTb, simDat, by = 'grid_id')%>%
-  sample_n(5000) 
-
+spatSimDat <- inner_join(genSiteTb, simDat, by = 'grid_id')
+spatSimDat$ID<-rep(1:160,each=1000)
+#sample_n(5000) 
+#Try and clump the data a bit
+spatSimDat <- spatSimDat %>% group_by(ID) %>% sample_n(300)
+spatSimDat<-spatSimDat[spatSimDat$ID %in% round(rnorm(5,50,50)),]
 
 #establish cluster
 plan(multisession,workers = availableCores())
 #run grid squares in parallel - as running over grid squares should be very scaleable
-out2 <-future_map2(spatSimDat$site, spatSimDat$clm, ~FR3PG_spat_run(.x, .y),.progress = T)
+out2 <-future_map2(spatSimDat$site, spatSimDat$clm, ~FR3PG_spat_run(.x, .y,param.draw),.progress = T)
 #bind into a single tibble
 out<-as_tibble(data.table::rbindlist(out2))
 #re-add grid_id values
@@ -40,7 +50,8 @@ out$grid_id<-spatSimDat$grid_id
 out<-drop_na(out)
 
 #Write output to file
-saveRDS(out,"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\scotSpat.rds")
+saveRDS(out,"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\scotSpat_clumped.rds")
+out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\scotSpat.rds")
 
 #Plot results
 out %>%
