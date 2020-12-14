@@ -73,49 +73,9 @@ acPerc<-function(chain){
     print(acceptance)
 }
 
-## load tower data and Rs/Reco ratio
-load(fl$tower)
-load(fl$rRsReco)
-
 ## Years of data to use for calibration
 startYear = 2015
 endYear = 2017
-
-## Calculate NPP and respiration fluxes
-tower <- tower %>% left_join(r[,c("year","r")],by="year")
-tower$Ra<-with(tower,Reco*(1-r))
-tower$Rs<-with(tower,Reco-Ra)
-tower$NPP<-with(tower,GPP_f-Ra)
-
-## Met data
-clm.df.full<-read.csv("clm_df_full.csv")
-
-## Aggregate to monthly values
-
-## Conversion factor to tonnes of dry matter per hectare
-tDMha<-1e-2*2592000*12*2*1e-6
-
-## Conversion factor to grams of carbon per square meter per day
-gCm2<-86400*12*1e-6
-
-
-## Put together the tower data at monthly timestamp
-data <- tower %>%
-    filter(year>=startYear&year<=endYear)%>%
-    group_by(year,month) %>%
-    summarise(gpp=mean(ifelse(GPP_f<=0,0,GPP_f)*tDMha,na.rm=T),
-              npp=mean(NPP,na.rm=T)*tDMha,
-              nee=mean(NEE_WithUstar_f,na.rm=T)*tDMha,
-              reco=mean(Reco,na.rm=T)*tDMha,
-              rs=mean(Rs,na.rm=T)*tDMha,
-              et=sum((ET*0.5),na.rm=T)
-              ) %>%
-    arrange(year) %>%
-    group_by(year)%>%
-    mutate(cumGPP=cumsum(gpp),
-           cumNPP=cumsum(npp),
-           timestamp = as.POSIXct(paste(sprintf("%02d",year),sprintf("%02d",month),sprintf("%02d",1),sep="-"),tz="GMT"))
-
 
 
 library(dplyr)
@@ -162,7 +122,7 @@ weeklyRfall<-weeklyRfall[,c(names(clm.df.fullX[,c(1:9)]))]
 
 ###############################################################
 
-sitka<-list(weather=weeklyRfall,
+sitka<-list(weather=clm.df.full,
             ## ~~ Initial pools ~~ ##
             Wl = 0.01,
             WlDormant = 0,
@@ -271,7 +231,7 @@ sitka<-list(weather=weeklyRfall,
             cod.pred = "3PG",
             cod.clim = "Month",
             ##Water balance submodel
-            waterBalanceSubMods =T, #Whether to run model using updated water balance submodels
+            waterBalanceSubMods =F, #Whether to run model using updated water balance submodels
             theta_wp = 0.1, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
             theta_fc =0.29,#Field capacity
             K_s=1, #Soil conductivity
@@ -281,7 +241,7 @@ sitka<-list(weather=weeklyRfall,
             E_S1 =100, #Cumulitive evap threshold
             E_S2 =0.1, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
             MaxASW_state=50,
-            timeStp = 52
+            timeStp = 12
             
 )
 
@@ -348,7 +308,8 @@ dev <- c(rep(.001,nrow(filter(data,year>=startYear&year<=endYear))),
 NLL <- function(p){
     sitka[.GlobalEnv$nm]<-p
     output<-do.call(fr3PGDN,sitka)
-    modelled <-sampleOutputTS(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
+    #use sampleOutputTS if using smaller time-steps
+    modelled <-sampleOutput(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
 
     NlogLik  <- sum(dnorm(.GlobalEnv$observed,mean=modelled,sd=dev,log=T))
     return(NlogLik)
@@ -380,42 +341,46 @@ Uprior <- createUniformPrior(lower = pMinima, upper = pMaxima)
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 BS3PGDN <- createBayesianSetup(likelihood = NLL, prior = Uprior, names = nm, parallel = T, catchDuplicates = F )
 
+
+
 ## Use the previous calibration parameters as starting values
 ## mP<-matrix(rep(pValues,3),nrow=length(pValues),ncol=3)
 
-## Choose the settings for the run
-settings = list(
-    iterations = 10000,
-    ## Z = NULL,
-    startValue = 5, #t(mP),#NULL, ## Use 5 chains instead of 3
-    nrChains = 1,
-    pSnooker = 0.5,
-    burnin = 100,
-    ## thin = 1,
-    ## f = 2.38,
-    ## eps = 0,
-    parallel = T,
-    ## pGamma1 = 0.1,
-    ## eps.mult = 0.2,
-    ## eps.add = 0,
-    ## consoleUpdates = 100,
-    ## zUpdateFrequency = 1,
-    ## currentChain = 3,
-    ## blockUpdate  = list("none",
-    ##                     k = NULL,
-    ##                     h = NULL,
-    ##                     pSel = NULL,
-    ##                     pGroup = NULL,
-    ##                     groupStart = 1000,
-    ##                     groupIntervall = 1000),
-    message = TRUE)
 
+
+## Choose the settings for the run
+
+settings = list(
+  iterations = 50000,
+  ## Z = NULL,
+  startValue = 7, #t(mP),#NULL, ## Use 5 chains instead of 3
+  nrChains = 1,
+  pSnooker = 0.5,
+  burnin = 10,
+  ## thin = 1,
+  ## f = 2.38,
+  ## eps = 0,
+  parallel = T,
+  ## pGamma1 = 0.1,
+  ## eps.mult = 0.2,
+  ## eps.add = 0,
+  ## consoleUpdates = 100,
+  ## zUpdateFrequency = 1,
+  ## currentChain = 3,
+  ## blockUpdate  = list("none",
+  ##                     k = NULL,
+  ##                     h = NULL,
+  ##                     pSel = NULL,
+  ##                     pGroup = NULL,
+  ##                     groupStart = 1000,
+  ##                     groupIntervall = 1000),
+  message = TRUE)
 
 ##  Run the Monte Carlo Markov Chain
+
 out <- runMCMC(bayesianSetup = BS3PGDN, sampler = "DEzs", settings = settings)
 
-save(out3,file="out.Rdata")
-
+saveRDS(out,file="outx.RDS")
 
 
 ## rM <- function(p){

@@ -5,12 +5,9 @@
 ## Function to plot the model against the Harwood data.
 plotResults <- function(df,ShortTS=F){
 dt=12
- #need to update grouping, might be aggregating too much?
 
-  #Only use last week value in a month
-  
   df <- df[c(2:nrow(df)),]
-  df <- df %>% group_by(Year) %>% mutate(cumGPP = cumsum(GPP),
+  df <- df %>% dplyr::group_by(Year)%>%mutate(cumGPP = cumsum(GPP),
                                          cumNPP = cumsum(NPP),
                                          timestamp = as.POSIXct(paste(sprintf("%02d",Year),sprintf("%02d",Month),sprintf("%02d",1),sep="-"),tz="GMT")) 
 
@@ -395,7 +392,8 @@ sitka<-list(weather=clm.df.full,
             pWl.sprouts = 0.5,
             pWsbr.sprouts = 0.9,
             cod.pred = "3PG",
-            cod.clim = "Month" 
+            cod.clim = "Month" ,
+            waterBalanceSubMods =F
 )
 #######################################################
 
@@ -515,7 +513,7 @@ sitka<-list(weather=clm.df.full,
             cod.pred = "3PG",
             cod.clim = "Month",
             ## ~~ Almedia et al. Parameters ~~ ##
-            waterBalanceSubMods =T, #Whether to run model using updated water balance submodels
+            waterBalanceSubMods =F, #Whether to run model using updated water balance submodels
             theta_wp = 0.1, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
             theta_fc =0.29,#Field capacity
             K_s=0.01, #Soil conductivity
@@ -539,8 +537,8 @@ sitka<-list(weather=clm.df.full,
 #Reco - ecosystem respiration
 
 #get some previous run parameter estimates#
-codM<-getSample(out, start = 1000, coda = TRUE, thin = 1)
-codM<-tail(as.data.frame(codM[[1]]),5)
+codM<-getSample(out, start = 1000, coda = TRUE, thin = 1)[[1]]
+#codM<-tail(as.data.frame(codM),5)
 codM<-data.table::transpose(data.frame(colMedians(codM)))
 names(codM)<-nm
 sitka[nm]<-codM
@@ -580,7 +578,7 @@ ggarrange(g2,g1)
 pOut <- plotModel(output)
 
 ## Plot the timeseries of model output vs data
-results<-plotResults(output,ShortTS=T)
+results<-plotResults(output,ShortTS=F)
 results
 
 ## Calculate yield class from height
