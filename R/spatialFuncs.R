@@ -1,6 +1,5 @@
 ##UK spatial data extraction
 
-library(multidplyr)
 library(r3PG)
 library(tidyr)
 library(purrr)
@@ -60,6 +59,9 @@ hadUKRast <- lapply(files[i], function(x) { brick(x) })
 #Crop each raster layer (currently approximately around scotland)
 
 hadUKRast <- lapply(hadUKRast, function(x) {crop(x, extent(0.5e+05, 4.5e+05, 6e+05, 1000000)) })
+#crs_input<-crs("+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +a=6377563.396 +b=6356256.909")
+#crs_output<-crs("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84")
+#hadUKRast_decLatLong <- inborutils::reproject_coordinates(as.data.frame(coordinates(hadUKRast)),col_long = "x", col_lat = "y", crs_input=crs_input, crs_output=crs_output)
 
 #layer rasters into single raster
 
@@ -67,12 +69,23 @@ hadUKRast<-brick(hadUKRast)
 
 #get climate values from raster 
 
-rasValue=as.data.frame(raster::extract(hadUKRast,extent(0.5e+05, 4.5e+05, 6e+05, 1000000),cellnumbers=F))
+rasValue=as.data.frame(raster::extract(hadUKRast))
 #Transpose data before putting into table
 rasValue<-rasValue %>% purrr::transpose()
 #Convert transposed data for each cell into a dataframe
 colNm<-fileNames[i]
 rasValue2<-lapply(rasValue,function(x) setNames(data.frame(unlist(x)),fileNames[i]))
+
+#addSolar<-function(rasValue2,hadUKRast_decLatLong){
+#  
+#  hadUKRast <- lapply(rasValue2, function(x) {crop(x, extent(0.5e+05, 4.5e+05, 6e+05, 1000000)) })
+#  
+#  sirad::ap(as.Date("2016-01-16", "%Y-%m-%d"),  -8.043887,58.74152, extraT=NULL, A=NA, B=NA, 145.72)
+#  
+#  
+#}
+
+
 #add to tibble
 if(i==1){
 simDat <- tibble(id = c(1:nrow(coordinates(hadUKRast))),
@@ -138,7 +151,8 @@ FR3PG_spat_run <- function(site, clm,param.draw){
       ####################needs better solution##########################
       #####if using monthly data from CEDA, split into daily values######
       ######else with hydro submodels the land gets scorched :( #########
-      clmDat$SolarRad<-clmDat$SolarRad/lubridate::days_in_month(clmDat$Month)#######
+      ######Also CEDA data is sunshine hours, not solar rad, need a better conversion?
+      clmDat$SolarRad<-clmDat$SolarRad/lubridate::days_in_month(clmDat$Month)
       ###################################################################
       
       sqLength<-lubridate::year(as.Date(site$to,"%Y-%d-%m"))-lubridate::year(as.Date(site$from,"%Y-%d-%m"))+1
@@ -172,38 +186,6 @@ FR3PG_spat_run <- function(site, clm,param.draw){
 }
 
 
-
-
-###Load in swiss MCMC data to get some parameter values (will replace with UK once we can run the full calibrations)
-swissParams<-function(MCMCfile,numSamps=10){
-  load(MCMCfile)
-  # default parameters for swedish data
-  par_def <- setNames(param_solling$default, param_solling$param_name)
-  err_def <- setNames(error_solling$default, error_solling$param_name)
-  
-  # parameters for calibration and their ranges
-  param_morris.df <- bind_rows(param_solling, error_solling) %>% filter(!is.na(min))
-  par_cal_names <- param_morris.df$param_name
-  par_cal_min <- param_morris.df$min
-  par_cal_max <- param_morris.df$max
-  par_cal_best <- param_morris.df$default
-  
-  par_def.df <- dplyr::select(param_solling, parameter = param_name, piab = default)
-  
-  load('C:\\R-Packages\\r3PG\\data\\mcmc.rda')
-  #Take a sample of parameter sets from the MCMC chains to get 95% credible intervals - currently MCMC chains from sweden calibrations, will update for UK
-  param.draw2 <- getSample(mcmc_out, numSamples = numSamps, coda = F, whichParameters = 1) %>%
-    as.data.frame() %>%
-    dplyr::mutate(mcmc_id = 1:n()) %>%
-    nest_legacy(-mcmc_id, .key = 'pars')   %>%
-    mutate( 
-      pars = map(pars, unlist),
-      pars = map(pars, ~tibble::enframe(.x, 'parameter', 'piab')),
-      pars = map(pars, ~bind_rows(.x, filter(par_def.df, !parameter %in% par_cal_names))))
-  
-  return(param.draw)
-  
-}
 
 
 
@@ -334,7 +316,13 @@ getParms<-function(){
 
 
 years <- 2010:2012
+
+if(Sys.info()[1]=="Windows"){
 clm.df.full<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\clm_df_full.csv")
+}else
+{
+clm.df.full<-read.csv("/home/users/aaronm7/3pgData/clm_df_full.csv")
+}
 
 #Add date
 clm.df.full$date<-as.Date(paste(clm.df.full$Year,"-",clm.df.full$Month,"-01",sep=""))

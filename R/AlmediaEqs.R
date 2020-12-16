@@ -112,11 +112,18 @@ soilWC_NRZ<-function(parms,weather,state){
   #Non-root zone decreases as root zone increases, V_nr is max non-root zone volume
   V_nrx<-max(V_nr-V_rz,0)
   
+  ##calculate max SWC of non-rooting zone so SWC can not go over this
+  theta_fc_nr= parms[["theta_fc"]]*V_nrx*1000
+
+  
   # Re-arrange equation A.14 to get value for non-rooting zone
   t_s0 = (V_rz * V_nrx) / (K_s * A * (V_rz + V_nrx))
   sigma_nr0 =max(((state[["ASW"]]*V_rz)+(state[["ASW"]]*V_nrx)-(exp(-t/t_s0)*sigma_rz0*V_nrx)-(sigma_rz0*V_rz))/((1-exp(-t/t_s0))*V_rz),0)
 
-
+  #SWC of non-root zone can't be above field capacity of non-root zone
+  sigma_nr0=min(sigma_nr0,theta_fc_nr)
+  
+  
   return(sigma_nr0)
 }
 

@@ -513,11 +513,11 @@ sitka<-list(weather=clm.df.full,
             cod.pred = "3PG",
             cod.clim = "Month",
             ## ~~ Almedia et al. Parameters ~~ ##
-            waterBalanceSubMods =F, #Whether to run model using updated water balance submodels
+            waterBalanceSubMods =T, #Whether to run model using updated water balance submodels
             theta_wp = 0.1, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
             theta_fc =0.29,#Field capacity
             K_s=0.01, #Soil conductivity
-            V_nr=3, #Volume of non-rooting zone
+            V_nr=5, #Volume of non-rooting zone
             sigma_zR =0.7, #area/depth explored by 1kg of root biomass
             sigma_nr0=100, #SWC of non-rooting zone at time 0
             E_S1 =10, #Cumulitive evap threshold
@@ -579,7 +579,7 @@ pOut <- plotModel(output)
 
 ## Plot the timeseries of model output vs data
 results<-plotResults(output,ShortTS=F)
-results
+results[1]
 
 ## Calculate yield class from height
 output <- output%>%mutate(

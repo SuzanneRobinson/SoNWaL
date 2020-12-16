@@ -70,8 +70,8 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       Evaporation = ifelse(E_S <= 0, 0, E_S)
       state[["E_S"]] = ifelse(E_S <= 0, 0,  E_S)
       
-      #Calculate any excess soil water
-      excessSW <- max(sigma_rz + Rain + MonthIrrig - EvapTransp - MaxASW - Evaporation, 0)
+      #Calculate any excess soil water use max ASW of field cap?
+      excessSW <- max(sigma_rz + Rain + MonthIrrig - EvapTransp - theta_fc - Evaporation, 0)
       
       #Update here, to have soil water go from rooting zone to non-rooting zone, use K_s and rooting zone depth?
       #state[["sigma_nr0"]]<- max(state[["sigma_nr0"]] + Rain + MonthIrrig - excessSW - Evaporation, 0)
