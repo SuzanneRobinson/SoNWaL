@@ -404,7 +404,7 @@ sitka<-list(weather=clm.df.full,
 #not sure if monthly rates need to be modified to whatever timestep is being used, depends on how they are used in the model
 #may be easier to adjust them by timestep within the model rather than at proposal to keep things cleaner?
 getParms<-function(){
-sitka<-list(weather=clm.df.full,
+sitka<-list(weather=clm.df.full[c(1:50),],
             ## ~~ Initial pools ~~ ##
             Wl = 0.01,
             WlDormant = 0,
@@ -517,9 +517,9 @@ sitka<-list(weather=clm.df.full,
             theta_wp = 0.1, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
             theta_fc =0.29,#Field capacity
             K_s=0.01, #Soil conductivity
-            V_nr=5, #Volume of non-rooting zone
+            V_nr=3, #Volume of non-rooting zone
             sigma_zR =0.7, #area/depth explored by 1kg of root biomass
-            sigma_nr0=100, #SWC of non-rooting zone at time 0
+            sigma_nr0=1000, #SWC of non-rooting zone at time 0
             E_S1 =10, #Cumulitive evap threshold
             E_S2 =.01, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
             MaxASW_state=50,

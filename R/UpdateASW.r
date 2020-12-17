@@ -80,8 +80,14 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       #Update value for non-rooting zone SWC - assuming rainfall, evaporation and evapotranspiration occurs in the rooting zone
       state[["sigma_nr0"]] <-soilWC_NRZ(parms, weather, state)
       
+      print("-")
+      print(paste0("rz = ", state[["ASW"]]))
+      print(paste0("nrz = ", state[["sigma_nr0"]]))
+      
       #Update available soil water -CHECK IF MIN OF 0 NEEDED
       state[["ASW"]] <- max(sigma_rz + Rain + MonthIrrig - EvapTransp - excessSW - Evaporation, 0)
+      print(paste0("rz2 = ", state[["ASW"]]))
+      print("-")
       
     } else
     {
