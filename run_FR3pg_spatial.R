@@ -1,4 +1,5 @@
 library(r3PG)
+library(plyr)
 library(tidyr)
 library(tidyverse)
 library(purrr)
@@ -14,10 +15,10 @@ library(httr)
 library(furrr)
 library(viridis)
 library(fr3PGDN)
-library(plyr)
 library(tibble)
 library(BayesianTools)
 library(miscTools)
+
 
 #Get UK spatial data - needs updating to web scraping
 simDat<-spatDatUK(dataDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\monthly")
@@ -54,8 +55,8 @@ out$grid_id<-spatSimDat$grid_id
 #out<-drop_na(out)
 
 #Write output to file
-saveRDS(out,"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\scotSpat_isle.rds")
-#out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\scotSpat_clumped.rds")
+#saveRDS(out,"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\scotSpat_isle.rds")
+out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\scotSpat_clumped.rds")
 
 
 out[,c(1:3)]<-log(1+out[,c(1:3)])

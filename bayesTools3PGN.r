@@ -77,11 +77,12 @@ acPerc<-function(chain){
 startYear = 2015
 endYear = 2017
 
-
 library(dplyr)
 library(lubridate)
 years <- 2010:2012
 
+
+##################needs putting into a neater function################
 if(Sys.info()[1]=="Windows"){
   clm.df.full<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\clm_df_full.csv")
   clm.df.daily<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\weather_day.csv")
@@ -115,7 +116,6 @@ weeklyRfall$MonthIrrig<-0
 
 #Split into weekly data
 clm.df.fullX<-NULL
-weekCount<-1
 clm_df<-clm.df.full
 for(i in c(1:nrow(clm.df.full))){
   reps<-ifelse(clm.df.full$Month[i]!=12,clm.df.full[i+1,"week"]-clm.df.full[i,"week"],4)
@@ -127,10 +127,7 @@ for(i in c(1:nrow(clm.df.full))){
 clm.df.fullX$week<-c(1:51)
 
 weeklyRfall<-weeklyRfall[,c(names(clm.df.fullX[,c(1:9)]))]
-
-
-#update date values
-#clm.df.fullX$Date<-as.Date(paste0(clm.df.fullX$Year,"-",clm.df.fullX$week,"-1"),'%Y-%U-%u')
+################################################################################
 
 
 ###############################################################

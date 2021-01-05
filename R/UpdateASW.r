@@ -37,7 +37,7 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     Etransp <- (e20 * netRad + rhoAir * lambda * VPDconv * VPD * 
         BLcond)/(1 + e20 + BLcond/CanCond)
     CanTransp <- Etransp/lambda * h
-    #less accurate but easier to have flexible time-steps, could include set useable time-steps and use if statements?
+    #less accurate but easier to have flexible time-steps?
     Transp <- CanTransp*365/parms[["timeStp"]] #general.info$daysinmonth[month] * CanTransp
     EvapTransp <- min(Transp + RainIntcptn, ASWrain)
     
@@ -53,8 +53,8 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     if (parms[["waterBalanceSubMods"]] == T) {
       
       #derive theta values, rooting zone can't be larger than non-rooting zone
-      theta_wp= parms[["theta_wp"]]*min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["V_nr"]])*1000
-      theta_fc= parms[["theta_fc"]]*min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["V_nr"]])*1000
+      theta_wp= parms[["theta_wp"]]*min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]])*1000
+      theta_fc= parms[["theta_fc"]]*min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]])*1000
       MaxASW <- theta_fc-theta_wp
 
       
@@ -80,14 +80,8 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       #Update value for non-rooting zone SWC - assuming rainfall, evaporation and evapotranspiration occurs in the rooting zone
       state[["sigma_nr0"]] <-soilWC_NRZ(parms, weather, state)
       
-      print("-")
-      print(paste0("rz = ", state[["ASW"]]))
-      print(paste0("nrz = ", state[["sigma_nr0"]]))
-      
       #Update available soil water -CHECK IF MIN OF 0 NEEDED
       state[["ASW"]] <- max(sigma_rz + Rain + MonthIrrig - EvapTransp - excessSW - Evaporation, 0)
-      print(paste0("rz2 = ", state[["ASW"]]))
-      print("-")
       
     } else
     {

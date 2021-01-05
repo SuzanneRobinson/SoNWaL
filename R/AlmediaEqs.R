@@ -49,7 +49,7 @@ soilWC<-function(parms,weather,state){
   K_s = parms[["K_s"]]
   
   #rooting depth / volume - Almedia describes this as depth, but sigma_zR could also be used to derive volume from root biomass?
-  z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),V_nr) # can't go deeper than non-rooting zone
+  z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone
   
   V_rz = z_r # not sure if this is equivalent, or whether there needs to be a conversion from depth to volume?
   #Shared area, area is in m^2, so area around the tree?
@@ -105,7 +105,7 @@ soilWC_NRZ<-function(parms,weather,state){
   #Soil conductivity - see Landsberg book for more details on this
   K_s = parms[["K_s"]]
   #rooting depth / volume - Almedia describes this as depth, but sigma_zR could also be used to derive volume from root biomass?
-  z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),V_nr) # can't go deeper than non-rooting zone
+  z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone
   V_rz = z_r # not sure if this is equivalent, or whether there needs to be a conversion from depth to volume?
   #Shared area
   A = 5

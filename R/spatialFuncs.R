@@ -65,11 +65,11 @@ hadUKRast <- lapply(hadUKRast, function(x) {crop(x, extent(0.5e+05, 4.5e+05, 6e+
 
 #layer rasters into single raster
 
-hadUKRast<-brick(hadUKRast)
+hadUKRast<-raster::brick(hadUKRast)
 
 #get climate values from raster 
 
-rasValue=as.data.frame(raster::extract(hadUKRast))
+rasValue=as.data.frame(raster::extract(hadUKRast,extent(0.5e+05, 4.5e+05, 6e+05, 1000000),cellnumbers=F)) 
 #Transpose data before putting into table
 rasValue<-rasValue %>% purrr::transpose()
 #Convert transposed data for each cell into a dataframe
@@ -166,6 +166,7 @@ FR3PG_spat_run <- function(site, clm,param.draw){
     }
   
   #select stem and branch biomass or other outputs, take mean and 95% credible intervals
+    #value to use? Wsbr or GPP etc?
   site_out <- tryCatch(
     { param.draw %>%
     dplyr::mutate( sim = map(pars, FR3pgRun)) %>%
