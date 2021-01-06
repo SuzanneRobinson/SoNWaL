@@ -132,7 +132,11 @@ return(genSiteTb)
 FR3PG_spat_run <- function(site, clm,param.draw){
   library(lubridate)
 
-    if(is.na(clm[1,1])==T) return (tibble::as_tibble(data.frame(q05=NA,q95=NA,value=NA)) ) else
+    if(is.na(clm[1,1])==T) return (tibble::as_tibble(data.frame(Wsbr_q05=NA,Wsbr_q95=NA,Wsbr_value=NA,
+                                                                GPP_q05=NA,GPP_q95=NA,GPP_value=NA,
+                                                                NPP_q05=NA,NPP_q95=NA,NPP_value=NA,
+                                                                NEE_q05=NA,NEE_q95=NA,NEE_value=NA,
+                                                                Reco_q05=NA,Reco_q95=NA,Reco_value=NA)) ) else
     
     
     FR3pgRun<-function(params){
@@ -173,12 +177,34 @@ FR3PG_spat_run <- function(site, clm,param.draw){
     dplyr::select(mcmc_id, sim) %>%
     tidyr::unnest_legacy() %>%
     dplyr::summarise(
-      q05 = quantile(Wsbr, 0.05, na.rm = T),
-      q95 = quantile(Wsbr, 0.95, na.rm = T),
-      value = quantile(Wsbr, 0.5, na.rm = T))
+      Wsbr_q05 = quantile(Wsbr, 0.05, na.rm = T),
+      Wsbr_q95 = quantile(Wsbr, 0.95, na.rm = T),
+      Wsbr_value = quantile(Wsbr, 0.5, na.rm = T),
+      
+      GPP_q05 = quantile(GPP, 0.05, na.rm = T),
+      GPP_q95 = quantile(GPP, 0.95, na.rm = T),
+      GPP_value = quantile(GPP, 0.5, na.rm = T),
+      
+      NPP_q05 = quantile(NPP, 0.05, na.rm = T),
+      NPP_q95 = quantile(NPP, 0.95, na.rm = T),
+      NPP_value = quantile(NPP, 0.5, na.rm = T),
+      
+      NEE_q05 = quantile(NEE, 0.05, na.rm = T),
+      NEE_q95 = quantile(NEE, 0.95, na.rm = T),
+      NEE_value = quantile(NEE, 0.5, na.rm = T),
+
+      Reco_q05 = quantile(Reco, 0.05, na.rm = T),
+      Reco_q95 = quantile(Reco, 0.95, na.rm = T),
+      Reco_value = quantile(Reco, 0.5, na.rm = T)
+      
+      )
     },
     error = function(cond){
-      site_out <- tibble::as_tibble(data.frame(q05=NA,q95=NA,value=NA))
+      site_out <- tibble::as_tibble(data.frame(Wsbr_q05=NA,Wsbr_q95=NA,Wsbr_value=NA,
+                                               GPP_q05=NA,GPP_q95=NA,GPP_value=NA,
+                                               NPP_q05=NA,NPP_q95=NA,NPP_value=NA,
+                                               NEE_q05=NA,NEE_q95=NA,NEE_value=NA,
+                                               Reco_q05=NA,Reco_q95=NA,Reco_value=NA))
     })
     
     
