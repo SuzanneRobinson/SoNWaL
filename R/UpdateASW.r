@@ -52,14 +52,11 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     ####Run using water balance sub-models from Almedia et al.####
     if (parms[["waterBalanceSubMods"]] == T) {
       
-      #derive theta values, rooting zone can't be larger than non-rooting zone
-      theta_wp= parms[["theta_wp"]]*min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]])*1000
-      theta_fc= parms[["theta_fc"]]*min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]])*1000
-      MaxASW <- theta_fc-theta_wp
-
+      #derive values for wilting point and fc in mm (parameter input is m^3 m^-3)
+      theta_fc= parms[["theta_fc"]]*1000
       
       #Run soil water content function to get root zone SWC
-      sigma_rz <- soilWC(parms, weather, state)
+      SWC_rz <- soilWC(parms, weather, state)
       
       #Calculate accumulated soil evaporation for the month using soilEvap function
       E_S <- soilEvap(parms, weather, state, interRad)
@@ -71,17 +68,13 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       state[["E_S"]] = ifelse(E_S <= 0, 0,  E_S)
       
       #Calculate any excess soil water use max ASW of field cap?
-      excessSW <- max(sigma_rz + Rain + MonthIrrig - EvapTransp - theta_fc - Evaporation, 0)
-      
-      #Update here, to have soil water go from rooting zone to non-rooting zone, use K_s and rooting zone depth?
-      #state[["sigma_nr0"]]<- max(state[["sigma_nr0"]] + Rain + MonthIrrig - excessSW - Evaporation, 0)
-      state[["MaxASW_state"]] <-MaxASW
+      excessSW <- max(SWC_rz + Rain + MonthIrrig - EvapTransp - theta_fc - Evaporation, 0)
 
       #Update value for non-rooting zone SWC - assuming rainfall, evaporation and evapotranspiration occurs in the rooting zone
-      state[["sigma_nr0"]] <-soilWC_NRZ(parms, weather, state)
+      state[["SWC_nr0"]] <-soilWC_NRZ(parms, weather, state)
       
       #Update available soil water -CHECK IF MIN OF 0 NEEDED
-      state[["ASW"]] <- max(sigma_rz + Rain + MonthIrrig - EvapTransp - excessSW - Evaporation, 0)
+      state[["ASW"]] <- max(SWC_rz + Rain + MonthIrrig - EvapTransp - excessSW - Evaporation, 0)
       
     } else
     {

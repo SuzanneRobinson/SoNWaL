@@ -5,8 +5,7 @@ library(tidyverse)
 library(dplyr)
 library(lubridate)
 
-## Switch off annoying warnings
-options(warn=-1)
+fName=paste0("outx_",stringr::str_sub(Sys.time(), 0, -10),stringr::str_sub(Sys.time(), 15, -4),stringr::str_sub(Sys.time(), 18, -1),".RDS")
 
 ## Custom function to sample the modelled data frame
 sampleOutput<-function(df,sY,eY){
@@ -232,7 +231,7 @@ sitka<-list(weather=clm.df.full,
             K_s=1, #Soil conductivity
             V_nr=10, #Volume of non-rooting zone
             sigma_zR =0.2, #area/depth explored by 1kg of root biomass
-            sigma_nr0=250, #SWC of non-rooting zone at time 0
+            SWC_nr0=250, #SWC of non-rooting zone at time 0
             E_S1 =100, #Cumulitive evap threshold
             E_S2 =0.1, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
             MaxASW_state=50,
@@ -240,7 +239,7 @@ sitka<-list(weather=clm.df.full,
             
 )
 
-nm<-c("theta_wp","theta_fc","K_s","V_nr","sigma_zR","E_S1","E_S2","sigma_nr0","pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR","mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond","Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
+nm<-c("theta_wp","theta_fc","K_s","V_nr","sigma_zR","E_S1","E_S2","SWC_nr0","pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR","mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond","Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
 
 f.decrease <- c(0.1,0.2,0.001,1,0.2,1,0.001,100,0.588503613257886,0.752929538228874,0.956131627577964,0.050456035523466,0.384021499609213,0.250229439327847,0.57408236899746,0.909666760291794,0.853276910139941,0.974961101217424,1,0.636422367959785,0.732916669791679,0.443930919848964,0.741758519667562,0.816463641720414,0.221779786451702,0.303779963365252,1,0.00141038795075,0.730688961031379,0.899808741360758,0.024817372196732,0.99632339563598,0.996373181003088,0.999649942946159,0.996388219783102,0.998203040988276,0.998245174258832,0.97983098579238,0.913069476259938,0.961283723717706,0.950056672692535,0.893875965852296,0.991080780202615,0.990457295759556)
 f.increase <- c(0.16,0.4,10,5,0.9,25,0.2,1000,0.573973679288588,0.235352308855631,1.86098081013281,0.374136113325978,0.231957000781575,0.56202200140032,3.45793787115991,1.30349761255926,0.600615525746093,0.251944939128821,0.768680943537667,0.817888160201076,0.335416651041606,0.668207240453109,0.549448881994627,0.835363582795864,0.03762695139773,0.218385064110809,0.917925202458998,2.5949226033773,1.15448831174897,0.001912586392424,5.82627839462287,6.35320872803933,2.62681899691161,2.50057053840858,2.61178021689853,0.796959011723578,0.754825741168422,1.01690142076198,0.738610474801243,0.935813814114711,0.498299819223935,1.12248068295408,0.783843959477034,0.90854084808886)
@@ -332,10 +331,10 @@ iters<-50000
 settings = list(
   iterations = iters,
   ## Z = NULL,
-  startValue = 6, #t(mP),#NULL, ## Use 5 chains instead of 3
+  startValue = 4,# internal chain number - dont use these chains for convergence testing 
   nrChains = 1,
   pSnooker = 0.5,
-  burnin = iters/100*10,
+  burnin = round(iters/100*10), # 10 percent of iterations
   ## thin = 1,
   ## f = 2.38,
   ## eps = 0,
@@ -359,6 +358,6 @@ settings = list(
 
 out <- runMCMC(bayesianSetup = BS3PGDN, sampler = "DEzs", settings = settings)
 
-saveRDS(out,file=paste0("outx_",stringr::str_sub(Sys.time(), 0, -10),".RDS"))
+saveRDS(out,file=fName)
 
 

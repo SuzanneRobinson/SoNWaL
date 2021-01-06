@@ -53,13 +53,16 @@ UpdateSoil <-
       
       ##change moistratio and soil water growth mod if using updated sub-models
       if(parms[["waterBalanceSubMods"]]==T){
-        theta_wp= parms[["theta_wp"]]*min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]])*1000
-        MaxASW<-state[["MaxASW_state"]]
+        theta_wp= parms[["theta_wp"]]*1000
+        theta_fc= parms[["theta_fc"]]*1000
+        MaxASW <- theta_fc-theta_wp
+        
         MoistRatio<- (ASW-theta_wp)/MaxASW
         #modify MoistRatio if numerators are above or below certain values (see Landsberg and waring)
         MoistRatio<-ifelse(ASW-theta_wp>=0,MoistRatio,0)
         MoistRatio<-ifelse(ASW-theta_wp>MaxASW,1,MoistRatio)
         fSW<-SWGmod(SWconst,SWpower,MoistRatio)
+        
       }else
       {
         MaxASW <- site[["MaxASW"]]

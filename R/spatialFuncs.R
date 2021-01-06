@@ -332,7 +332,7 @@ getParms<-function(){
               K_s=0.01, #Soil conductivity
               V_nr=3, #Volume of non-rooting zone
               sigma_zR =0.7, #area/depth explored by 1kg of root biomass
-              sigma_nr0=100, #SWC of non-rooting zone at time 0
+              SWC_nr0=100, #SWC of non-rooting zone at time 0
               E_S1 =10, #Cumulitive evap threshold
               E_S2 =.01, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
               MaxASW_state=50,

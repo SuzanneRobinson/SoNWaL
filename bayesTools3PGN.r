@@ -247,7 +247,7 @@ sitka<-list(weather=clm.df.full,
             K_s=1, #Soil conductivity
             V_nr=10, #Volume of non-rooting zone
             sigma_zR =0.2, #area/depth explored by 1kg of root biomass
-            sigma_nr0=250, #SWC of non-rooting zone at time 0
+            SWC_nr0=250, #SWC of non-rooting zone at time 0
             E_S1 =100, #Cumulitive evap threshold
             E_S2 =0.1, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
             MaxASW_state=50,
@@ -256,7 +256,7 @@ sitka<-list(weather=clm.df.full,
 )
 
 
-nm<-c("theta_wp","theta_fc","K_s","V_nr","sigma_zR","E_S1","E_S2","sigma_nr0","pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR","mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond","Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
+nm<-c("theta_wp","theta_fc","K_s","V_nr","sigma_zR","E_S1","E_S2","SWC_nr0","pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR","mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond","Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
 
 ## Load the parameter set from the fifth calibration run to use as starting values
 #load("fifth_run_3pgn_all_data/par.Rdata")
