@@ -52,11 +52,21 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     ####Run using water balance sub-models from Almedia et al.####
     if (parms[["waterBalanceSubMods"]] == T) {
       
-      #derive values for wilting point and fc in mm (parameter input is m^3 m^-3)
+      #derive values for wp, fc and fsat in mm (parameter input is volumetric m^3 m^-3)
+      theta_wp= parms[["theta_wp"]]*1000
       theta_fc= parms[["theta_fc"]]*1000
+      theta_sat= parms[["theta_sat"]]*1000
       
-      #Run soil water content function to get root zone SWC
-      SWC_rz <- soilWC(parms, weather, state)
+      #draining of non-root zone since prev time-step
+      nrz_out_drain<-drainage_nrz_out(parms, weather, state)
+      
+      state[["SWC_nr0"]] <- state[["SWC_nr0"]]-max(nrz_out_drain,0)
+      
+      #root depth in mm assumed to be proportional to root biomass (see almedia and sands)
+      z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]])
+      
+      #Run soil water content function to get root zone SWC - comes out as volumetric, as root depth is accounted for in function
+      SWC_rz0 <- soilWC(parms, weather, state)
       
       #Calculate accumulated soil evaporation for the month using soilEvap function
       E_S <- soilEvap(parms, weather, state, interRad)
@@ -67,15 +77,21 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       Evaporation = ifelse(E_S <= 0, 0, E_S)
       state[["E_S"]] = ifelse(E_S <= 0, 0,  E_S)
       
-      #Calculate any excess soil water use max ASW of field cap?
-      excessSW <- max(SWC_rz + Rain + MonthIrrig - EvapTransp - theta_fc - Evaporation, 0)
+      #Calculate drainage from root zone to non-root zone where SWC of root zone exceeds field capacity (eq A.11)
+      rz_nrz_drain <- max(drainage_rz_nrz(parms, weather, state),0)
+      excessSW<-rz_nrz_drain
+  
+      #Update value for non-rooting zone SWC - assuming max value is theta_sat (above this is run-off) and drainage of excess water into the non-root zone from root zone
+      state[["SWC_nr0"]] <- state[["SWC_nr0"]]+rz_nrz_drain
 
-      #Update value for non-rooting zone SWC - assuming rainfall, evaporation and evapotranspiration occurs in the rooting zone
-      state[["SWC_nr0"]] <-soilWC_NRZ(parms, weather, state)
+      #Update root zone SWC with the addition of rainfall, irrigation, minus evap and drainage into non-root zone
+      state[["SWC_rz0"]] <- max(SWC_rz0 + Rain + MonthIrrig - EvapTransp - rz_nrz_drain - Evaporation,0)
       
-      #Update available soil water -CHECK IF MIN OF 0 NEEDED
-      state[["ASW"]] <- max(SWC_rz + Rain + MonthIrrig - EvapTransp - excessSW - Evaporation, 0)
+      #ASW calculated as SWC in the root zone divided by depth (m) minus volumetric SWC (mm) of soil profile at wilting point
+      # See Almedia and Sands eq A.2 - This value can only go as high as max ASW? - all the rest is run-off
+      state[["ASW"]] <- min(theta_fc-theta_wp,max((state[["SWC_rz0"]]/z_r)-theta_wp,0))
       
+
     } else
     {
       MaxASW<- site[["MaxASW"]]

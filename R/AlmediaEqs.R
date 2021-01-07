@@ -43,7 +43,7 @@ soilWC<-function(parms,weather,state){
   V_nr = parms[["V_nr"]]
   
   #soil water in rooting zone at t0 (start of time-step)
-  SWC_rz0 = state[["ASW"]]
+  SWC_rz0 = state[["SWC_rz0"]]
   
   #Soil conductivity - see Landsberg book for more details on this 
   K_s = parms[["K_s"]]
@@ -72,57 +72,89 @@ soilWC<-function(parms,weather,state){
 
 
 
-#'@description Calculates soil water content for non-rooting zones
+#'@description Calculates drainage from rooting zone to non-rooting zone
 #'@param parms global 3PG parameter values
 #'@param weather global weather values
 #'@param state state values
 
 #Internal function variable descriptions
 #'@param t length of time-step
-#'@param V_nr volume of non-rooting zone
 #'@param V_rz volume of rooting zone
-#'@param A shared area
 #'@param z_r depth (or volume?) of rooting zone
 #'@param sigma_zR area/depth explored by 1kg of root biomass
-#'@param SWC_nr0 SWC of non-rooting zone at time 0
 #'@param SWC_rz0 SWC of rooting zone at time 0
 
-#'@return soilWC_NRZ SWC of non-rooting zone
+#'@return amount of drainage
 
-soilWC_NRZ<-function(parms,weather,state){
+drainage_rz_nrz<-function(parms,weather,state){
   #size of time-step. This is for monthly time steps
   if (parms[["timeStp"]] ==12) t =   days_in_month(weather[["Month"]]) 
   if (parms[["timeStp"]] ==52) t =   7
   if (parms[["timeStp"]] ==365) t =  1
   if (is.numeric(t)==F) print ("unsupported time step used")
   
-  #Volume of initial non-rooting zone
-  V_nr = parms[["V_nr"]]
-  #soil water in rooting zone at t0, equiv ASW? depends if rain is assumed to occur at begining or end of month,
+
+  #soil water in rooting zone at t0 depends if rain is assumed to occur at begining or end of month,
   #need to be careful so as not to mess up biomass allocation function which comes in after in the same time step (see RunModel.r)
-  SWC_rz0 = state[["ASW"]]
-  #Soil conductivity - see Landsberg book for more details on this
-  K_s = parms[["K_s"]]
+  SWC_rz0 = state[["SWC_rz0"]]
+
+  theta_fc= parms[["theta_fc"]]*1000
+  
+  K_drain<-parms[["K_drain"]]
+  
   #rooting depth / volume - Almedia describes this as depth, but sigma_zR could also be used to derive volume from root biomass?
   z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone
-  V_rz = z_r # not sure if this is equivalent, or whether there needs to be a conversion from depth to volume?
-  #Shared area
-  A = parms[["shared_area"]]
+  V_rz = z_r # not sure if this is equivalent, in paper Almedia and Sands assumed to be equiv.
+  
+  ##calculate drainage
+  Qd<-(SWC_rz0-V_rz*theta_fc)*(1-exp(-K_drain*t))
+
+  return(Qd)
+}
+
+
+#'@description Calculates drainage from non-rooting zone out of the system
+#'@param parms global 3PG parameter values
+#'@param weather global weather values
+#'@param state state values
+
+#Internal function variable descriptions
+#'@param t length of time-step
+#'@param V_rz volume of rooting zone
+#'@param z_r depth (or volume?) of rooting zone
+#'@param sigma_zR area/depth explored by 1kg of root biomass
+#'@param SWC_nr0 SWC of non-rooting zone at time 0
+
+#'@return amount of drainage
+
+drainage_nrz_out<-function(parms,weather,state){
+  #size of time-step. This is for monthly time steps
+  if (parms[["timeStp"]] ==12) t =   days_in_month(weather[["Month"]]) 
+  if (parms[["timeStp"]] ==52) t =   7
+  if (parms[["timeStp"]] ==365) t =  1
+  if (is.numeric(t)==F) print ("unsupported time step used")
+  
+
+
+  #Volume of initial non-rooting zone
+  V_nr = parms[["V_nr"]]
+  #current SWC of non-rooting zone
+  SWC_nr0 = state[["SWC_nr0"]]
+  
+  theta_fc= parms[["theta_fc"]]*1000
+  
+  K_drain<-parms[["K_drain"]]
+  
+  #rooting depth / volume - Almedia describes this as depth, but sigma_zR could also be used to derive volume from root biomass?
+  z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone
+  V_rz = z_r # not sure if this is equivalent, in paper Almedia and Sands assumed to be equiv.
+  
   #Non-root zone decreases as root zone increases, V_nr is max non-root zone volume
   V_nrx<-max(V_nr-V_rz,0)
   
-  ##calculate field capacity of non-rooting zone
-  theta_fc_nr= parms[["theta_fc"]]*1000
-
-  #Re-arrange equation A.14 in Almedia and Sands to get value for non-rooting zone
-  t_s0 = (V_rz * V_nrx) / (K_s * A * (V_rz + V_nrx))
-  SWC_nr0 =max(((state[["ASW"]]*V_rz)+(state[["ASW"]]*V_nrx)-(exp(-t/t_s0)*SWC_rz0*V_nrx)-(SWC_rz0*V_rz))/((1-exp(-t/t_s0))*V_rz),0)
-
-  #SWC of non-root zone can't be above field capacity of non-root zone?
-  SWC_nr0=min(SWC_nr0,theta_fc_nr)
-  
-  
-  return(SWC_nr0)
+  ##calculate drainage
+  Qd<-(SWC_nr0-V_nrx*theta_fc)*(1-exp(-K_drain*t))
+  return(Qd)
 }
 
 #      ____     _ __  ____                             __  _          # 

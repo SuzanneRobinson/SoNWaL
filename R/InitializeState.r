@@ -15,7 +15,7 @@ function (stand, site, parms, general.info, weather)
                      "Wdl", "Wds", "Wdr","YrC","YlC","OC","YrN","YlN","ON","kl",
                      "kr","ko","hl","hr","hNl","hNr","YrCflx","YlCflx","OCflx",
                      "YrNflx","YlNflx","ONflx","Navflx","totC","totN","Un","Nav",
-                     "Nleach","SWC_nr0","MaxASW_state","E_S")
+                     "Nleach","SWC_nr0","MaxASW_state","E_S","SWC_rz0")
     .length.state.vec <- length(names.state)
     state.vector <- rep(NA, .length.state.vec)
     names(state.vector) <- names.state
@@ -23,6 +23,7 @@ function (stand, site, parms, general.info, weather)
     state.init[names(stand)] <- stand
     state.init["ASW"] <- site[["ASW"]]
     state.init["SWC_nr0"] <- site[["SWC_nr0"]]
+    state.init["SWC_rz0"] <- site[["SWC_rz0"]]
     state.init["MaxASW_state"] <- site[["MaxASW"]]
     state.init["E_S"] <- site[["E_S"]]
     

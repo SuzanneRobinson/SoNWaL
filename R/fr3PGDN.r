@@ -18,7 +18,8 @@ function (weather, presc, t = 0, N = 2500, Wl = 0.01, WlDormant = 0, Wr = 0.01, 
               qil = 49.08, qh = 23.63, qbc = 2.21, el = 0.25, er = 0.56, Nf = 0.0684, Navm = 0.01, Navx = 20,
               leaf.grow = 0, leaf.fall = 0, Wl.s = 0.01, Wsbr.s = 0.1, Wr.s = 0.01, pWl.sprouts = 0.5,
               pWsbr.sprouts = 0.9, cod.pred = "3PG", cod.clim = "Average" ,K_s=0.1,V_nr=5,sigma_zR =1,SWC_nr0=800,E_S=100,
-              E_S1 =50,E_S2 =0.01,waterBalanceSubMods=T,theta_wp=0.1,theta_fc=0.3,MaxASW_state=50,timeStp=12,maxRootDepth=2,shared_area=5)
+              E_S1 =50,E_S2 =0.01,waterBalanceSubMods=T,theta_wp=0.1,theta_fc=0.3,MaxASW_state=50,timeStp=12,maxRootDepth=2,shared_area=5,
+          K_drain=0.1,SWC_rz0,theta_sat=0.35)
         ## added WlDormant, leafgrow and leaffall, leafgrow and leaffall - Tom Locateli
         ## pfsPower = -0.522878745280338, pfsConst = 0.43104582317421,
 {
@@ -33,7 +34,7 @@ function (weather, presc, t = 0, N = 2500, Wl = 0.01, WlDormant = 0, Wr = 0.01, 
                tRho, Qa, Qb, gDM_mol, molPAR_MJ, CoeffCond, fCalpha700, fCg700, fCalphax, fCg0,
                klmax, krmax, komax, hc, qir, qil, qh, qbc, el, er, Nf, Navm, Navx,
                MinCond, Wl.s, Wsbr.s, Wr.s, pWl.sprouts, pWsbr.sprouts, leaf.grow, leaf.fall,K_s,V_nr,sigma_zR, 
-               E_S1,E_S2,waterBalanceSubMods,theta_wp,theta_fc,timeStp,maxRootDepth,shared_area)
+               E_S1,E_S2,waterBalanceSubMods,theta_wp,theta_fc,timeStp,maxRootDepth,shared_area,K_drain,theta_sat)
 
     names(parms)<-c("pFS2","pFS20","aS","nS","pRx","pRn",
                     "Tmin","Topt","Tmax","kF",
@@ -49,7 +50,7 @@ function (weather, presc, t = 0, N = 2500, Wl = 0.01, WlDormant = 0, Wr = 0.01, 
                     "el","er","Nf","Navm","Navx",
                     "MinCond","Wl.s","Wsbr.s","Wr.s","pWl.sprouts",
                     "pWsbr.sprouts","leaf.grow","leaf.fall","K_s","V_nr","sigma_zR",
-                    "E_S1","E_S2","waterBalanceSubMods","theta_wp","theta_fc","timeStp","maxRootDepth","shared_area")
+                    "E_S1","E_S2","waterBalanceSubMods","theta_wp","theta_fc","timeStp","maxRootDepth","shared_area","K_drain","theta_sat")
 
     vars.ini <- c(t, N, Wl, WlDormant, Wr, Wsbr, Wlitt, YrC, YlC, OC, YrN, YlN, ON, Nf, Nav,
                   rotation, cycle, rm.sprouts, nyears, initial.month)
@@ -62,7 +63,7 @@ function (weather, presc, t = 0, N = 2500, Wl = 0.01, WlDormant = 0, Wr = 0.01, 
                    CO2,SWC_nr0,E_S,MaxASW_state,E_S)
 
     names(site.info) <- c("latitude", "soilclass", "ASW", 
-                          "MaxASW", "MinASW", "CO2","SWC_nr0","E_S","MaxASW_state")
+                          "MaxASW", "MinASW", "CO2","SWC_nr0","E_S","MaxASW_state","SWC_rz0")
 
     parms.general <- list(daysinmonth = c(Jan = 31, Feb = 28, 
                                           Mar = 31, Apr = 30,
