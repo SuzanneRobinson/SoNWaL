@@ -135,19 +135,19 @@ sitka<-list(weather=clm.df.full,
             cod.clim = "Month",
             ## ~~ Almedia et al. Parameters ~~ ##
             waterBalanceSubMods =T, #Whether to run model using updated water balance submodels
-            theta_wp = 0.11, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
-            theta_fc =0.26,#Field capacity
-            theta_sat= 0.45, #field saturation point
+            theta_wp = 0.1, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
+            theta_fc =0.4,#Field capacity
+            theta_sat= 1, #field saturation point
             K_s=0.1, #Soil conductivity
             shared_area=5, #shared area of rooting and non-rooting zone
-            V_nr=3, #Volume of non-rooting zone
+            V_nr=4, #Volume of non-rooting zone
             maxRootDepth=2,
-            sigma_zR =0.7, #area/depth explored by 1kg of root biomass
+            sigma_zR =0.5, #area/depth explored by 1kg of root biomass
             SWC_nr0=10, #SWC of non-rooting zone at time 0
             E_S1 =10, #Cumulitive evap threshold - sensitive to length of time-step, e.g. monthly time-step means wetting event only occurs at end of month
-            E_S2 =.01, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
+            E_S2 =.1, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
             MaxASW_state=50,
-            K_drain=0.1,
+            K_drain=100,
             timeStp = 12 # time step, 52 for weekly, 12 for monthly and 365 for daily
             )
 }
@@ -164,7 +164,7 @@ sitka<-list(weather=clm.df.full,
 ## Plot the timeseries of model output vs data
 output<-do.call(fr3PGDN,sitka)
 results<-plotResults(output,ShortTS=F)
-results[1]
+results[3]
 
 
 ## Calculate yield class from height
@@ -185,7 +185,7 @@ results[1]
 #output<-do.call(fr3PGDN,sitka)
 output<-do.call(fr3PGDN,sitka)
 plot(output$SWC_nr0[c(1:2393)]~output$t[c(1:2393)],col="white")
-lines(output$ASW[c(1:2393)]~output$t[c(1:2393)],col="red")
+lines(output$SWC_rz0[c(1:2393)]~output$t[c(1:2393)],col="red")
 lines(output$SWC_nr0[c(1:2393)]~output$t[c(1:2393)],col="blue")
 
   plot(.GlobalEnv$interRad[c(1:2347)]~output$t[c(1:2347)],col="white")
