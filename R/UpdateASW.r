@@ -63,7 +63,7 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]])
       
       #Run soil water content function to get root zone SWC
-      SWC_rz0 <- soilWC(parms, weather, state)
+      SWC_rz <- soilWC(parms, weather, state)
       
       #Calculate accumulated soil evaporation for the month using soilEvap function
       E_S <- soilEvap(parms, weather, state, interRad)
@@ -78,17 +78,19 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       nrz_out_drain <-max(drainage_nrz_out(parms, weather, state),0)
       
       #volume of water moving from non-root zone to root zone is diff between current state of root zone SWC and updated
-      rz_nrz_recharge<-state[["SWC_rz0"]]-SWC_rz0
+      rz_nrz_recharge<-state[["SWC_rz"]]-SWC_rz
 
+      print(rz_nrz_recharge)
+      
       #Update value for non-rooting zone SWC - assuming max value is theta_sat (above this is run-off) and drainage of excess water into the non-root zone from root zone
-      state[["SWC_nr0"]] <- min(theta_sat,max(state[["SWC_nr0"]]+rz_nrz_drain-nrz_out_drain+rz_nrz_recharge,0))
+      state[["SWC_nr"]] <- min(theta_sat,max(state[["SWC_nr"]]+rz_nrz_drain-nrz_out_drain+rz_nrz_recharge,0))
      
       #Update root zone SWC with the addition of rainfall, irrigation, minus evap and drainage into non-root zone
-      state[["SWC_rz0"]] <- min(theta_sat,max(SWC_rz0 + Rain + MonthIrrig - EvapTransp - rz_nrz_drain - E_S,0))
+      state[["SWC_rz"]] <- min(theta_sat,max(SWC_rz + Rain + MonthIrrig - EvapTransp - rz_nrz_drain - E_S,0))
       
       #ASW calculated as SWC in the root zone divided by depth (m) minus volumetric SWC (mm) of soil profile at wilting point
       # See Almedia and Sands eq A.2 - This value can only go as high as max ASW? - all the rest is run-off
-      state[["ASW"]] <- min(theta_fc-theta_wp,max((SWC_rz0/z_r)-theta_wp,0))
+      state[["ASW"]] <- min(theta_fc-theta_wp,max((SWC_rz/z_r)-theta_wp,0))
       
       
 
@@ -96,6 +98,7 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     {
       MaxASW<- site[["MaxASW"]]
       excessSW <- max(ASWrain - EvapTransp - MaxASW, 0)
+      rz_nrz_drain<-excessSW
       state[["ASW"]] <-  max(ASWrain - EvapTransp - excessSW, 0)
     }
     

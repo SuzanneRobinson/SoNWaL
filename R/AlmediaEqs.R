@@ -43,7 +43,7 @@ soilWC<-function(parms,weather,state){
   V_nr = parms[["V_nr"]]
   
   #soil water in rooting zone at t0 (start of time-step)
-  SWC_rz0 = state[["SWC_rz0"]]
+  SWC_rz0 = state[["SWC_rz"]]
   
   #Soil conductivity - see Landsberg book for more details on this 
   K_s = parms[["K_s"]]
@@ -61,7 +61,7 @@ soilWC<-function(parms,weather,state){
   t_s0 = (V_rz * V_nrx) / (K_s * A * (V_rz + V_nrx))
   
   #Current state of soil water content in non-rooting zone (at time-0 for month)
-  SWC_nr0 = state[["SWC_nr0"]]
+  SWC_nr0 = state[["SWC_nr"]]
   
   #State of soil water content in rooting zone at the end of the time step
   SWC_rz = (((SWC_rz0 * V_nrx - SWC_nr0 * V_rz) / (V_rz + V_nrx)) * exp(-t /t_s0)) +
@@ -96,7 +96,7 @@ drainage_rz_nrz<-function(parms,weather,state){
 
   #soil water in rooting zone at t0 depends if rain is assumed to occur at begining or end of month,
   #need to be careful so as not to mess up biomass allocation function which comes in after in the same time step (see RunModel.r)
-  SWC_rz0 = state[["SWC_rz0"]]
+  SWC_rz0 = state[["SWC_rz"]]
 
   theta_fc= parms[["theta_fc"]]*1000
   
@@ -139,7 +139,7 @@ drainage_nrz_out<-function(parms,weather,state){
   #Volume of initial non-rooting zone
   V_nr = parms[["V_nr"]]
   #current SWC of non-rooting zone
-  SWC_nr0 = state[["SWC_nr0"]]
+  SWC_nr0 = state[["SWC_nr"]]
   
   theta_fc= parms[["theta_fc"]]*1000
   
