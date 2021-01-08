@@ -177,7 +177,7 @@ drainage_nrz_out<-function(parms,weather,state){
 #Calc using penman monteith eq. g_c is infinite - could be better modified by soil dryness etc.
 
 
-soilEvap<-function(parms,weather,state,interRad){
+soilEvap<-function(parms,weather,state,interRad,h){
   
   e20 <- parms[["e20"]]
   rhoAir <- parms[["rhoAir"]]
@@ -196,19 +196,29 @@ soilEvap<-function(parms,weather,state,interRad){
   if (parms[["timeStp"]] ==52) t =   7
   if (parms[["timeStp"]] ==365) t =  1
   if (is.numeric(t)==F) print ("unsupported time step used")
+  s<-145
+  gb_s<-0.01#soil boundary layer conductance
+  g_C<-Inf
+  P_a = 1.204
+  C_pa = 1004
+  gamma= 66.1
+  s=145
+  D=VPD
+  L_v= 2453#Volumetric latent heat of vaporization. Energy required per water volume vaporized
+
+  #e0<-h*(g_C*(s*interRad+gb_s*P_a*C_pa*D))/(lambda*((gamma+s)*g_C+gamma*g_C))
   
-  
-  #Potential wet surface evaporation rate - using Penman Monteith eq. mm per day loss
-  e0 <- max(((e20 * interRad + rhoAir * lambda * VPDconv * VPD *
-                  soilCond) / (1 + e20 + soilCond / Inf)), 1e-6) # 1e-6 to avoid division by zero...not sure it'd ever go below this though
+  #get potential evaporation rate using penman-monteith with soil specific params
+  e0<-(s*interRad+gb_s*P_a*C_pa*D)/(s+gamma*(1+gb_s/g_C)*L_v)
 
   #E_S0 is E_S at the start of the time-step
   E_S0 = max(state[["E_S"]] , 0)
   
-
+##check e0, should be rate??????
+  
+  
   #Duration of phase 1 evaporation
   t_S1 = E_S1 / e0
-  
   #Solved for t equation A.10 in Almedia, to get equivalent t for E_S0 value
   t0 = as.numeric(round(((-2 * E_S0 * E_S1) + (E_S0 ^ 2) + (2 * E_S0) +
                            (E_S1 ^ 2) - (2 * E_S1) + 1 + (2 * e0 * E_S2 * t_S1) - (E_S2 ^ 2)

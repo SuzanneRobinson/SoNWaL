@@ -66,7 +66,7 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       SWC_rz <- soilWC(parms, weather, state)
       
       #Calculate accumulated soil evaporation for the month using soilEvap function
-      E_S <- soilEvap(parms, weather, state, interRad)
+      E_S <- soilEvap(parms, weather, state, interRad,h)
       
       #evaporation Minus monthly rainfall and irrigation from cumulative E_S value
       E_S <- max(E_S + RainIntcptn - Rain - MonthIrrig,0) # rainfall needs to be added after as biomass allocation function requires months rainfall
@@ -80,8 +80,6 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       #volume of water moving from non-root zone to root zone is diff between current state of root zone SWC and updated
       rz_nrz_recharge<-state[["SWC_rz"]]-SWC_rz
 
-      print(rz_nrz_recharge)
-      
       #Update value for non-rooting zone SWC - assuming max value is theta_sat (above this is run-off) and drainage of excess water into the non-root zone from root zone
       state[["SWC_nr"]] <- min(theta_sat,max(state[["SWC_nr"]]+rz_nrz_drain-nrz_out_drain+rz_nrz_recharge,0))
      
