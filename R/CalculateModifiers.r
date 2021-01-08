@@ -42,20 +42,16 @@ function (state, weather, site, parms, general.info)
     ##change moistratio and soil water growth mod if using updated sub-models
     if(parms[["waterBalanceSubMods"]]==T){
 
-      #as theta_wp are converted to mm, you can use ASW without conversion to volumetric
+      #calc wp and fc
       theta_wp= parms[["theta_wp"]]*1000
       theta_fc= parms[["theta_fc"]]*1000
-      MaxASW <- theta_fc-theta_wp
+      MaxASW <- (theta_fc-theta_wp)
       
-  
-      #get volumetric value in mm
-
+      #calc moist ratio
       MoistRatio<- ASW/MaxASW
-     # print(paste0("SWC_nr0 ",state[["SWC_nr0"]]))
-
       #modify MoistRatio if numerators are above or below certain values (see Landsberg and waring)
-      MoistRatio<-ifelse(ASW-theta_wp>=0,MoistRatio,0)
-      MoistRatio<-ifelse(ASW-theta_wp>MaxASW,1,MoistRatio)
+      MoistRatio<-ifelse(ASW>=0,MoistRatio,0)
+      MoistRatio<-ifelse(ASW>MaxASW,1,MoistRatio)
       fSW<-SWGmod(SWconst,SWpower,MoistRatio)
     
     }else

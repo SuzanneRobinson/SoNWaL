@@ -136,15 +136,15 @@ sitka<-list(weather=clm.df.full,
             ## ~~ Almedia et al. Parameters ~~ ##
             waterBalanceSubMods =T, #Whether to run model using updated water balance submodels
             theta_wp = 0.1, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
-            theta_fc =0.29,#Field capacity
+            theta_fc =0.31,#Field capacity
             theta_sat= 1, #field saturation point
             K_s=0.1, #Soil conductivity
             shared_area=4, #shared area of rooting and non-rooting zone
             V_nr=3, #Volume of non-rooting zone
             maxRootDepth=2,
-            sigma_zR =0.3, #area/depth explored by 1kg of root biomass
+            sigma_zR =0.7, #area/depth explored by 1kg of root biomass
             SWC_nr=10, #SWC of non-rooting zone at time 0
-            E_S1 =0.3, #Cumulitive evap threshold (kg^m-2) - sensitive to length of time-step, e.g. monthly time-step means wetting event only occurs at end of month
+            E_S1 =0.1, #Cumulitive evap threshold (kg^m-2) - sensitive to length of time-step, e.g. monthly time-step means wetting event only occurs at end of month
             E_S2 =0.3, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
             MaxASW_state=50,
             K_drain=0.1,
@@ -184,8 +184,8 @@ results[1]
 ##.GlobalEnv$interRad<-0
 #output<-do.call(fr3PGDN,sitka)
 output<-do.call(fr3PGDN,sitka)
-plot(output$SWC_nr[c(1:2393)]~output$t[c(1:2393)],col="white")
-lines(output$SWC_rz[c(1:2393)]~output$t[c(1:2393)],col="red")
+plot(output$ASW[c(1:2393)]~output$t[c(1:2393)],col="white")
+lines(output$ASW[c(1:2393)]~output$t[c(1:2393)],col="red")
 lines(output$SWC_nr[c(1:2393)]~output$t[c(1:2393)],col="blue")
 
   plot(.GlobalEnv$interRad[c(1:2347)]~output$t[c(1:2347)],col="white")

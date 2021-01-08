@@ -188,14 +188,13 @@ soilEvap<-function(parms,weather,state,interRad,h){
   E_S1 = parms[["E_S1"]]
   E_S2 = parms[["E_S2"]]
 
-
-
   
   #size of time-step. This is for monthly time steps
   if (parms[["timeStp"]] ==12) t =   days_in_month(weather[["Month"]]) 
   if (parms[["timeStp"]] ==52) t =   7
   if (parms[["timeStp"]] ==365) t =  1
   if (is.numeric(t)==F) print ("unsupported time step used")
+  #parameter values from landsberg and sands book (7.2.1)
   s<-145
   gb_s<-0.01#soil boundary layer conductance
   g_C<-Inf
@@ -206,16 +205,11 @@ soilEvap<-function(parms,weather,state,interRad,h){
   D=VPD
   L_v= 2453#Volumetric latent heat of vaporization. Energy required per water volume vaporized
 
-  #e0<-h*(g_C*(s*interRad+gb_s*P_a*C_pa*D))/(lambda*((gamma+s)*g_C+gamma*g_C))
-  
-  #get potential evaporation rate using penman-monteith with soil specific params
+  #get potential evaporation rate using penman-monteith with soil specific params - following eq in landsberg and sands (7.2.1), adjusted to output evap volume rate
   e0<-(s*interRad+gb_s*P_a*C_pa*D)/(s+gamma*(1+gb_s/g_C)*L_v)
 
   #E_S0 is E_S at the start of the time-step
   E_S0 = max(state[["E_S"]] , 0)
-  
-##check e0, should be rate??????
-  
   
   #Duration of phase 1 evaporation
   t_S1 = E_S1 / e0
