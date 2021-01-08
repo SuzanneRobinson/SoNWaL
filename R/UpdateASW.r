@@ -84,14 +84,14 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       ##Considering the dynamic depths of the soil profiles we should use this data to update theta vals?
       
       #Update value for non-rooting zone SWC - assuming max value is theta_sat (above this is run-off) and drainage of excess water into the non-root zone from root zone
-      state[["SWC_nr"]] <- min(theta_sat,max(state[["SWC_nr"]]+rz_nrz_drain-nrz_out_drain+rz_nrz_recharge,0))
+      state[["SWC_nr"]] <- min(theta_sat*(parms[["V_nr"]]-z_r),max(state[["SWC_nr"]]+rz_nrz_drain-nrz_out_drain+rz_nrz_recharge,0))
      
       #Update root zone SWC with the addition of rainfall, irrigation, minus evap and drainage into non-root zone
       state[["SWC_rz"]] <- min(theta_sat*z_r,max(SWC_rz + (Rain + MonthIrrig - EvapTransp - rz_nrz_drain - E_S),0))
       
       #ASW calculated as SWC in the root zone divided by depth (m) minus volumetric SWC (mm) of soil profile at wilting point
       # See Almedia and Sands eq A.2 - This value can only go as high as max ASW? - all the rest is run-off
-      state[["ASW"]] <- min((theta_fc-theta_wp),max((SWC_rz/z_r)-theta_wp,0))
+      state[["ASW"]] <- min(z_r*(theta_fc-theta_wp),max((SWC_rz/z_r)-z_r*theta_wp,0))
       
       
 
