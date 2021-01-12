@@ -41,13 +41,8 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     Transp <- CanTransp*365/parms[["timeStp"]] #general.info$daysinmonth[month] * CanTransp
     EvapTransp <- min(Transp + RainIntcptn, ASWrain)
     
-   
-
-
     #non-Intercepted radiation
     interRad<-(RAD.day * 1e+06/h)-max(netRad,0)
-#    .GlobalEnv$interRad <- rbind(.GlobalEnv$interRad,interRad)
-#    .GlobalEnv$Rad <- rbind(.GlobalEnv$Rad,(RAD.day * 1e+06/h))
     
     ####Run using water balance sub-models from Almedia et al.####
     if (parms[["waterBalanceSubMods"]] == T) {
@@ -75,11 +70,10 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       rz_nrz_drain <- max(drainage_rz_nrz(parms, weather, state),0)
       nrz_out_drain <-max(drainage_nrz_out(parms, weather, state),0)
       
-      #volume of water moving from non-root zone to root zone is diff between current state of root zone SWC and updated
+      #volume of water moving from non-root zone to root zone is diff between current state of root zone SWC and updated root zone SWC
       rz_nrz_recharge<-state[["SWC_rz"]]-SWC_rz
 
-      
-      ##Inclusion of z_r...some uncertainty, looking for example at eq 7.2 in landsdown and sands book and A.2 in Almedia and Sands
+      ##Inclusion of z_r in the following eq's...some uncertainty, looking at eq 7.2 in landsdown and sands book and A.2 in Almedia and Sands
       #it seems like volumetric theta_x values should be proportional to soil profile depth?
       ##Considering the dynamic depths of the soil profiles we should use this data to update theta vals?
       
@@ -92,8 +86,6 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       #ASW calculated as SWC in the root zone divided by depth (m) minus volumetric SWC (mm) of soil profile at wilting point
       # See Almedia and Sands eq A.2 - This value can only go as high as max ASW? - all the rest is run-off
       state[["ASW"]] <- min(z_r*(theta_fc-theta_wp),max((SWC_rz/z_r)-z_r*theta_wp,0))
-      
-      
 
     } else
     {

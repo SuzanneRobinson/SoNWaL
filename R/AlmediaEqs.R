@@ -48,10 +48,11 @@ soilWC<-function(parms,weather,state){
   #Soil conductivity - see Landsberg book for more details on this 
   K_s = parms[["K_s"]]
   
-  #rooting depth / volume - Almedia describes this as depth, but sigma_zR could also be used to derive volume from root biomass?
+  #rooting depth / volume - Almedia describes this as depth, assumed to be proportional in paper to biomass
   z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone/max root depth
   
-  V_rz = z_r # not sure if this is equivalent, or whether there needs to be a conversion from depth to volume?
+  V_rz = z_r #Almedia and Sands paper suggests volume of root zone is equivalent to z_r
+  
   #Shared area, area is in m^2, so area around the tree?
   A = parms[["shared_area"]]
   
@@ -102,9 +103,9 @@ drainage_rz_nrz<-function(parms,weather,state){
   
   K_drain<-parms[["K_drain"]]
   
-  #rooting depth / volume - Almedia describes this as depth, but sigma_zR could also be used to derive volume from root biomass?
+  #rooting depth / volume
   z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone
-  V_rz = z_r # not sure if this is equivalent, in paper Almedia and Sands assumed to be equiv.
+  V_rz = z_r
   
   ##calculate drainage
   Qd<-(SWC_rz0-V_rz*theta_fc)*(1-exp(-K_drain*t))
@@ -145,9 +146,9 @@ drainage_nrz_out<-function(parms,weather,state){
   
   K_drain<-parms[["K_drain"]]
   
-  #rooting depth / volume - Almedia describes this as depth, but sigma_zR could also be used to derive volume from root biomass?
+  #rooting depth / volume 
   z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone
-  V_rz = z_r # not sure if this is equivalent, in paper Almedia and Sands assumed to be equiv.
+  V_rz = z_r 
   
   #Non-root zone decreases as root zone increases, V_nr is max non-root zone volume
   V_nrx<-max(V_nr-V_rz,0)
@@ -203,7 +204,7 @@ soilEvap<-function(parms,weather,state,interRad,h){
   gamma= 66.1
   s=145
   D=VPD
-  L_v= 2453#Volumetric latent heat of vaporization. Energy required per water volume vaporized
+  L_v= 2453#Volumetric latent heat of vaporization. Energy required per water volume vaporized (see penman monteith)
 
   #get potential evaporation rate using penman-monteith with soil specific params - following eq in landsberg and sands (7.2.1), adjusted to output evap volume rate
   e0<-(s*interRad+gb_s*P_a*C_pa*D)/(s+gamma*(1+gb_s/g_C)*L_v)
@@ -221,7 +222,6 @@ soilEvap<-function(parms,weather,state,interRad,h){
   
   #Integrate equation A.9 to get value at time t (assuming t is number of days in month)
   #and Calc E_S using t+t0 to get amount of evaporation between t0 and t
-
   E_S = if (t <= t_S1)
     e0 * t
   else
