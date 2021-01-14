@@ -47,13 +47,13 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     ####Run using water balance sub-models from Almedia et al.####
     if (parms[["waterBalanceSubMods"]] == T) {
       
-      #derive values for wp, fc and fsat in mm (parameter input is volumetric m^3 m^-3)
-      theta_wp= parms[["theta_wp"]]*1000
-      theta_fc= parms[["theta_fc"]]*1000
-      theta_sat= parms[["theta_sat"]]*1000
-      
       #root depth in mm assumed to be proportional to root biomass (see almedia and sands)
       z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]])
+      
+      #derive the VOUMETRIC SWC in mm (theta_x vals in Almedia and Sands) for the rooting-zone soil profile at wp, fc and fsat in mm
+      volSWC_wp= (parms[["wiltPoint"]])
+      volSWC_fc= (parms[["fieldCap"]])
+      volSWC_sat= (parms[["satPoint"]])
       
       #Run soil water content function to get root zone SWC
       SWC_rz <- soilWC(parms, weather, state)
@@ -67,25 +67,23 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       state[["E_S"]] = E_S
       
       #Calculate drainage from root zone to non-root zone and out of non-root zone, where SWC of root zone exceeds field capacity of the soil zone (eq A.11)
-      rz_nrz_drain <- max(drainage_rz_nrz(parms, weather, state),0)
-      nrz_out_drain <-max(drainage_nrz_out(parms, weather, state),0)
+      rz_nrz_drain <- max(drainageFunc(parms, weather, SWC=state[["SWC_rz"]],soilVol=z_r),0)
+      nrz_out_drain <-max(drainageFunc(parms, weather, SWC=state[["SWC_nr"]],soilVol=parms[["V_nr"]]-z_r),0)
       
       #volume of water moving from non-root zone to root zone is diff between current state of root zone SWC and updated root zone SWC
       rz_nrz_recharge<-state[["SWC_rz"]]-SWC_rz
-
-      ##Inclusion of z_r in the following eq's...some uncertainty, looking at eq 7.2 in landsdown and sands book and A.2 in Almedia and Sands
-      #it seems like volumetric theta_x values should be proportional to soil profile depth?
-      ##Considering the dynamic depths of the soil profiles we should use this data to update theta vals?
       
-      #Update value for non-rooting zone SWC - assuming max value is theta_sat (above this is run-off) and drainage of excess water into the non-root zone from root zone
-      state[["SWC_nr"]] <- min(theta_sat*(parms[["V_nr"]]-z_r),max(state[["SWC_nr"]]+rz_nrz_drain-nrz_out_drain+rz_nrz_recharge,0))
-     
+      #update SWC by adding drainage from root zone and removing drainage out from non-root zone
+      state[["SWC_nr"]] <- max(state[["SWC_nr"]]+rz_nrz_drain-nrz_out_drain+rz_nrz_recharge,0)
       #Update root zone SWC with the addition of rainfall, irrigation, minus evap and drainage into non-root zone
-      state[["SWC_rz"]] <- min(theta_sat*z_r,max(SWC_rz + (Rain + MonthIrrig - EvapTransp - rz_nrz_drain - E_S),0))
+      state[["SWC_rz"]] <- max(SWC_rz + (Rain + MonthIrrig - EvapTransp - rz_nrz_drain - E_S),0)
       
-      #ASW calculated as SWC in the root zone divided by depth (m) minus volumetric SWC (mm) of soil profile at wilting point
-      # See Almedia and Sands eq A.2 - This value can only go as high as max ASW? - all the rest is run-off
-      state[["ASW"]] <- min(z_r*(theta_fc-theta_wp),max((SWC_rz/z_r)-z_r*theta_wp,0))
+      #Volumetric SWC of rooting zone (z_r converted to mm)
+      volSWC_rz<-(SWC_rz/(z_r*1000))
+      
+      #ASW calculated as SWC in the root zone divided by depth (mm) minus volumetric SWC of soil profile at wilting point
+      # See Almedia and Sands eq A.2 and landsdown and sands 7.1.1
+      state[["ASW"]] <-max(volSWC_rz-volSWC_wp,0)
 
     } else
     {

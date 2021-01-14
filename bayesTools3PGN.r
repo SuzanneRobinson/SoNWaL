@@ -37,12 +37,12 @@ observed <- c(data$gpp,                ## GPP
               86.7,                    ## totC, see jarvis_total_soil.ods
               2.16                     ## totN, 40 C:N ratio
 )
-dev <- c(rep(.001,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
-         rep(.001,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
+dev <- c(rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
          rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
          rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
-         rep(0.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
-         rep(0.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
+         rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
+         rep(0.1,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
+         rep(0.1,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
          rep(0.5,(nrow(dplyr::filter(data,year>=startYear&year<=endYear))-1)),
          1.5,1.5,
          1,
@@ -73,9 +73,9 @@ dev <- c(rep(3,nrow(filter(data,year>=startYear&year<=endYear))),
 #Initiate bayesian setup
 BS3PGDN <- createBayesianSetup(likelihood = NLL, prior = Uprior, names = nm, parallel = T, catchDuplicates = F )
 settings = list(
-  iterations = 10000,
+  iterations = 25000,
   ## Z = NULL,
-  startValue = 8, #t(mP),#NULL, ## Use 5 chains instead of 3
+  startValue = 7, #t(mP),#NULL, ## Use 5 chains instead of 3
   nrChains = 1,
   pSnooker = 0.5,
   burnin = 10,

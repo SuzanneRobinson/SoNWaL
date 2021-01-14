@@ -7,9 +7,9 @@ library(viridis)
 ###########################
 sitka<-getParms(weather=clm_df_full,
                 waterBalanceSubMods =T, #Whether to run model using updated water balance submodels
-                theta_wp = 0.1, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
-                theta_fc =0.29,#Field capacity
-                theta_sat= 0.45, #field saturation point
+                wiltPoint = 0.1, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
+                fieldCap =0.29,#Field capacity
+                satPoint= 0.45, #field saturation point
                 K_s=0.1, #Soil conductivity
                 shared_area=4, #shared area of rooting and non-rooting zone
                 V_nr=3, #Volume of non-rooting zone
@@ -26,16 +26,14 @@ sitka<-getParms(weather=clm_df_full,
 priors<-createPriors_sitka(sitka=sitka)
 pMaxima<-priors[[1]]
 pMinima<-priors[[2]]
-#pMaxima[[30]]<-0.01
-
-Uprior <- createUniformPrior(lower = pMinima, upper = pMaxima)
-nm<-c("theta_wp","theta_fc","theta_sat","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain")
+Uprior <- createUniformPrior(lower = pMinima[1:11], upper = pMaxima[1:11])
+nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain")
 
 
 ##setup likelihood and model running functions for sense analysis
 morris_setup <- createBayesianSetup(
   likelihood = NLL, 
-  prior = Uprior,
+  prior = Uprior, 
   names = nm)
 
 set.seed(10)
@@ -44,10 +42,10 @@ set.seed(10)
 morrisOut <- morris(
   model = morris_setup$posterior$density,
   factors = nm, 
-  r = 500, 
+  r = 100, 
   design = list(type = "oat", levels = 20, grid.jump = 3), 
-  binf = pMinima, 
-  bsup = pMaxima, 
+  binf = pMinima[1:11], 
+  bsup = pMaxima[1:11], 
   scale = TRUE)
 
 # summarise the sensitivity analysis
@@ -59,9 +57,7 @@ morrisOut.df <- data.frame(
   arrange( mu.star )
 
 
-morrisOut.df$mu.star<-log(1+morrisOut.df$mu.star)
-morrisOut.df$sigma<-log(1+morrisOut.df$sigma)
-
+#plot results
 morrisOut.df %>%
   gather(variable, value, -parameter) %>%
   ggplot(aes(reorder(parameter, value), value, fill = variable), color = NA)+

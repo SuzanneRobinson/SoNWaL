@@ -110,9 +110,9 @@ getParms<-function(weather=clm_df_full,
                    cod.clim = "Month",
                    ## ~~ Almedia et al. Parameters ~~ ##
                    waterBalanceSubMods =T, #Whether to run model using updated water balance submodels
-                   theta_wp = 0.1, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
-                   theta_fc =0.29,#Field capacity
-                   theta_sat= 0.45, #field saturation point
+                   wiltPoint = 0.1, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
+                   fieldCap =0.29,#Field capacity
+                   satPoint= 0.45, #field saturation point
                    K_s=0.1, #Soil conductivity
                    shared_area=4, #shared area of rooting and non-rooting zone
                    V_nr=3, #Volume of non-rooting zone
@@ -236,9 +236,9 @@ getParms<-function(weather=clm_df_full,
               cod.clim = cod.clim,
               ## ~~ Almedia et al. Parameters ~~ ##
               waterBalanceSubMods =waterBalanceSubMods, #Whether to run model using updated water balance submodels
-              theta_wp = theta_wp, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
-              theta_fc =theta_fc,#Field capacity
-              theta_sat= theta_sat, #field saturation point
+              wiltPoint = wiltPoint, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
+              fieldCap =fieldCap,#Field capacity
+              satPoint= satPoint, #field saturation point
               K_s=K_s, #Soil conductivity
               shared_area=shared_area, #shared area of rooting and non-rooting zone
               V_nr=V_nr, #Volume of non-rooting zone

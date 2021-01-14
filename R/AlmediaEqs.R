@@ -72,91 +72,34 @@ soilWC<-function(parms,weather,state){
 }
 
 
-
-#'@description Calculates drainage from rooting zone to non-rooting zone
+#'@description Calculates drainage out of a soil zone
 #'@param parms global 3PG parameter values
 #'@param weather global weather values
-#'@param state state values
-
+#'@param SWC soil water content of zone to drain
 #Internal function variable descriptions
 #'@param t length of time-step
-#'@param V_rz volume of rooting zone
-#'@param z_r depth (or volume?) of rooting zone
-#'@param sigma_zR area/depth explored by 1kg of root biomass
-#'@param SWC_rz0 SWC of rooting zone at time 0
-
 #'@return amount of drainage
 
-drainage_rz_nrz<-function(parms,weather,state){
+drainageFunc<-function(parms,weather,SWC,soilVol){
+  
   #size of time-step. This is for monthly time steps
   if (parms[["timeStp"]] ==12) t =   days_in_month(weather[["Month"]]) 
   if (parms[["timeStp"]] ==52) t =   7
   if (parms[["timeStp"]] ==365) t =  1
   if (is.numeric(t)==F) print ("unsupported time step used")
+ 
+  #Volumetric field capacity
+  volSWC_fc= parms[["fieldCap"]]
   
-
-  #soil water in rooting zone at t0 depends if rain is assumed to occur at begining or end of month,
-  #need to be careful so as not to mess up biomass allocation function which comes in after in the same time step (see RunModel.r)
-  SWC_rz0 = state[["SWC_rz"]]
-
-  theta_fc= parms[["theta_fc"]]*1000
-  
+  #Drainage parameter based on soil texture
   K_drain<-parms[["K_drain"]]
   
-  #rooting depth / volume
-  z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone
-  V_rz = z_r
-  
-  ##calculate drainage
-  Qd<-(SWC_rz0-V_rz*theta_fc)*(1-exp(-K_drain*t))
+  ##calculate drainage, convert soilVol to mm
+  Qd<-(SWC-(volSWC_fc*soilVol*1000))*(1-exp(-K_drain*t))
 
   return(Qd)
 }
 
-
-#'@description Calculates drainage from non-rooting zone out of the system
-#'@param parms global 3PG parameter values
-#'@param weather global weather values
-#'@param state state values
-
-#Internal function variable descriptions
-#'@param t length of time-step
-#'@param V_rz volume of rooting zone
-#'@param z_r depth (or volume?) of rooting zone
-#'@param sigma_zR area/depth explored by 1kg of root biomass
-#'@param SWC_nr0 SWC of non-rooting zone at time 0
-
-#'@return amount of drainage
-
-drainage_nrz_out<-function(parms,weather,state){
-  #size of time-step. This is for monthly time steps
-  if (parms[["timeStp"]] ==12) t =   days_in_month(weather[["Month"]]) 
-  if (parms[["timeStp"]] ==52) t =   7
-  if (parms[["timeStp"]] ==365) t =  1
-  if (is.numeric(t)==F) print ("unsupported time step used")
-  
-
-
-  #Volume of initial non-rooting zone
-  V_nr = parms[["V_nr"]]
-  #current SWC of non-rooting zone
-  SWC_nr0 = state[["SWC_nr"]]
-  
-  theta_fc= parms[["theta_fc"]]*1000
-  
-  K_drain<-parms[["K_drain"]]
-  
-  #rooting depth / volume 
-  z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone
-  V_rz = z_r 
-  
-  #Non-root zone decreases as root zone increases, V_nr is max non-root zone volume
-  V_nrx<-max(V_nr-V_rz,0)
-  
-  ##calculate drainage
-  Qd<-(SWC_nr0-V_nrx*theta_fc)*(1-exp(-K_drain*t))
-  return(Qd)
-}
 
 #      ____     _ __  ____                             __  _          # 
 #     / __/__  (_) / / __/  _____ ____  ___  _______ _/ /_(_)__  ___  # 

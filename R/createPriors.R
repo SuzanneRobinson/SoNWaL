@@ -1,17 +1,17 @@
 
 createPriors_sitka<-function(sitka){
 
-nm<-c("theta_wp","theta_fc","theta_sat","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
+nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
       "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
       "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
 
 f.decrease <- c(
-  0.08, #theta_wp
-  0.2, #theta_fc
-  0.3,#theta_sat
+  0.08, #wiltPoint
+  0.2, #fieldCap
+  0.3,#satPoint
   0.001, #K_s
-  2, #V_nr
+  3, #V_nr
   0.2, #sigma_zR
   0.05, #E_S1
   0.1, #E_S2
@@ -58,9 +58,9 @@ f.decrease <- c(
 
 f.increase <-
   c(
-    0.14,#theta_wp
-    0.35,#theta_fc
-    0.6,#theta_sat
+    0.14,#wiltPoint
+    0.35,#fieldCap
+    0.6,#satPoint
     10,#K_s
     5,#V_nr
     0.9,#sigma_zR
@@ -68,7 +68,7 @@ f.increase <-
     0.5,#E_S2
     6, #shared_area
     4, #maxRootDepth
-    1, #K_drain
+    0.5, #K_drain
     0.573973679288588,#pFS2
     0.235352308855631,#pFS20
     1.86098081013281,#aS
