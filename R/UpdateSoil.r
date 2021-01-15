@@ -54,8 +54,7 @@ UpdateSoil <-
       ##change moistratio and soil water growth mod if using updated sub-models
       if(parms[["waterBalanceSubMods"]]==T){
         
-        #z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]])
-        #calc rooting zone soil profile VOLUMETRIC SWC at wp and fc (mm)
+        #calc soil profile VOLUMETRIC SWC at wp and fc 
         volSWC_wp= parms[["wiltPoint"]]
         volSWC_fc= parms[["fieldCap"]]
         MaxASW <- (volSWC_fc-volSWC_wp)

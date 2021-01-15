@@ -16,7 +16,6 @@ library(furrr)
 library(viridis)
 library(fr3PGDN)
 library(tibble)
-library(BayesianTools)
 library(miscTools)
 
 
@@ -56,16 +55,16 @@ out$grid_id<-spatSimDat$grid_id
 
 #Write output to file
 #saveRDS(out,"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\scotSpat_isle.rds")
-#out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\scotSpat_clumped.rds")
+out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\scotSpat_clumped.rds")
 
 
-out[,c(1:3)]<-log(1+out[,c(1:3)])
+out[,c(1:3)]<-log(4*out[,c(1:3)])
 
 
 #Plot results
 out %>%
-  mutate( range = GPP_q95 - GPP_q05) %>%
-  dplyr::select( grid_id, mean = GPP_value, range) %>%
+  mutate( range = q95 - q05) %>%
+  dplyr::select( grid_id, mean = value, range) %>%
   gather( variable, GPP_value, -grid_id) %>%
   inner_join( ., simDat, by = 'grid_id') %>%
   ggplot( aes(x, y, fill = GPP_value )) + #*100 to get hectares from 1km grid squares
@@ -80,9 +79,9 @@ out %>%
         axis.ticks.y=element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())+
-  ggtitle("Spatial analysis of FR3PG model - Scotland")+
+  ggtitle("Spatial analysis of FR3PGN model - Scotland")+
   coord_equal() + 
- scale_fill_viridis_c( expression(biomass~(ln~tons~per~ha)),option = "plasma", na.value="gray70")
+ scale_fill_viridis_c( expression(log~Wsbr~(tDM~ha^-1)),option = "plasma", na.value="gray70")
 
 
   

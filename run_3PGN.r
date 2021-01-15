@@ -42,6 +42,8 @@ output<-do.call(fr3PGDN,sitka)
 results<-plotResults(output,ShortTS=F)
 results[1]
 
+codM<-getSample(out, start = 5000, coda = TRUE, thin = 10)
+bayesplot::mcmc_trace(codM)
 #get some previous run parameter estimates#
 codM<-mergeChains(out$chain)
 codM<-tail(as.data.frame(codM),1)

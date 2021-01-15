@@ -4,6 +4,8 @@ library(BayesianTools,quietly=TRUE)
 library(tidyverse)
 library(dplyr)
 
+#create filename based on time...maybe not necessary, just trying to avoid overwriting of outputs from diff sessions by JASMIN
+fName=paste0("outx_",stringr::str_sub(Sys.time(), 0, -10),stringr::str_sub(Sys.time(), 15, -4),stringr::str_sub(Sys.time(), 18, -1),".RDS")
 #get climate data
 clm_df_full<-getClimDat("monthly")
 ## Read Harwood data for Sitka spruce and mutate timestamp to POSIXct
@@ -12,11 +14,19 @@ data <- read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents
 #get parameter values 
 sitka<-getParms()
 
+
+nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
+      "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
+      "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
+      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
+
+
+
 ##Set priors
 priors<-createPriors_sitka(sitka=sitka)
 pMaxima<-priors[[1]]
 pMinima<-priors[[2]]
-pMaxima[[27]]<-0.01
+pMaxima[[30]]<-0.01
 Uprior <- createUniformPrior(lower = pMinima, upper = pMaxima)
 
 ## Set observed calibration data and uncertainty
@@ -57,7 +67,7 @@ dev <- c(rep(.001,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
 #Initiate bayesian setup
 BS3PGDN <- createBayesianSetup(likelihood = NLL, prior = Uprior, names = nm, parallel = T, catchDuplicates = F )
 settings = list(
-  iterations = 50000,
+  iterations = 500,
   ## Z = NULL,
   startValue = 8, # internal chain number - dont use these chains for convergence testing 
   nrChains = 1, # Number of chains
@@ -87,5 +97,5 @@ settings = list(
 out <- runMCMC(bayesianSetup = BS3PGDN, sampler = "DEzs", settings = settings)
 
 #Save output
-saveRDS(out,file="outx.RDS")
+saveRDS(out,file=fName)
 

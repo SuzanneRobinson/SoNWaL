@@ -73,7 +73,7 @@ dev <- c(rep(3,nrow(filter(data,year>=startYear&year<=endYear))),
 #Initiate bayesian setup
 BS3PGDN <- createBayesianSetup(likelihood = NLL, prior = Uprior, names = nm, parallel = T, catchDuplicates = F )
 settings = list(
-  iterations = 25000,
+  iterations = 500000,
   ## Z = NULL,
   startValue = 7, #t(mP),#NULL, ## Use 5 chains instead of 3
   nrChains = 1,

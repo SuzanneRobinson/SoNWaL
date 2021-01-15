@@ -47,7 +47,7 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     ####Run using water balance sub-models from Almedia et al.####
     if (parms[["waterBalanceSubMods"]] == T) {
       
-      #root depth in mm assumed to be proportional to root biomass (see almedia and sands)
+      #root depth assumed to be proportional to root biomass (see almedia and sands)
       z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]])
       
       #derive the VOUMETRIC SWC in mm (theta_x vals in Almedia and Sands) for the rooting-zone soil profile at wp, fc and fsat in mm
@@ -78,7 +78,7 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       #Update root zone SWC with the addition of rainfall, irrigation, minus evap and drainage into non-root zone
       state[["SWC_rz"]] <- max(SWC_rz + (Rain + MonthIrrig - EvapTransp - rz_nrz_drain - E_S),0)
       
-      #Volumetric SWC of rooting zone (z_r converted to mm)
+      #Volumetric SWC of rooting zone (z_r converted to mm as SWC in mm)
       volSWC_rz<-(SWC_rz/(z_r*1000))
       
       #ASW calculated as SWC in the root zone divided by depth (mm) minus volumetric SWC of soil profile at wilting point
