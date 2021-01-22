@@ -3,7 +3,8 @@ function (stand.init, weather, site, parms, general.info = parms.general,
     presc = presc, cod.pred = "3PG", cod.clim = "Month") 
 {
     weather <- PredictWeatherVariables(weather = weather)
-    state.init <- InitializeState(stand = stand.init, site = site, 
+
+        state.init <- InitializeState(stand = stand.init, site = site, 
         parms = parms, general.info = general.info, weather = weather)
     proj.results <- list()
     state <- PredictVariablesInterest.3PG(state = state.init, 

@@ -58,7 +58,7 @@ out$grid_id<-spatSimDat$grid_id
 out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\scotSpat_clumped.rds")
 
 
-out[,c(1:3)]<-log(4*out[,c(1:3)])
+out[,c(3)]<-log(1+10*out[,c(3)])
 
 
 #Plot results

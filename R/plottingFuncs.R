@@ -142,13 +142,13 @@ plotResults <- function(df,ShortTS=F){
   names(difRoots)<-c("year","age","difroots")
   
   totC<-data.frame(rbind(
-    c(dplyr::filter(df,Year==2018&Month==7)$Year+dplyr::filter(df,Year==2018&Month==7)$Month/dt,dplyr::filter(df,Year==2018&Month==7)$t.proj,86.7)
+    c(dplyr::filter(df,Year==2018&Month==7)$Year+dplyr::filter(df,Year==2018&Month==7)$Month/dt,dplyr::filter(df,Year==2018&Month==7)$t.proj,429.52)
   )
   )
   names(totC)<-c("year","age","totC")
   
   totN<-data.frame(rbind(
-    c(dplyr::filter(df,Year==2018&Month==7)$Year+dplyr::filter(df,Year==2018&Month==7)$Month/dt,dplyr::filter(df,Year==2018&Month==7)$t.proj,2.16)
+    c(dplyr::filter(df,Year==2018&Month==7)$Year+dplyr::filter(df,Year==2018&Month==7)$Month/dt,dplyr::filter(df,Year==2018&Month==7)$t.proj,14.30)
   )
   )
   names(totN)<-c("year","age","totN")

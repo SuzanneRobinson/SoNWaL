@@ -28,27 +28,34 @@ observed <- c(data$gpp,                ## GPP
               data$reco,               ## Reco
               data$rs,                 ## Rs
               data$et,                 ## Etransp
-              data$gs[2:nrow(data)],   ## CanCond
+            #  data$gs[2:nrow(data)],   ## CanCond
               5.7,5.56,                ## LAI
-              1348,                    ## N
+              1348,                    ## N - fairly well known
               24.1,                    ## dg
-              4.88,                    ## Wr
-              0.53,                    ## difRoots
-              86.7,                    ## totC, see jarvis_total_soil.ods
-              2.16                     ## totN, 40 C:N ratio
+            #  4.88,                    ## Wr
+             # 0.53,                    ## difRoots
+              429.52,                    ## totC, see jarvis_total_soil.ods
+              14.30                     ## totN, 40 C:N ratio
+            #measured values are from 2015 for totC and totN
+            #possible starting value from other site using approx values
 )
+
+#check state variables excel file - update totC and totN
+
+
+
 dev <- c(rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
          rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
          rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
          rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
          rep(0.1,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
          rep(0.1,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
-         rep(0.5,(nrow(dplyr::filter(data,year>=startYear&year<=endYear))-1)),
+        # rep(0.5,(nrow(dplyr::filter(data,year>=startYear&year<=endYear))-1)),
          1.5,1.5,
          1,
          3,
-         2,
-         1,
+       #  2,
+       #  1,
          5,
          1
 )
@@ -60,12 +67,12 @@ dev <- c(rep(3,nrow(filter(data,year>=startYear&year<=endYear))),
          rep(5,nrow(filter(data,year>=startYear&year<=endYear))),
          rep(5,nrow(filter(data,year>=startYear&year<=endYear))),
          rep(10,nrow(filter(data,year>=startYear&year<=endYear))),
-         rep(0.05,(nrow(filter(data,year>=startYear&year<=endYear))-1)),
+        # rep(0.05,(nrow(filter(data,year>=startYear&year<=endYear))-1)),
          1.5,1.5,
          100,
          3.0,
-         2.0,
-         1.0,
+       #  2.0,
+        # 1.0,
          30.0,
          1.0
 )

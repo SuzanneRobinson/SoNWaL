@@ -16,7 +16,8 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     latitude <- site[["latitude"]]
     RAD.day <- state[["RAD.day"]]
     h <- GetDayLength(Lat = latitude, month = month)
-    netRad <- Qa + Qb * (RAD.day * 1e+06/h)*(1-exp(-parms[["k"]]*LAI)) # 1e+06 converts mega-joules to joules
+    netRad <- Qa + Qb * (RAD.day * 1e+06/h)*(1-exp(-parms[["k"]]*LAI)) # 1e+06 converts mega-joules to joules netrad is in W m^-2
+
     MinCond <- parms[["MinCond"]]
     MaxCond <- parms[["MaxCond"]]
     LAIgcx <- parms[["LAIgcx"]]
@@ -42,9 +43,11 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     EvapTransp <- min(Transp + RainIntcptn, ASWrain)
     
     #non-Intercepted radiation
-    interRad<-(RAD.day * 1e+06/h)-max(netRad,0)
+    interRad<-(RAD.day * 1e+06/h)-max((RAD.day * 1e+06/h)*(1-exp(-parms[["k"]]*LAI)),0)
+    state[["soilRad"]]<-interRad
+    state[["totalRad"]]<-(RAD.day * 1e+06/h)
     
-    ####Run using water balance sub-models from Almedia et al.####
+        ####Run using water balance sub-models from Almedia et al.####
     if (parms[["waterBalanceSubMods"]] == T) {
       
       #root depth assumed to be proportional to root biomass (see almedia and sands)
@@ -59,13 +62,14 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       SWC_rz <- soilWC(parms, weather, state)
       
       #Calculate accumulated soil evaporation for the month using soilEvap function
-      E_S <- soilEvap(parms, weather, state, interRad,h)
+      evapRes <- soilEvap(parms, weather, state, interRad,h)
+      E_S<-evapRes[[1]]
+      state[["potentialEvap"]]<-evapRes[[2]]
       
       #evaporation Minus monthly rainfall and irrigation from cumulative E_S value
       E_S <- max(E_S + RainIntcptn - Rain - MonthIrrig,0) # rainfall needs to be added after as biomass allocation function requires months rainfall
-
       state[["E_S"]] = E_S
-      
+     
       #Calculate drainage from root zone to non-root zone and out of non-root zone, where SWC of root zone exceeds field capacity of the soil zone (eq A.11)
       rz_nrz_drain <- max(drainageFunc(parms, weather, SWC=state[["SWC_rz"]],soilVol=z_r),0)
       nrz_out_drain <-max(drainageFunc(parms, weather, SWC=state[["SWC_nr"]],soilVol=parms[["V_nr"]]-z_r),0)
@@ -78,13 +82,15 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       #Update root zone SWC with the addition of rainfall, irrigation, minus evap and drainage into non-root zone
       state[["SWC_rz"]] <- max(SWC_rz + (Rain + MonthIrrig - EvapTransp - rz_nrz_drain - E_S),0)
       
-      #Volumetric SWC of rooting zone (z_r converted to mm as SWC in mm)
+
+      #Volumetric SWC of rooting zone (z_r converted to mm as SWC in mm), equiv to SWC fraction in observed data - water to soil ratio
       volSWC_rz<-(SWC_rz/(z_r*1000))
       
       #ASW calculated as SWC in the root zone divided by depth (mm) minus volumetric SWC of soil profile at wilting point
       # See Almedia and Sands eq A.2 and landsdown and sands 7.1.1
       state[["ASW"]] <-max(volSWC_rz-volSWC_wp,0)
-
+      state[["volSWC_rz"]]<-volSWC_rz
+      
     } else
     {
       MaxASW<- site[["MaxASW"]]

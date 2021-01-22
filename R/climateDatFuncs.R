@@ -29,8 +29,12 @@ clm_df_dailyX<-clm_df_daily[!duplicated(clm_df_daily[c(1,12)]),]
 weeklyRfall<-aggregate(clm_df_daily$Rain~clm_df_daily$week+clm_df_daily$Year,FUN=sum)
 names(weeklyRfall)<-c("week","Year","Rain")
 
+weeklyRfall$SolarRad<-aggregate(clm_df_daily$SolarRad~clm_df_daily$week+clm_df_daily$Year,FUN=mean)[,3]
+weeklyRfall$Tmax<-aggregate(clm_df_daily$Tmax~clm_df_daily$week+clm_df_daily$Year,FUN=max)[,3]
+weeklyRfall$Tmin<-aggregate(clm_df_daily$Tmin~clm_df_daily$week+clm_df_daily$Year,FUN=min)[,3]
+weeklyRfall$Tmean<-aggregate(clm_df_daily$Tmean~clm_df_daily$week+clm_df_daily$Year,FUN=mean)[,3]
+
 weeklyRfall$Month<-month(clm_df_dailyX$Date)
-weeklyRfall<-cbind(weeklyRfall,clm_df_dailyX[c(3:5,7)])
 weeklyRfall$FrostDays<-(aggregate(clm_df_daily$FrostHours~clm_df_daily$week+clm_df_daily$Year,FUN=sum)[,3])/24
 weeklyRfall$MonthIrrig<-0
 

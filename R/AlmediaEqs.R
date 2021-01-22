@@ -96,7 +96,6 @@ drainageFunc<-function(parms,weather,SWC,soilVol){
   
   ##calculate drainage, convert soilVol to mm
   Qd<-(SWC-(volSWC_fc*soilVol*1000))*(1-exp(-K_drain*t))
-
   return(Qd)
 }
 
@@ -125,9 +124,8 @@ soilEvap<-function(parms,weather,state,interRad,h){
   
   e20 <- parms[["e20"]]
   rhoAir <- parms[["rhoAir"]]
-  lambda <- parms[["lambda"]]
+  lambda <- parms[["lambda"]]#Volumetric latent heat of vaporization. Energy required per water volume vaporized (see penman monteith)
   VPDconv <- parms[["VPDconv"]]
-  soilCond <- 0.01 #lower than canopy conductivity
   VPD <- weather[["VPD"]]
   E_S1 = parms[["E_S1"]]
   E_S2 = parms[["E_S2"]]
@@ -147,31 +145,39 @@ soilEvap<-function(parms,weather,state,interRad,h){
   gamma= 66.1
   s=145
   D=VPD
-  L_v= 2453#Volumetric latent heat of vaporization. Energy required per water volume vaporized (see penman monteith)
+  lambda=2.45
+  
+  soilBoundaryCond<-0.01
+  soilCond<-Inf
+  #convert joules m^2 per hour to watts m^2 (1 Wm^2 = 1 J m^2 per second)
 
   #get potential evaporation rate using penman-monteith with soil specific params - following eq in landsberg and sands (7.2.1), adjusted to output evap volume rate
-  e0<-(s*interRad+gb_s*P_a*C_pa*D)/(s+gamma*(1+gb_s/g_C)*L_v)
-
+#  e0<-(s*interRad+gb_s*P_a*C_pa*D)/(s+gamma*(1+gb_s/g_C)*lambda)
+  
+  e0<- (e20 * interRad + rhoAir * lambda * VPDconv * VPD * 
+         soilBoundaryCond)/(1 + e20 + soilBoundaryCond/soilCond)
+  
   #E_S0 is E_S at the start of the time-step
-  E_S0 = max(state[["E_S"]] , 0)
-  
-  #Duration of phase 1 evaporation
-  t_S1 = E_S1 / e0
-  #Solved for t equation A.10 in Almedia, to get equivalent t for E_S0 value
-  t0 = as.numeric(round(((-2 * E_S0 * E_S1) + (E_S0 ^ 2) + (2 * E_S0) +
-                           (E_S1 ^ 2) - (2 * E_S1) + 1 + (2 * e0 * E_S2 * t_S1) - (E_S2 ^ 2)
-  ) / (2 * e0 * E_S2)))
-  
-  
-  #Integrate equation A.9 to get value at time t (assuming t is number of days in month)
-  #and Calc E_S using t+t0 to get amount of evaporation between t0 and t
-  E_S = if (t <= t_S1)
-    e0 * t
-  else
-    (E_S1 + E_S2 * (sqrt(1 + 2 * (e0 / E_S2) * ((t + t0) - t_S1) - 1)))-E_S0
-  
+  E_S0 = state[["E_S"]]
 
-  return(E_S)
+#  #Duration of phase 1 evaporation
+# t_S1 = E_S1 / e0
+# #Solved for t equation A.10 in Almedia, to get equivalent t for E_S0 value
+# t0 = as.numeric(round(((-2 * E_S0 * E_S1) + (E_S0 ^ 2) + (2 * E_S0) +
+#                          (E_S1 ^ 2) - (2 * E_S1) + 1 + (2 * e0 * E_S2 * t_S1) - (E_S2 ^ 2)
+# ) / (2 * e0 * E_S2)))
+# 
+# print((t + t0) <= t_S1)
+# #Integrate equation A.9 to get value at time t (assuming t is number of days in month)
+# #and Calc E_S using t+t0 to get amount of evaporation between t0 and t
+# E_S = if ((t + t0) <= t_S1)
+#   e0 * (t + t0)
+# else
+#   (E_S1 + E_S2 * (sqrt(1 + 2 * (e0 / E_S2) * ((t + t0) - t_S1) - 1)))-E_S0
+#  
+  E_S<-E_S0+ifelse(E_S0<=E_S1,e0,e0/(1+(E_S0-E_S1)/E_S2))
+
+  return(list(E_S,e0))
   
 }
 
