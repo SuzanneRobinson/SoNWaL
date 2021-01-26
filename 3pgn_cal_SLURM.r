@@ -3,6 +3,8 @@ library(fr3PGDN,quietly=TRUE)
 library(BayesianTools,quietly=TRUE)
 library(tidyverse)
 library(dplyr)
+library(coda)
+library(miscTools)
 
 ##choose timestep size
 timeStep<-"monthly"
@@ -23,20 +25,16 @@ if(Sys.info()[1]=="Windows"){
 sitka<-getParms(timeStp = ifelse(timeStep=="monthly",12,52))
 
 
-nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
-      "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
-      "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
-
-
+nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain"
+      )
 
 ##Set priors
 priors<-createPriors_sitka(sitka=sitka)
+
 pMaxima<-priors[[1]]
 pMinima<-priors[[2]]
 pMaxima[[30]]<-0.01
-Uprior <- createUniformPrior(lower = pMinima, upper = pMaxima)
-
+Uprior <- createUniformPrior(lower = pMinima[1:length(nm)], upper = pMaxima[1:length(nm)])
 ## Set observed calibration data and uncertainty
 startYear = 2015
 endYear = 2017
@@ -57,7 +55,7 @@ observed <- c(data$gpp,                ## GPP
               # 0.53,                    ## difRoots
               429.52,                    ## totC, see jarvis_total_soil.ods
               14.30,                     ## totN, 40 C:N ratio
-              data$swc                ## Etransp
+              data$swc                ## SWC
               
               #measured values are from 2015 for totC and totN
               #possible starting value from other site using approx values
@@ -68,10 +66,10 @@ dev <- c(rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
          rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
          rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
          rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
-         rep(0.1,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
-         rep(0.1,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
+         rep(0.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
+         rep(0.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
          # rep(0.5,(nrow(dplyr::filter(data,year>=startYear&year<=endYear))-1)),
-         1.5,1.5,
+         0.1,0.1,
          1,
          3,
          #  2,
@@ -87,13 +85,13 @@ dev <- c(rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
 
 likelihoodFunc<-ifelse(timeStep=="monthly",NLL,NLL_weekly)
 
-iters=2000000
+iters=10000
 #Initiate bayesian setup
 BS3PGDN <- createBayesianSetup(likelihood = likelihoodFunc, prior = Uprior, names = nm, parallel = T, catchDuplicates = F )
 settings = list(
   iterations = iters,
   ## Z = NULL,
-  startValue = 8, # internal chain number - dont use these chains for convergence testing 
+  startValue = 7, # internal chain number - dont use these chains for convergence testing 
   nrChains = 1, # Number of chains
   pSnooker = 0.5,
   burnin = round(iters/100*10), #10% burnin
@@ -117,9 +115,72 @@ settings = list(
   message = TRUE)
 
 
-#Run calibration
+#Run calibration for just hydro models
 out <- runMCMC(bayesianSetup = BS3PGDN, sampler = "DEzs", settings = settings)
 
+
+
+
+#calculate priors for hydro submodels from first run
+codM<-as.data.frame(mergeChains(out$chain))
+codM<-codM[nm]
+codMQ<-as.data.frame(HPDinterval(as.mcmc(codM)))
+codMQ$median<-colMedians(codM)
+#pMaxima<-pMaxima
+#pMinima<-pMinima
+
+#26 bad
+#12 bad
+#15 bad
+#13 bad
+#pMaxima[c(26,12,15,13)]<-pMaxima[c(26,12,15,13)]*0.1
+#pMinima[c(26,12,15,13)]<-pMinima[c(26,12,15,13)]*0.1
+
+pMaxima[1:nrow(codMQ)]<-codMQ$upper
+pMinima[1:nrow(codMQ)]<-codMQ$lower
+pMinima[30]<-0
+Uprior <- createUniformPrior(lower = pMinima, upper = pMaxima)
+
+nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
+"pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
+"mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
+"Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
+
+
+
+iters=10000
+#Initiate bayesian setup
+BS3PGDN <- createBayesianSetup(likelihood = likelihoodFunc, prior = Uprior, names = nm, parallel = T, catchDuplicates = F )
+settings = list(
+  iterations = iters,
+  ## Z = NULL,
+  startValue = 7, # internal chain number - dont use these chains for convergence testing 
+  nrChains = 1, # Number of chains
+  pSnooker = 0.5,
+  burnin = round(iters/100*10), #10% burnin
+  ## thin = 1,
+  ## f = 2.38,
+  ## eps = 0,
+  parallel = T,
+  ## pGamma1 = 0.1,
+  ## eps.mult = 0.2,
+  ## eps.add = 0,
+  ## consoleUpdates = 100,
+  ## zUpdateFrequency = 1,
+  ## currentChain = 3,
+  ## blockUpdate  = list("none",
+  ##                     k = NULL,
+  ##                     h = NULL,
+  ##                     pSel = NULL,
+  ##                     pGroup = NULL,
+  ##                     groupStart = 1000,
+  ##                     groupIntervall = 1000),
+  message = TRUE)
+
+#run calibration with all parameters and priors based on initial hydro model runs
+out2 <- runMCMC(bayesianSetup = BS3PGDN, sampler = "DEzs", settings = settings)
+
+
 #Save output
-saveRDS(out,file=fName)
+saveRDS(out2,file=fName)
 

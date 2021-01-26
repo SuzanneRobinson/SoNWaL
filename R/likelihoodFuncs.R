@@ -11,8 +11,8 @@ sampleOutput<-function(df,sY,eY){
        filter(df,Year==2018&Month==8)$LAI,
        filter(df,Year==2018&Month==8)$N,
        filter(df,Year==2018&Month==8)$dg,
-       filter(df,Year==2015&Month==7)$Wr,
-       filter(df,Year==2015&Month==7)$difRoots,
+      # filter(df,Year==2015&Month==7)$Wr,
+      # filter(df,Year==2015&Month==7)$difRoots,
        filter(df,Year==2015&Month==7)$totC,
        filter(df,Year==2015&Month==7)$totN,
        filter(df,Year>=sY&Year<=eY)$volSWC_rz
@@ -20,6 +20,10 @@ sampleOutput<-function(df,sY,eY){
   )
   return(m)
 }
+
+
+
+
 
 ## Extract simulated data for use in likelihood function for shorter time-steps
 sampleOutputTS<-function(df,sY,eY){
@@ -34,8 +38,8 @@ sampleOutputTS<-function(df,sY,eY){
        filter(df,Year==2018&Month==8)$LAI[1],
        filter(df,Year==2018&Month==8)$N[1],
        filter(df,Year==2018&Month==8)$dg[1],
-       filter(df,Year==2015&Month==7)$Wr[1],
-       filter(df,Year==2015&Month==7)$difRoots[1],
+     #  filter(df,Year==2015&Month==7)$Wr[1],
+     #  filter(df,Year==2015&Month==7)$difRoots[1],
        filter(df,Year==2015&Month==7)$totC[1],
        filter(df,Year==2015&Month==7)$totN[1],
        aggregate(df$volSWC_rz~ df$Month+df$Year,FUN=mean)[,3]

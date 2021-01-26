@@ -6,6 +6,9 @@ nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","s
       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
       "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
 
+
+
+
 f.decrease <- c(
   0.08, #wiltPoint
   0.2, #fieldCap
@@ -13,11 +16,11 @@ f.decrease <- c(
   0.001, #K_s
   3, #V_nr
   0.2, #sigma_zR
-  0.05, #E_S1
-  0.1, #E_S2
+  1, #E_S1
+  0.5, #E_S2
   2, #shared_area
-  1, #maxRootDepth
-  0.01, #K_drain
+  2, #maxRootDepth
+  0.1, #K_drain
   0.588503613257886, #pFS2
   0.752929538228874, #pFS20
   0.956131627577964, #aS
@@ -64,8 +67,8 @@ f.increase <-
     10,#K_s
     5,#V_nr
     0.9,#sigma_zR
-    0.3,#E_S1
-    0.5,#E_S2
+    100,#E_S1
+    20,#E_S2
     6, #shared_area
     4, #maxRootDepth
     0.5, #K_drain
@@ -108,8 +111,8 @@ f.increase <-
   )
 
 ##Need to check what priors we are using!
-pMaxima <- as.vector(unlist(sitka[nm])*(1+(f.increase)))
-pMinima <- as.vector(unlist(sitka[nm])*(1-(f.decrease)))
+pMaxima <- as.vector(unlist(sitka[nm])*(1+(0.5*f.increase)))
+pMinima <- as.vector(unlist(sitka[nm])*(1-(0.5*f.decrease)))
 pValues <- as.vector(unlist(sitka[nm]))
 
 pMaxima[1:11] <- f.increase[1:11]

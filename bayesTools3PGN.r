@@ -13,8 +13,8 @@ sitka<-getParms()
 
 ##Set priors
 priors<-createPriors_sitka(sitka=sitka)
-pMaxima<-priors[[1]]
-pMinima<-priors[[2]]
+pMaxima<-priors[[1]]*0.4
+pMinima<-priors[[2]]*0.4
 pMaxima[[30]]<-0.01
 Uprior <- createUniformPrior(lower = pMinima, upper = pMaxima)
 
