@@ -7,7 +7,7 @@ library(coda)
 library(miscTools)
 
 ##choose timestep size
-timeStep<-"monthly"
+timeStep<-"daily"
 
 #create filename based on time...maybe not necessary, just trying to avoid overwriting of outputs from diff sessions by JASMIN
 fName=paste0("outx_",stringr::str_sub(Sys.time(), 0, -10),stringr::str_sub(Sys.time(), 15, -4),stringr::str_sub(Sys.time(), 18, -1),".RDS")
@@ -22,23 +22,32 @@ if(Sys.info()[1]=="Windows"){
 }
 
 #get parameter values 
-sitka<-getParms(timeStp = ifelse(timeStep=="monthly",12,52))
+
+sitka<-getParms(timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
 
 
-nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain"
-      )
+
+nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
+      "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
+      "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
+      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
+
+
 
 ##Set priors
 priors<-createPriors_sitka(sitka=sitka)
 
 pMaxima<-priors[[1]]
 pMinima<-priors[[2]]
-pMaxima[[30]]<-0.01
-Uprior <- createUniformPrior(lower = pMinima[1:length(nm)], upper = pMaxima[1:length(nm)])
+pMaxima[[30]]<-0.1
+Uprior <- createPrior(lower = pMinima, upper = pMaxima)
 ## Set observed calibration data and uncertainty
 startYear = 2015
-endYear = 2017
-years <- 2010:2012
+endYear = 2018
+
+
+Uprior <- createTruncatedNormalPrior(mean = priors[[3]], sd=(pMaxima-pMinima)*0.1,
+                     lower = pMinima, upper = pMaxima)
 
 
 observed <- c(data$gpp,                ## GPP
@@ -62,21 +71,21 @@ observed <- c(data$gpp,                ## GPP
 )
 
 
-dev <- c(rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
-         rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
-         rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
-         rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
-         rep(0.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
-         rep(0.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
+dev <- c(rep(.3,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
+         rep(.3,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
+         rep(.3,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
+         rep(.3,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
+         rep(.1,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
+         rep(6,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
          # rep(0.5,(nrow(dplyr::filter(data,year>=startYear&year<=endYear))-1)),
          0.1,0.1,
+         10,
          1,
-         3,
          #  2,
          #  1,
          5,
-         1,
-         rep(0.001,nrow(dplyr::filter(data,year>=startYear&year<=endYear)))
+         0.5,
+         rep(.1,nrow(dplyr::filter(data,year>=startYear&year<=endYear)))
          
 )
 
@@ -85,76 +94,14 @@ dev <- c(rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
 
 likelihoodFunc<-ifelse(timeStep=="monthly",NLL,NLL_weekly)
 
-iters=10000
+
+iters=1000
 #Initiate bayesian setup
-BS3PGDN <- createBayesianSetup(likelihood = likelihoodFunc, prior = Uprior, names = nm, parallel = T, catchDuplicates = F )
+BS3PGDN <- createBayesianSetup(likelihood = likelihoodFunc, prior = Uprior, names = nm, parallel = 6, catchDuplicates = F )
 settings = list(
   iterations = iters,
   ## Z = NULL,
-  startValue = 7, # internal chain number - dont use these chains for convergence testing 
-  nrChains = 1, # Number of chains
-  pSnooker = 0.5,
-  burnin = round(iters/100*10), #10% burnin
-  ## thin = 1,
-  ## f = 2.38,
-  ## eps = 0,
-  parallel = T,
-  ## pGamma1 = 0.1,
-  ## eps.mult = 0.2,
-  ## eps.add = 0,
-  ## consoleUpdates = 100,
-  ## zUpdateFrequency = 1,
-  ## currentChain = 3,
-  ## blockUpdate  = list("none",
-  ##                     k = NULL,
-  ##                     h = NULL,
-  ##                     pSel = NULL,
-  ##                     pGroup = NULL,
-  ##                     groupStart = 1000,
-  ##                     groupIntervall = 1000),
-  message = TRUE)
-
-
-#Run calibration for just hydro models
-out <- runMCMC(bayesianSetup = BS3PGDN, sampler = "DEzs", settings = settings)
-
-
-
-
-#calculate priors for hydro submodels from first run
-codM<-as.data.frame(mergeChains(out$chain))
-codM<-codM[nm]
-codMQ<-as.data.frame(HPDinterval(as.mcmc(codM)))
-codMQ$median<-colMedians(codM)
-#pMaxima<-pMaxima
-#pMinima<-pMinima
-
-#26 bad
-#12 bad
-#15 bad
-#13 bad
-#pMaxima[c(26,12,15,13)]<-pMaxima[c(26,12,15,13)]*0.1
-#pMinima[c(26,12,15,13)]<-pMinima[c(26,12,15,13)]*0.1
-
-pMaxima[1:nrow(codMQ)]<-codMQ$upper
-pMinima[1:nrow(codMQ)]<-codMQ$lower
-pMinima[30]<-0
-Uprior <- createUniformPrior(lower = pMinima, upper = pMaxima)
-
-nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
-"pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
-"mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-"Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
-
-
-
-iters=10000
-#Initiate bayesian setup
-BS3PGDN <- createBayesianSetup(likelihood = likelihoodFunc, prior = Uprior, names = nm, parallel = T, catchDuplicates = F )
-settings = list(
-  iterations = iters,
-  ## Z = NULL,
-  startValue = 7, # internal chain number - dont use these chains for convergence testing 
+  startValue = 6, # internal chain number - dont use these chains for convergence testing 
   nrChains = 1, # Number of chains
   pSnooker = 0.5,
   burnin = round(iters/100*10), #10% burnin
@@ -178,9 +125,9 @@ settings = list(
   message = TRUE)
 
 #run calibration with all parameters and priors based on initial hydro model runs
-out2 <- runMCMC(bayesianSetup = BS3PGDN, sampler = "DEzs", settings = settings)
+out <- runMCMC(bayesianSetup = BS3PGDN, sampler = "DEzs", settings = settings)
 
 
 #Save output
-saveRDS(out2,file=fName)
+saveRDS(out,file=paste0(timeStep,"_",fName))
 

@@ -53,24 +53,46 @@ sampleOutputTS<-function(df,sY,eY){
 ## Likelihood function
 NLL <- function(p){
   sitka[.GlobalEnv$nm]<-p
-  output<-do.call(fr3PGDN,sitka)
-  #use sampleOutputTS if using smaller time-steps
-  modelled <-sampleOutput(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
   
-  #Some observed SWC values are missing, so NA, thus need to remove any NA results for sum
-  NlogLik  <- sum(dnorm(.GlobalEnv$observed,mean=modelled,sd=.GlobalEnv$dev,log=T),na.rm = T)
-  return(NlogLik)
+  
+  NlogLik <- tryCatch(
+    {
+      output<-do.call(fr3PGDN,sitka)
+      #use sampleOutputTS if using smaller time-steps
+      modelled <-sampleOutput(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
+      
+      #Some observed SWC values are missing, so NA, thus need to remove any NA results for sum
+      #also if the model outputs NA's we don't want to keep this param set
+      ifelse(any(is.na(modelled)==T),-Inf,sum(dnorm(x=.GlobalEnv$observed,sd =.GlobalEnv$dev, mean=modelled,log=T),na.rm = T))
+      
+    },
+    error=function(cond) {
+      return(-Inf)
+    })
+  
+   return(NlogLik)
 }
+
+
 
 
 
 ## Likelihood function
 NLL_weekly <- function(p){
   sitka[.GlobalEnv$nm]<-p
+  
+  NlogLik <- tryCatch(
+    {
   output<-do.call(fr3PGDN,sitka)
   #use sampleOutputTS if using smaller time-steps
   modelled <-sampleOutputTS(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
   
-  NlogLik  <- sum(dnorm(.GlobalEnv$observed,mean=modelled,sd=.GlobalEnv$dev,log=T),na.rm = T)
+  NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,sum(dnorm(.GlobalEnv$observed,mean=modelled,sd=.GlobalEnv$dev,log=T),na.rm = T))
+  
+  
+    },
+  error=function(cond) {
+    return(-Inf)
+  })
   return(NlogLik)
 }

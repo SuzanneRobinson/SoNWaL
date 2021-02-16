@@ -14,12 +14,12 @@ f.decrease <- c(
   0.2, #fieldCap
   0.3,#satPoint
   0.001, #K_s
-  3, #V_nr
-  0.2, #sigma_zR
+  2, #V_nr
+  0.1, #sigma_zR
   1, #E_S1
-  0.5, #E_S2
+  0.1, #E_S2
   2, #shared_area
-  2, #maxRootDepth
+  1.5, #maxRootDepth
   0.1, #K_drain
   0.588503613257886, #pFS2
   0.752929538228874, #pFS20
@@ -61,17 +61,17 @@ f.decrease <- c(
 
 f.increase <-
   c(
-    0.14,#wiltPoint
+    0.25,#wiltPoint
     0.35,#fieldCap
     0.6,#satPoint
     10,#K_s
     5,#V_nr
     0.9,#sigma_zR
-    100,#E_S1
-    20,#E_S2
+    7,#E_S1
+    6,#E_S2
     6, #shared_area
     4, #maxRootDepth
-    0.5, #K_drain
+    0.8, #K_drain
     0.573973679288588,#pFS2
     0.235352308855631,#pFS20
     1.86098081013281,#aS
@@ -111,8 +111,8 @@ f.increase <-
   )
 
 ##Need to check what priors we are using!
-pMaxima <- as.vector(unlist(sitka[nm])*(1+(0.5*f.increase)))
-pMinima <- as.vector(unlist(sitka[nm])*(1-(0.5*f.decrease)))
+pMaxima <- as.vector(unlist(sitka[nm])*(1+(f.increase)))
+pMinima <- as.vector(unlist(sitka[nm])*(1-(f.decrease)))
 pValues <- as.vector(unlist(sitka[nm]))
 
 pMaxima[1:11] <- f.increase[1:11]

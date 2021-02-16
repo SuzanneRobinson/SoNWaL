@@ -22,7 +22,6 @@ library(miscTools)
 #Get UK spatial data - needs updating to web scraping
 simDat<-spatDatUK(dataDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\monthly")
 
-#Load in Swiss MCMC data to get a range of parameters - taken from Trotsiuk et al. (2020)
 param.drawX<-read_rds('C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\outx.RDS')
 param.drawX<-as_tibble(getSample(param.drawX, start = 100, coda = TRUE, thin = 1,numSamples = 1000 )[[1]])#,colMedians(getSample(param.drawX, start = 1000, coda = TRUE, thin = 1 )[[2]])))
 param.draw<-as_tibble(1:nrow(param.drawX))

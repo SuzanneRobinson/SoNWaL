@@ -51,10 +51,19 @@ for(i in c(1:nrow(clm_df_full))){
 clm_df_fullX$week<-c(1:51)
 
 weeklyRfall<-weeklyRfall[,c(names(clm_df_fullX[,c(1:9)]))]
+names(clm_df_daily)<-c("Year","DOY","Tmax","Tmin","Tmean","Rain","SolarRad","FrostHours","MonthIrrig","Date","week")
+clm_df_daily<-clm_df_fullX[,c(names(clm_df_fullX[,c(1:9)]))]
+
+#User longer term daily data for historical rainfall and temp
+#clm_df_full$Rain<-aggregate(weeklyRfall$Rain~weeklyRfall$Month+weeklyRfall$Year,FUN=sum)[,3]
+#clm_df_full$Tmax<-aggregate(weeklyRfall$Tmax~weeklyRfall$Month+weeklyRfall$Year,FUN=max)[,3]
+#clm_df_full$Tmin<-aggregate(weeklyRfall$Tmax~weeklyRfall$Month+weeklyRfall$Year,FUN=min)[,3]
+#clm_df_full$Tmean<-aggregate(weeklyRfall$Tmax~weeklyRfall$Month+weeklyRfall$Year,FUN=mean)[,3]
 
 
 if(timeStep=="monthly") return (clm_df_full)
 if(timeStep=="weekly") return (weeklyRfall)
+if(timeStep=="daily") return (clm_df_daily)
 
 }
 ################################################################################

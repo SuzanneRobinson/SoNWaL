@@ -70,9 +70,13 @@ R/._*
 
 /*.Rcheck/
 
+.tif
 
+.tiff
 
+.rvt
 
+.xml
 
 
 

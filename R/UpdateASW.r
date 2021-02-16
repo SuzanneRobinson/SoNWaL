@@ -40,7 +40,8 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     CanTransp <- Etransp/lambda * h
     #less accurate but easier to have flexible time-steps?
     Transp <- CanTransp*365/parms[["timeStp"]] #general.info$daysinmonth[month] * CanTransp
-    EvapTransp <- min(Transp + RainIntcptn, ASWrain)
+    EvapTransp <- min(Transp + RainIntcptn, state[["SWC_rz"]]+Rain-RainIntcptn) # NOT SURE IF THIS NEEDS A MINIUM VALUE???? if so, ASW+rain or SWC+rain? remember ASW is now volumetric
+    #evap from soil and drainage occur after transpiration so max is just plus rain...?
     
     #non-Intercepted radiation
     interRad<-(RAD.day * 1e+06/h)-max((RAD.day * 1e+06/h)*(1-exp(-parms[["k"]]*LAI)),0)

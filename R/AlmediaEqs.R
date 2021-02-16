@@ -127,8 +127,8 @@ soilEvap<-function(parms,weather,state,interRad,h){
   lambda <- parms[["lambda"]]#Volumetric latent heat of vaporization. Energy required per water volume vaporized (see penman monteith)
   VPDconv <- parms[["VPDconv"]]
   VPD <- weather[["VPD"]]
-  E_S1 = parms[["E_S1"]]
-  E_S2 = parms[["E_S2"]]
+  E_S1 = exp(parms[["E_S1"]])
+  E_S2 = exp(parms[["E_S2"]])
 
   
   #size of time-step. This is for monthly time steps
@@ -160,22 +160,21 @@ soilEvap<-function(parms,weather,state,interRad,h){
   #E_S0 is E_S at the start of the time-step
   E_S0 = state[["E_S"]]
 
-#  #Duration of phase 1 evaporation
-# t_S1 = E_S1 / e0
-# #Solved for t equation A.10 in Almedia, to get equivalent t for E_S0 value
-# t0 = as.numeric(round(((-2 * E_S0 * E_S1) + (E_S0 ^ 2) + (2 * E_S0) +
-#                          (E_S1 ^ 2) - (2 * E_S1) + 1 + (2 * e0 * E_S2 * t_S1) - (E_S2 ^ 2)
-# ) / (2 * e0 * E_S2)))
-# 
-# print((t + t0) <= t_S1)
-# #Integrate equation A.9 to get value at time t (assuming t is number of days in month)
-# #and Calc E_S using t+t0 to get amount of evaporation between t0 and t
-# E_S = if ((t + t0) <= t_S1)
-#   e0 * (t + t0)
-# else
-#   (E_S1 + E_S2 * (sqrt(1 + 2 * (e0 / E_S2) * ((t + t0) - t_S1) - 1)))-E_S0
-#  
-  E_S<-E_S0+ifelse(E_S0<=E_S1,e0,e0/(1+(E_S0-E_S1)/E_S2))
+  #Duration of phase 1 evaporation
+ t_S1 = E_S1 / e0
+ #Solved for t equation A.10 in Almedia, to get equivalent t for E_S0 value
+ t0 = as.numeric(round(((-2 * E_S0 * E_S1) + (E_S0 ^ 2) + (2 * E_S0) +
+                          (E_S1 ^ 2) - (2 * E_S1) + 1 + (2 * e0 * E_S2 * t_S1) - (E_S2 ^ 2)
+ ) / (2 * e0 * E_S2)))
+ 
+ #Integrate equation A.9 to get value at time t (assuming t is number of days in month)
+ #and Calc E_S using t+t0 to get amount of evaporation between t0 and t
+ E_S = if ((t + t0) <= t_S1)
+   e0 * (t + t0)
+ else
+   (E_S1 + E_S2 * (sqrt(1 + 2 * (e0 / E_S2) * ((t + t0) - t_S1) - 1)))-E_S0
+  
+ # E_S<-E_S0+ifelse(E_S0<=E_S1,e0,e0/(1+(E_S0-E_S1)/E_S2))
 
   return(list(E_S,e0))
   

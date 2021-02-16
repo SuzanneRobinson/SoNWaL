@@ -47,7 +47,7 @@ function (state, weather, site, parms, general.info)
       volSWC_fc= parms[["fieldCap"]]
       MaxASW <- (volSWC_fc-volSWC_wp)
       
-      #calc moist ratio
+      #calc moist ratio (or relative ASW)
       MoistRatio<- ASW/MaxASW
       #modify MoistRatio if numerators are above or below certain values (see Landsberg and waring)
       MoistRatio<-ifelse(ASW>=0,MoistRatio,0)

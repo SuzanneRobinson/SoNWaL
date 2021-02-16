@@ -44,10 +44,10 @@ observed <- c(data$gpp,                ## GPP
 
 
 
-dev <- c(rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
-         rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
-         rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
-         rep(.01,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
+dev <- c(rep(.1,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
+         rep(.1,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
+         rep(.1,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
+         rep(.1,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
          rep(0.1,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
          rep(0.1,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
         # rep(0.5,(nrow(dplyr::filter(data,year>=startYear&year<=endYear))-1)),
