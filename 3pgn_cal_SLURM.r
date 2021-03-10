@@ -1,6 +1,6 @@
 ## Load necessary packages
-library(fr3PGDN,quietly=TRUE)
-library(BayesianTools,quietly=TRUE)
+library(fr3PGDN)
+library(BayesianTools)
 library(tidyverse)
 library(dplyr)
 library(coda)
@@ -95,7 +95,7 @@ dev <- c(rep(.3,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
 likelihoodFunc<-ifelse(timeStep=="monthly",NLL,NLL_weekly)
 
 
-iters=1000
+iters=200000
 #Initiate bayesian setup
 BS3PGDN <- createBayesianSetup(likelihood = likelihoodFunc, prior = Uprior, names = nm, parallel = 6, catchDuplicates = F )
 settings = list(

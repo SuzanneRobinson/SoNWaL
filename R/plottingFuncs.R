@@ -20,6 +20,7 @@ plotResults <- function(df,ShortTS=F){
       if(df$Month[i]!=df$Month[i+1])
         df2<-rbind(df2,df[i,])
     }
+    df2<-df2[-1,]
     df2$GPP<-aggregate(df$GPP~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
     df2$NPP<-aggregate(df$NPP~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
     df2$EvapTransp<-aggregate(df$EvapTransp~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]

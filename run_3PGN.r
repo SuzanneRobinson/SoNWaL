@@ -41,8 +41,8 @@ sitka<-getParms(weather=clm_df_full,
                 maxRootDepth=2.5,
                 sigma_zR =0.3, #area/depth explored by 1kg of root biomass
                 SWC_nr=10, #SWC of non-rooting zone at time 0
-                E_S1 =4, #Cumulitive evap threshold (kg^m-2) - sensitive to length of time-step, e.g. monthly time-step means wetting event only occurs at end of month
-                E_S2 =2, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
+                E_S1 =1, #Cumulitive evap threshold (kg^m-2) - sensitive to length of time-step, e.g. monthly time-step means wetting event only occurs at end of month
+                E_S2 =1, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
                 MaxASW_state=50,
                 K_drain=0.16,
                 timeStp = 12 #time step, 52 for weekly, 12 for monthly and 365 for daily
@@ -147,7 +147,7 @@ ggarrange(g2,g1,g3,g4)
 #
 ### Plot model outputs
 #pOut <- plotModel(output)
-out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\monthly_outx_2021-02-114431.RDS")
+out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\weekly_outx_2021-02-255532.RDS")
 
 #
 #YC.finder <- function(HT,AGE) 
