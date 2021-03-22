@@ -63,10 +63,10 @@ results<-plotResults(output,ShortTS=F)
 #results
 ggarrange(results[[1]],results[[2]],results[[3]],results[[4]],results[[5]],results[[12]])
 
-codM<-getSample(out, start = 1000, coda = TRUE, thin = 10)
+codM<-getSample(out, start = 10000, coda = TRUE, thin = 10)
 #bayesplot::mcmc_trace(codM)
 priorSamp<-Uprior$sampler(35000)
-MCMCtrace(codM,wd="C:\\Users\\aaron.morris", priors = priorSamp, post_zm=F)
+MCMCtrace(codM[-7],wd="C:\\Users\\aaron.morris", priors = priorSamp, post_zm=F,iter=5000)
 #get some previous run parameter estimates#
 codM<-as.data.frame(mergeChains(out$chain))
 names(codM)<-nm
@@ -147,7 +147,7 @@ ggarrange(g2,g1,g3,g4)
 #
 ### Plot model outputs
 #pOut <- plotModel(output)
-out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\weekly_outx_2021-02-255532.RDS")
+out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\monthly_outx_2021-02-265347.RDS")
 
 #
 #YC.finder <- function(HT,AGE) 

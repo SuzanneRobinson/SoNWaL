@@ -7,7 +7,7 @@ library(coda)
 library(miscTools)
 
 ##choose timestep size
-timeStep<-"daily"
+timeStep<-"weekly"
 
 #create filename based on time...maybe not necessary, just trying to avoid overwriting of outputs from diff sessions by JASMIN
 fName=paste0("outx_",stringr::str_sub(Sys.time(), 0, -10),stringr::str_sub(Sys.time(), 15, -4),stringr::str_sub(Sys.time(), 18, -1),".RDS")
@@ -94,14 +94,14 @@ dev <- c(rep(.3,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
 
 likelihoodFunc<-ifelse(timeStep=="monthly",NLL,NLL_weekly)
 
-
-iters=200000
+outX<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\daily_outx_2021-02-262358.RDS")
+iters=300000
 #Initiate bayesian setup
-BS3PGDN <- createBayesianSetup(likelihood = likelihoodFunc, prior = Uprior, names = nm, parallel = 6, catchDuplicates = F )
+BS3PGDN <- createBayesianSetup(likelihood = likelihoodFunc, prior = Uprior, names = nm, parallel = 8, catchDuplicates = F )
 settings = list(
   iterations = iters,
   ## Z = NULL,
-  startValue = 6, # internal chain number - dont use these chains for convergence testing 
+  startValue = 7, # internal chain number - dont use these chains for convergence testing 
   nrChains = 1, # Number of chains
   pSnooker = 0.5,
   burnin = round(iters/100*10), #10% burnin
@@ -125,9 +125,9 @@ settings = list(
   message = TRUE)
 
 #run calibration with all parameters and priors based on initial hydro model runs
-out <- runMCMC(bayesianSetup = BS3PGDN, sampler = "DEzs", settings = settings)
+out2 <- runMCMC(bayesianSetup = outX, sampler = "DEzs", settings = settings)
 
 
 #Save output
-saveRDS(out,file=paste0(timeStep,"_",fName))
+saveRDS(out2,file=paste0(timeStep,"_",fName))
 

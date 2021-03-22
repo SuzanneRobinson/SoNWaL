@@ -26,7 +26,7 @@ fName=paste0("outx_",stringr::str_sub(Sys.time(), 0, -10),stringr::str_sub(Sys.t
 #get climate data
 clm_df_full<-getClimDat(timeStep)
 
-## Read Harwood data for Sitka spruce and mutate timestamp to POSIXct
+## Read Harwood data for Sitka spruce
 if(Sys.info()[1]=="Windows"){
   data <- read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\harwood_data.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
 }else
@@ -147,3 +147,5 @@ morrisOut_df %>%
     axis.title = element_blank(),
     legend.position = c(0.05 ,0.95),legend.justification = c(0.05,0.95)
   )
+
+

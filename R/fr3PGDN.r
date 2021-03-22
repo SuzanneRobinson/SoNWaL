@@ -19,7 +19,7 @@ function (weather, presc, t = 0, N = 2500, Wl = 0.01, WlDormant = 0, Wr = 0.01, 
               leaf.grow = 0, leaf.fall = 0, Wl.s = 0.01, Wsbr.s = 0.1, Wr.s = 0.01, pWl.sprouts = 0.5,
               pWsbr.sprouts = 0.9, cod.pred = "3PG", cod.clim = "Average" ,K_s=0.1,V_nr=5,sigma_zR =1,SWC_nr=800,E_S=100,
               E_S1 =50,E_S2 =0.01,waterBalanceSubMods=T,wiltPoint=0.1,fieldCap=0.3,MaxASW_state=50,timeStp=12,maxRootDepth=2,shared_area=5,
-          K_drain=0.1,SWC_rz,satPoint=0.35)
+          K_drain=0.1,SWC_rz,satPoint=0.35,tempMod=1,rainMod=1)
         ## added WlDormant, leafgrow and leaffall, leafgrow and leaffall - Tom Locateli
         ## pfsPower = -0.522878745280338, pfsConst = 0.43104582317421,
 {
@@ -77,6 +77,12 @@ function (weather, presc, t = 0, N = 2500, Wl = 0.01, WlDormant = 0, Wr = 0.01, 
                                                   soilclass = c(1, 2, 3, 4, -1, 0),
                                                   SWconst = c(0.7, 0.6, 0.5, 0.4, parms[["SWconst0"]], 1),
                                                   SWpower = c(9, 7, 5, 3, parms[["SWpower0"]], 1)))
+    
+    
+    ##For spatial increase sensitivity analysis, temp and rainfall mods
+    weather$Rain<-weather$Rain*rainMod
+    weather[,c("Tmean","Tmax","Tmin")]<-weather[,c("Tmean","Tmax","Tmin")]*tempMod
+    
     
     proj <- RunModel(stand.init = vars.ini, weather = weather, 
                      site = site.info, general.info = parms.general, presc = presc, 

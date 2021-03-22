@@ -159,6 +159,9 @@ YCfunc<-function(out){
   CAI<-(aggregate(out$CAI~out$Year,FUN=mean))
   names(MAI)<-c("x","y")
   names(CAI)<-c("x","y")
+  MAIx<-MAI[-c(1:10),]
+  CAIx<-CAI[-c(1:10),]
+  
   MAI$x<-c(1:nrow(MAI))
   CAI$x<-c(1:nrow(CAI))
   
@@ -170,14 +173,16 @@ YCfunc<-function(out){
   lines(MAI,col="blue")
   lines(CAI,col="red")
   
+  
   interSec<- tryCatch(
     {
-      CAIx<-CAI[-c(1:10),2]
       curve_intersect(MAI[-c(1:10),], CAI[-c(1:10),], empirical = TRUE, domain = NULL)[[2]]
       
     },
     error = function(cond){
-      CAIx[which(diff(sign(diff(CAIx)))==2)+1]
+      #CAIx[which(diff(sign(diff(CAIx)))==2)+1]
+      CAIx$MAI<-MAIx$y
+      CAIx[which(CAIx$y<CAIx$MAI),][1,3]
     })
   
   interSec<-if(length(interSec)>1) interSec[2] else interSec
@@ -233,7 +238,7 @@ FR3PG_spat_run <- function(site, clm,param.draw,clm_df_full){
       
       
       
-      weatherDat$Rain<-weatherDat$Rain*0.6
+      weatherDat$Rain<-weatherDat$Rain#*0.6
     #  weatherDat$Tmax<-weatherDat$Tmax*1.1
     #  weatherDat$Tmean<-weatherDat$Tmean*1.1
     #  weatherDat$Tmin<-weatherDat$Tmin*1.1
@@ -265,7 +270,9 @@ FR3PG_spat_run <- function(site, clm,param.draw,clm_df_full){
   
   #select stem and branch biomass or other outputs, take mean and 95% credible intervals
     #value to use? Wsbr or GPP etc?
- site_out <- param.draw %>%##THIS IS BROKEN - NEEDS FIXING!!!!!!!!!!!!
+ site_out <- tryCatch(
+   {param.draw %>%
+   
     dplyr::mutate( sim = map(pars, FR3pgRun)) %>%
     dplyr::select(mcmc_id, sim) %>%
     tidyr::unnest_legacy() %>%
@@ -309,6 +316,14 @@ FR3PG_spat_run <- function(site, clm,param.draw,clm_df_full){
       Reco_value = quantile(Reco, 0.5, na.rm = T)
       
     )
+},
+error = function(cond){
+  site_out <- tibble::as_tibble(data.frame(Wsbr_q05=NA,Wsbr_q95=NA,Wsbr_value=NA,
+                                           GPP_q05=NA,GPP_q95=NA,GPP_value=NA,
+                                           NPP_q05=NA,NPP_q95=NA,NPP_value=NA,
+                                           NEE_q05=NA,NEE_q95=NA,NEE_value=NA,
+                                           Reco_q05=NA,Reco_q95=NA,Reco_value=NA))
+})
 
     
     

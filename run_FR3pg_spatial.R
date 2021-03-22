@@ -47,7 +47,7 @@ plan(multisession,workers = 7)
 #run grid squares in parallel - as running over grid squares should be very scaleable
 out2 <-future_map2(spatSimDat$site, spatSimDat$clm, ~FR3PG_spat_run(site=.x, clm=.y,param.draw=param.draw,clm_df_full=clm_df_full),.progress = T)
 #bind into a single tibble
-out<-as_tibble(data.table::rbindlist(out2))
+out<-as_tibble(data.table::rbindlist(out2,fill=T))
 #re-add grid_id values
 out$grid_id<-spatSimDat$grid_id
 #Remove areas where there is no data (such as the ocean), for speed FR3PG_spat_run skips these and just adds NA's
@@ -72,11 +72,15 @@ else return (NA)
 #out$YC_q95<-as.numeric(sapply(out$height_q95,YC.finder))
 #out$YC_q05<-as.numeric(sapply(out$height_q05,YC.finder))
 #
-out$yc_value<-(out$yc_value-min(out$yc_value,na.rm=T))/(24-8)
-out$yc_q95<-(out$yc_q95-min(out$yc_q95,na.rm=T))/(24-8)
-out$yc_q05<-(out$yc_q05-min(out$yc_q05,na.rm=T))/(24-8)
+out$yc_value<-(out$yc_value-8)/(24-8)
+out$yc_q95<-(out$yc_q95-8)/(24-8)
+out$yc_q05<-(out$yc_q05-8)/(24-8)
 #
 #
+out$yc_value<-ifelse(out$yc_value<0,0,out$yc_value)
+out$yc_q95<-ifelse(out$yc_q95<0,0,out$yc_q95)
+out$yc_q05<-ifelse(out$yc_q05<0,0,out$yc_q05)
+
 ## out$an_dbh<-rep(aggregate(out$dg~out$Year,FUN=max)[,2],each=12)
 #out$age<-rev(as.numeric(2018-out$Year))
 ##out$sVol<-2000*((out$dg/2)^2*pi*out$hdom)/100
@@ -84,9 +88,9 @@ out$yc_q05<-(out$yc_q05-min(out$yc_q05,na.rm=T))/(24-8)
 #out$CAI<-c(rep(0,12),diff(out$Vu,lag=12))
 #
 
-#saveRDS(out2,file="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\map_Drought.RDS")
+#saveRDS(out2,file="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\map_NoDrought.RDS")
 
-#out2<-readRDS(out2,file="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\map_NoDrought.RDS")
+out2<-readRDS(out2,file="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\map_Drought.RDS")
 
 #Plot results
 g1<-out %>%
@@ -107,7 +111,7 @@ g1<-out %>%
         panel.grid.minor = element_blank())+
   ggtitle("Suitability")+
   coord_equal() + 
- scale_fill_viridis_c( "",option = "plasma", na.value="gray70",
+ scale_fill_viridis_c( "",option = "plasma", na.value="gray70",limits=c(0,1),
                        breaks=c(0,0.5,1),labels=c("Unsuitable","Suitable","V. Suitable"))
 
 

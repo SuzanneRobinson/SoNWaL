@@ -123,7 +123,10 @@ getParms<-function(weather=clm_df_full,
                    E_S2 =1.5, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
                    MaxASW_state=50,
                    K_drain=0.3,
-                   timeStp = 12 # time step, 52 for weekly, 12 for monthly and 365 for daily
+                   timeStp = 12, # time step, 52 for weekly, 12 for monthly and 365 for daily
+                   rainMod =1, #rain adjustment for sensitivity analyses
+                   tempMod =1 #rain adjustment for sensitivity analyses
+                   
                    ){
   
  list(weather=weather,
@@ -249,7 +252,9 @@ getParms<-function(weather=clm_df_full,
               E_S2 =E_S2, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
               MaxASW_state=MaxASW_state,
               K_drain=K_drain,
-              timeStp = timeStp # time step, 52 for weekly, 12 for monthly and 365 for daily
+              timeStp = timeStp, # time step, 52 for weekly, 12 for monthly and 365 for daily
+      rainMod=rainMod,
+      tempMod=tempMod
   )
 }
 
