@@ -15,7 +15,7 @@ getParms<-function(weather=clm_df_full,
                    ON = 14.7,
                    Nav = 12.4,
                    ## ~~ Site ~~ ##
-                   N = 2000,
+                   N = 902,
                    rotation = 1,
                    cycle = 1,
                    rm.sprouts = F,

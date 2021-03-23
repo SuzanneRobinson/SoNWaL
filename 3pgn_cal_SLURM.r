@@ -7,7 +7,7 @@ library(coda)
 library(miscTools)
 
 ##choose timestep size
-timeStep<-"weekly"
+timeStep<-"monthly"
 
 #create filename based on time...maybe not necessary, just trying to avoid overwriting of outputs from diff sessions by JASMIN
 fName=paste0("outx_",stringr::str_sub(Sys.time(), 0, -10),stringr::str_sub(Sys.time(), 15, -4),stringr::str_sub(Sys.time(), 18, -1),".RDS")

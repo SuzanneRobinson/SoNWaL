@@ -99,8 +99,8 @@ nm<-c("rainMod")
 #create priors/ranges for hydrological params, plus add some for rain and temp mods
 pMaxima<-priors[[1]][1:length(nm)]
 pMinima<-priors[[2]][1:length(nm)]
-pMinima[c(1)]<-0.5#up and down by 50% for rainfall
-pMaxima[c(1)]<-1.5
+pMinima[c(1)]<-.2#up and down by 50% for rainfall
+pMaxima[c(1)]<-1.8
 pMinima[c(1)]<-0.8#up and down by 10% for temperature
 pMaxima[c(1)]<-1.2
 Uprior <- createPrior(lower = pMinima, upper = pMaxima)
@@ -122,7 +122,7 @@ morris_setup <- createBayesianSetup(
 morrisOut <- morris(
   model = morris_setup$posterior$density,
   factors = nm, 
-  r = 50, 
+  r = 25, 
   design = list(type = "oat", levels = 50, grid.jump = 3), 
   binf = pMinima, 
   bsup = pMaxima, 
@@ -133,9 +133,12 @@ morrisOut <- morris(
 senseOutTemp<-data.frame(func_output=morrisOut$y,inputVal=morrisOut$X[,1])
 senseOutRain<-data.frame(func_output=morrisOut$y,inputVal=morrisOut$X[,1])
 
+senseOutRain2$inputVal2<-"noHS"
+senseOutRain$inputVal2<-"HS"
+senseOutRainX<-rbind(senseOutRain,senseOutRain2)
 
-g1<-ggplot(senseOutRain,aes(x=(inputVal*100)-100,y=func_output))+
-  geom_point(col="red",alpha=0.1)+
+g1<-ggplot(senseOutRainX,aes(x=(inputVal*100)-100,y=func_output,col=inputVal2))+
+  geom_point(alpha=1)+
   geom_smooth()+
   ylab(expression(paste("NPP [tDM"," ",ha^-1,"]",sep="")))+
   xlab("Rainfall change (%)")+
