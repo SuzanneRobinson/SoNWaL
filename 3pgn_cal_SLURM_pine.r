@@ -3,14 +3,25 @@ library(tidyverse)
 library(lubridate)
 library(RNetCDF)
 library(zoo)
+library(fr3PGDN)
+library(BayesianTools)
+library(dplyr)
+library(coda)
+library(miscTools)
+
 setwd("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PROFOUND_data\\ProfoundData")
 setDB(db_name ="ProfoundData.sqlite")
+timeStep="weekly"
 
-
+clm_df_full<-getClimDat(timeStep)
+sitka<-getParms(timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
 sites    <- c("peitz","soro" ,"hyytiala","solling_beech","solling_spruce")
+fName=paste0("outx_",stringr::str_sub(Sys.time(), 0, -10),stringr::str_sub(Sys.time(), 15, -4),stringr::str_sub(Sys.time(), 18, -1),".RDS")
 
 ##hyytiala
 site = 3
+
+getClmPine<-function(timeStep="monthly"){
 
 ## 1996-2012
 NinetySixtoEnd <- getData(site=sites[site],dataset="CLIMATE_LOCAL")
@@ -31,31 +42,89 @@ extendDates                   <- seq(as.Date("1961/1/1"), as.Date(NinetySixtoEnd
 extendYrs                     <- as.integer(format(extendDates,format="%Y"))
 weathdata                     <- weathdata %>% mutate(date = extendDates, year = extendYrs)
 
+weathdata$week<-week(weathdata$date)
+weathdata$week[weathdata$week==53]<-52
 
+if(timeStep=="monthly"){
 clm_df_pine<-aggregate(weathdata$tmean_degC~weathdata$mo+weathdata$year,FUN=mean)
 clm_df_pine<-data.frame(Year=clm_df_pine$`weathdata$year`,Month=clm_df_pine$`weathdata$mo`,Tmean=clm_df_pine$`weathdata$tmean_degC`)
 
 clm_df_pine$Tmax         <- aggregate(weathdata$tmax_degC~weathdata$mo+weathdata$year,FUN=max)[,3]
 clm_df_pine$Tmin         <- aggregate(weathdata$tmin_degC~weathdata$mo+weathdata$year,FUN=min)[,3]
 clm_df_pine$Rain      <- aggregate(weathdata$p_mm~weathdata$mo+weathdata$year,FUN=sum)[,3]
-clm_df_pine$solarRad        <- aggregate(weathdata$rad_Jcm2*((100*100)/1000000)~weathdata$mo+weathdata$year,FUN=mean)[,3] # convert to MJ/m*m/day
+clm_df_pine$SolarRad        <- aggregate(weathdata$rad_Jcm2*((100*100)/1000000)~weathdata$mo+weathdata$year,FUN=mean)[,3] # convert to MJ/m*m/day
 clm_df_pine$FrostDays<-0
 clm_df_pine$MonthIrrig<-0
 clm_df_pine$date<-as.Date(paste0(clm_df_pine$Year,"-",clm_df_pine$Month,"-01"))
-clm_df_pine$week<-week(clm_df_pine$date)
+
+
+}
+
+if(timeStep=="weekly"){
+  clm_df_pine<-aggregate(weathdata$tmean_degC~weathdata$week+weathdata$year,FUN=mean)
+  clm_df_pine<-data.frame(Year=clm_df_pine$`weathdata$year`,Week=clm_df_pine$`weathdata$week`,Tmean=clm_df_pine$`weathdata$tmean_degC`)
+  
+  clm_df_pine$Tmax         <- aggregate(weathdata$tmax_degC~weathdata$week+weathdata$year,FUN=max)[,3]
+  clm_df_pine$Tmin         <- aggregate(weathdata$tmin_degC~weathdata$week+weathdata$year,FUN=min)[,3]
+  clm_df_pine$Rain      <- aggregate(weathdata$p_mm~weathdata$week+weathdata$year,FUN=sum)[,3]
+  clm_df_pine$SolarRad        <- aggregate(weathdata$rad_Jcm2*((100*100)/1000000)~weathdata$week+weathdata$year,FUN=mean)[,3] # convert to MJ/m*m/day
+  clm_df_pine$FrostDays<-0
+  clm_df_pine$MonthIrrig<-0
+  clm_df_pine$date<-as.Date(paste(clm_df_pine$Year, clm_df_pine$Week, 1, sep="-"), "%Y-%U-%u")
+  
+  clm_df_pine$Month<-month(clm_df_pine$date)
+  clm_df_pine<-clm_df_pine[,c(1,11,3:10,2)]
+
+}
+
+if(timeStep=="daily"){
+  clm_df_pine<-aggregate(weathdata$tmean_degC~weathdata$week+weathdata$year,FUN=mean)
+  clm_df_pine<-data.frame(Year=clm_df_pine$`weathdata$year`,Month=clm_df_pine$`weathdata$week`,Tmean=clm_df_pine$`weathdata$tmean_degC`)
+  
+  clm_df_pine$Tmax         <- aggregate(weathdata$tmax_degC~weathdata$week+weathdata$year,FUN=max)[,3]
+  clm_df_pine$Tmin         <- aggregate(weathdata$tmin_degC~weathdata$week+weathdata$year,FUN=min)[,3]
+  clm_df_pine$Rain      <- aggregate(weathdata$p_mm~weathdata$week+weathdata$year,FUN=sum)[,3]
+  clm_df_pine$SolarRad        <- aggregate(weathdata$rad_Jcm2*((100*100)/1000000)~weathdata$week+weathdata$year,FUN=mean)[,3] # convert to MJ/m*m/day
+  clm_df_pine$FrostDays<-0
+  clm_df_pine$MonthIrrig<-0
+  
+}
+
+return(clm_df_pine)
+
+}
+clm_df_pine<-getClmPine(timeStep)
 
 #get parameters
 pine<-getParms(timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
 pine$weather<-clm_df_pine
   
+#management
+#15.5	4230	0	0	0
+#20.5	2120	0.554071739	0.561434582	0.573399222
+#25.5	1275	0.55064136	0.557545216	0.568770838
+
+#1976 0.4 removed
+#1991 0.3 removed
+#1995 0.007201646 removed
+
+presc<-data.frame(cycle=c(1,1,1),t=c(15,25,35),pNr=c(0.4,0.3,0.075),thinWl=c(0.4,0.3,0.075),
+                  thinWsbr=c(0.4,0.3,0.075),thinWr=c(0.4,0.3,0.075),t.nsprouts=c(1,1,1))
+
+
+pine$presc<-presc
 ###Get observed flux data
 fluxDat <- getData(site=sites[site],dataset="FLUX")
 GPP<-aggregate(fluxDat$gppDtCutRef_umolCO2m2s1~fluxDat$mo+fluxDat$year,FUN=mean)
 names(GPP)<-c("month","year","GPP")
+GPP<-filter(GPP,year!=2007)
 NEE<-aggregate(fluxDat$neeCutRef_umolCO2m2s1~fluxDat$mo+fluxDat$year,FUN=mean)
 names(NEE)<-c("month","year","NEE")
+NEE<-filter(NEE,year!=2007)
 reco<-aggregate(fluxDat$recoDtCutRef_umolCO2m2s1~fluxDat$mo+fluxDat$year,FUN=mean)
 names(reco)<-c("month","year","reco")
+reco<-filter(reco,year!=2007)
+
 
 #get stand data
 standDat <- getData(site=sites[site],dataset="STAND")
@@ -98,10 +167,10 @@ observedPine <- c(GPP$GPP,                ## GPP - monthly avg
 startYear<-1996
 endYear<-2014
 
-devPine <- c(rep(.3,nrow(dplyr::filter(GPP,year>=startYear&year<=endYear))),
-         rep(.3,nrow(dplyr::filter(NEE,year>=startYear&year<=endYear))),
-         rep(.3,nrow(dplyr::filter(reco,year>=startYear&year<=endYear))),
-         rep(.3,nrow(LAI)),
+devPine <- c(rep(.3,nrow(dplyr::filter(GPP,year>=startYear&year<=endYear&year!=2007))),
+         rep(.3,nrow(dplyr::filter(NEE,year>=startYear&year<=endYear&year!=2007))),
+         rep(.3,nrow(dplyr::filter(reco,year>=startYear&year<=endYear&year!=2007))),
+         rep(.1,nrow(LAI)),
          rep(.3,nrow(dbh)),
          20,
          5
@@ -110,10 +179,21 @@ devPine <- c(rep(.3,nrow(dplyr::filter(GPP,year>=startYear&year<=endYear))),
 
 
 ## Extract simulated data for use in likelihood function
+#2007 is removed as a year due to some odd observed data values, basically there's no GPP or NEE etc.
 sampleOutputPine<-function(df,sY,eY){
-  m<-c(filter(df,Year>=sY&Year<=eY)$GPP,
-       filter(df,Year>=sY&Year<=eY)$NEE,
-       filter(df,Year>=sY&Year<=eY)$Reco,
+  m<-c(
+    pull(filter(df,Year>=sY&Year<=eY&Year!=2007)%>%
+           group_by(Month,Year)%>%
+           summarise(sum=sum(GPP,na.rm=TRUE))%>%
+           select(sum)),
+    pull(filter(df,Year>=sY&Year<=eY&Year!=2007)%>%
+           group_by(Month,Year)%>%
+           summarise(sum=sum(NEE,na.rm=TRUE))%>%
+           select(sum)),
+    pull(filter(df,Year>=sY&Year<=eY&Year!=2007)%>%
+           group_by(Month,Year)%>%
+           summarise(sum=sum(Reco,na.rm=TRUE))%>%
+           select(sum)),
    
       pull(filter(df,Year>=1995&Year<=2011)%>%
          group_by(Year)%>%
@@ -124,7 +204,6 @@ sampleOutputPine<-function(df,sY,eY){
         group_by(Year)%>%
         summarise(mean=mean(dg,na.rm=TRUE))%>%
         select(mean)),
-         
        
       pull(filter(df,Year==1996)%>%
         group_by(Year)%>%
@@ -163,7 +242,7 @@ startYear = 1996
 endYear = 2014
 
 
-Uprior <- createTruncatedNormalPrior(mean = priors[[3]], sd=(pMaxima-pMinima)*0.1,
+Uprior <- createTruncatedNormalPrior(mean = priors[[3]], sd=(pMaxima-pMinima)*0.3,
                                      lower = pMinima, upper = pMaxima)
 
 
@@ -176,7 +255,7 @@ pineLL <- function(p){
   NlogLik <- tryCatch(
     {
       output<-do.call(fr3PGDN,pine)
-      modelled <-sampleOutputPine(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
+      modelled <-suppressWarnings(suppressMessages(sampleOutputPine(output,.GlobalEnv$startYear,.GlobalEnv$endYear)))
       ifelse(any(is.na(modelled)==TRUE),-Inf,sum(dnorm(x=.GlobalEnv$observedPine,sd =.GlobalEnv$devPine, mean=modelled,log=T),na.rm = T))
       
     },
@@ -199,9 +278,9 @@ pineLL <- function(p){
 
 
 
-iters=20000
+iters=250000
 #Initiate bayesian setup
-BS3PGDN <- createBayesianSetup(likelihood = pineLL, prior = Uprior, names = nm, parallel = 8, catchDuplicates = F )
+BS3PGDN <- createBayesianSetup(likelihood = pineLL, prior = Uprior, names = nm, parallel = 7, catchDuplicates = F )
 settings = list(
   iterations = iters,
   ## Z = NULL,
@@ -233,5 +312,5 @@ out2 <- runMCMC(bayesianSetup = BS3PGDN, sampler = "DEzs", settings = settings)
 
 
 #Save output
-saveRDS(out2,file=paste0(timeStep,"_",fName))
+saveRDS(out2,file=paste0(timeStep,"_pine_",fName))
 

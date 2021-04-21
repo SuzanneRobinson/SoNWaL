@@ -2,6 +2,100 @@
 
 
 ## Function to plot the model against the Harwood data.
+plotResultsPine <- function(df,ShortTS=F){
+  
+  ##if plyr is loaded before dplyr can cause problems with groupby
+  dt=12
+  
+  df <- df[c(2:nrow(df)),]
+  df <- df %>% dplyr::group_by(Year)%>%mutate(cumGPP = cumsum(GPP),
+                                              cumNPP = cumsum(NPP),
+                                              timestamp = as.POSIXct(paste(sprintf("%02d",Year),sprintf("%02d",Month),sprintf("%02d",1),sep="-"),tz="GMT")) 
+  
+  GPP$timestamp<-as.Date(paste0(GPP$year,"-",GPP$month,"-01"))
+  GPP<-GPP%>%mutate(timestamp=as.POSIXct(timestamp))
+  
+  NEE$timestamp<-as.Date(paste0(NEE$year,"-",NEE$month,"-01"))
+  NEE<-NEE%>%mutate(timestamp=as.POSIXct(timestamp))
+  
+  reco$timestamp<-as.Date(paste0(reco$year,"-",reco$month,"-01"))
+  reco<-reco%>%mutate(timestamp=as.POSIXct(timestamp))
+  
+
+  if(ShortTS==T){
+    df2<-NULL
+    for(i in c(1:(nrow(df)-1))){
+      
+      if(df$Month[i]!=df$Month[i+1])
+        df2<-rbind(df2,df[i,])
+    }
+    df2<-df2[-1,]
+    df2$GPP<-aggregate(df$GPP~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+    df2$NPP<-aggregate(df$NPP~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+    df2$EvapTransp<-aggregate(df$EvapTransp~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+    df2$NEE<-aggregate(df$NEE~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+    df2$Reco<-aggregate(df$Reco~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+    df2$Rs<-aggregate(df$Rs~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
+    df<-df2
+  }  
+  
+
+  
+  gpp<-ggplot()+theme_bw()+
+    geom_line(data=df,aes(x=timestamp,y=aggregate(df$GPP~ df$Month+df$Year,FUN=sum)[,3],group=Year),colour="black",size=1)+
+    geom_point(data=GPP,aes(x=timestamp,y=GPP),colour="red",size=2)+
+    ## geom_ribbon(data=data,aes(x=timestamp,ymin=gpp-gpp.sd,ymax=gpp+gpp.sd),alpha=0.3)+
+    scale_x_datetime(limits=c(as.POSIXct("2006-01-01",tz="GMT"),as.POSIXct("2010-01-01",tz="GMT")))+    
+    labs(x="Year",y=expression(paste("GPP [tDM"," ",ha^-1,"]",sep="")))+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+
+  
+  nee<-ggplot()+theme_bw()+
+    geom_line(data=df,aes(x=timestamp,y=NEE,group=Year),colour="black",size=1)+
+    geom_point(data=NEE,aes(x=timestamp,y=NEE),colour="red",size=2)+
+    ## geom_ribbon(data=data,aes(x=timestamp,ymin=nee-nee.sd,ymax=nee+nee.sd),alpha=0.3)+
+    geom_hline(yintercept=0,lty=3)+
+    scale_y_continuous(limits=c(-5,2.5))+
+    scale_x_datetime(limits=c(as.POSIXct("2005-01-01",tz="GMT"),as.POSIXct("2014-01-01",tz="GMT")))+    
+    labs(x="Year",y=expression(paste("NEE [tDM"," ",ha^-1,"]",sep="")))+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+  
+  ggreco<-ggplot()+theme_bw()+
+    geom_line(data=df,aes(x=timestamp,y=Reco,group=Year),colour="black",size=1)+
+    geom_point(data=reco,aes(x=timestamp,y=reco),colour="red",size=2)+
+    ## geom_ribbon(data=data,aes(x=timestamp,ymin=reco-reco.sd,ymax=reco+reco.sd),alpha=0.3)+
+    geom_hline(yintercept=0,lty=3)+
+    scale_y_continuous(limits=c(0,5))+
+    scale_x_datetime(limits=c(as.POSIXct("2005-01-01",tz="GMT"),as.POSIXct("2014-01-01",tz="GMT")))+    
+    labs(x="Year",y=expression(paste("Reco [tDM"," ",ha^-1,"]",sep="")))+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+  gpp1<-ggarrange(gpp,nee,ggreco)
+  
+  return(list(gpp1))
+}
+
+
+## Function to find the yield class of the stand based on stand dominant height (assuming it is the same as top height)
+YC.finder <- function(HT,AGE) 
+{
+  YC.site = ((HT/(1-exp(-0.033329*AGE))^1.821054)-14.856317)/1.425397
+  if(YC.site>24) 24
+  else if (YC.site<4) 4
+  else unlist(sub("\\]","",unlist(strsplit(as.character(cut(YC.site,breaks=c(6,8,10,12,14,16,18,20,22,24),right=T)),split="\\,"))[2]))
+}
+
+############################################################################################
+
+
+
+
+
+## Function to plot the model against the Harwood data.
 plotResults <- function(df,ShortTS=F){
   
   ##if plyr is loaded before dplyr can cause problems with groupby
@@ -20,7 +114,7 @@ plotResults <- function(df,ShortTS=F){
       if(df$Month[i]!=df$Month[i+1])
         df2<-rbind(df2,df[i,])
     }
-    df2<-df2[-1,]
+   # if(nrow(df>555)) df2<-df2[-1,]#if daily time steps, need to remove a data point
     df2$GPP<-aggregate(df$GPP~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
     df2$NPP<-aggregate(df$NPP~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
     df2$EvapTransp<-aggregate(df$EvapTransp~ df$Month+df$Year,FUN=sum)[-nrow(df2),3]
@@ -251,14 +345,3 @@ plotModel<-function(output.df){
   
   return(list(flux,lai,rad,g,dg,hdom,fN,nav,totc,totn))
 }
-
-## Function to find the yield class of the stand based on stand dominant height (assuming it is the same as top height)
-YC.finder <- function(HT,AGE) 
-{
-  YC.site = ((HT/(1-exp(-0.033329*AGE))^1.821054)-14.856317)/1.425397
-  if(YC.site>24) 24
-  else if (YC.site<4) 4
-  else unlist(sub("\\]","",unlist(strsplit(as.character(cut(YC.site,breaks=c(6,8,10,12,14,16,18,20,22,24),right=T)),split="\\,"))[2]))
-}
-
-############################################################################################

@@ -1,10 +1,4 @@
-
-
-######################
-## START THE SCRIPT ##
-######################
-
-## Load necessary packages
+##Analysis of MCMC
 library(fr3PGDN,quietly=TRUE)
 library(tidyverse,quietly=TRUE)
 library(lubridate)
@@ -12,14 +6,10 @@ library(coda)
 library(BayesianTools)
 library(miscTools)
 library(ggpubr)
-## Years of data to use for calibration
-startYear = 2015
-endYear = 2018
-#install.packages("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\fr3PGDN_2.0.tar.gz", repos = NULL, type="source")
-
+library(MCMCvis)
 
 ## Met data
-clm_df_full<-getClimDat("monthly")
+clm_df_full<-getClimDat("weekly")
 ## Read Harwood data for Sitka spruce and mutate timestamp to POSIXct
 if(Sys.info()[1]=="Windows"){
   data <- read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\harwood_data.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
@@ -27,6 +17,8 @@ if(Sys.info()[1]=="Windows"){
 {
   data <- read.csv("/home/users/aaronm7/3pgData/harwood_data.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
 }
+
+timeStep="weekly"
 ###########################
 ## Initialise Parameters ##
 ###########################
@@ -46,45 +38,35 @@ sitka<-getParms(weather=clm_df_full,
                 MaxASW_state=50,
                 K_drain=0.16,
                 timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365 #time step, 52 for weekly, 12 for monthly and 365 for daily
-                )
+)
 #######################################################
+clm_df_full<-getClimDat(timeStep)
 
-out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\monthly_2_T.RDS")
+
+nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
+      "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
+      "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
+      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
+##Set priors
+priors<-createPriors_sitka(sitka=sitka)
+pMaxima<-priors[[1]]
+pMinima<-priors[[2]]
+pMaxima[[30]]<-0.1
+Uprior <- createPrior(lower = pMinima, upper = pMaxima)
+
+out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_3_F.RDS")
+
+codM<-getSample(out, start = 100, coda = TRUE, thin = 10)
+priorSamp<-Uprior$sampler(35000)
+MCMCtrace(codM,wd="C:\\Users\\aaron.morris", post_zm=F,iter=5000)
 codM<-as.data.frame(mergeChains(out$chain))
 names(codM)<-nm
 codM<-colMedians(as.data.frame(codM))
+sitka[nm]<-codM[nm]
 
-output<-do.call(fr3PGDN,sitka)
-tail(output$GPP)
-results<-plotResults(output,ShortTS=F)
-#results
-ggarrange(results[[2]],results[[4]],results[[5]],results[[12]])
+sitkaBICcomp(data,startY=2015,endY=2018,pNum=36,sitka)
 
 
-
-
-##aggregate data by year for total annual ranfall
-#annualPrecip <- weather%>%group_by(Year)%>%summarise(annual_precip=sum(Rain))
-#
-#
-#hazprecip <- quantile(annualPrecip$annual_precip,0.1)
-#
-##Risk function
-#calc_risk <- function(strtyr,endyr,df,hazval){
-#  fldf    <- df %>% filter(Year >= strtyr & Year <= endyr)
-#  lowyrs  <- fldf$Year[(fldf$annual_precip <= hazval)]
-#  highyrs <- fldf$Year[!(fldf$Year %in% lowyrs)]
-#  vuln    <- mean(output[weather$Year %in% highyrs,"GPP"]) - mean(output[weather$Year %in% lowyrs,"GPP"])
-#  haz     <- length(lowyrs)/((endyr - strtyr)+1)
-#  return(tibble("startYr"= strtyr,
-#                "endYr"=endyr,
-#                "vulnerability"= vuln,
-#                "hazard"  = haz,
-#                "risk" = vuln*haz))
-#}
-#
-##' # Expected loss of GPP 
-#inpt   <- tibble(strtyr=c(1985,1995,2005,2015),endyr=c(1988,1998,2008,2018))
-#riskdf <- purrr::map2_df(inpt$strtyr,inpt$endyr,calc_risk,df=annualPrecip,hazval=hazprecip)
-#knitr::kable(riskdf, digits=4, align = c(rep("c", 5)))
-#
+#output<-do.call(fr3PGDN,sitka)
+#tail(output$GPP)
+#results<-plotResults(output,ShortTS=T)

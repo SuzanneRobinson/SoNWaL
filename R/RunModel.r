@@ -12,7 +12,7 @@ function (stand.init, weather, site, parms, general.info = parms.general,
     t.proj <- 0
     proj.results[[1]] <- c(t.proj = t.proj, state)
     if (!missing(presc)) {
-        fma.c <- presc[presc$cycle == state[["cycle"]], ]
+        fma.c <- presc[presc$cycle == state[["cycle"]], ] # which cycle in presc to be using depending on current cycle state
         t.nsprouts <- unique(fma.c[, "t.nsprouts"])
         fst.row.fma.app <- min(c(which(fma.c$t > state[["t"]]), 
             nrow(fma.c)))

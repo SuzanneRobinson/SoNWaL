@@ -73,11 +73,12 @@ sitka[nm]<-codM[nm]
 
 ## Likelihood function
 likelihoodFunc <- function(p){
-  sitka[.GlobalEnv$nm]<-p
-  NlogLik <- tryCatch(
+  print(p)
+sitka$weather[sitka$weather$Year>=2015,6]<-sitka$weather[sitka$weather$Year>=2015,6]*p
+    NlogLik <- tryCatch(
     {
       output<-do.call(fr3PGDN,sitka)%>%
-      filter(Year==2018)%>%
+      filter(Year>=2015)%>%
         mutate(meanNPP = mean(NPP))
                
       mean(output$meanNPP,na.rm=T)
@@ -120,7 +121,7 @@ morris_setup <- createBayesianSetup(
 #set.seed(50)
 #run morris sensitivity analysis
 morrisOut <- morris(
-  model = morris_setup$posterior$density,
+  model = morris_setup$likelihood$density,
   factors = nm, 
   r = 25, 
   design = list(type = "oat", levels = 50, grid.jump = 3), 
@@ -133,22 +134,24 @@ morrisOut <- morris(
 senseOutTemp<-data.frame(func_output=morrisOut$y,inputVal=morrisOut$X[,1])
 senseOutRain<-data.frame(func_output=morrisOut$y,inputVal=morrisOut$X[,1])
 
-senseOutRain2$inputVal2<-"noHS"
-senseOutRain$inputVal2<-"HS"
+senseOutRain2$Model<-"3PG"
+senseOutRain$Model<-"SonWal"
 senseOutRainX<-rbind(senseOutRain,senseOutRain2)
 
-g1<-ggplot(senseOutRainX,aes(x=(inputVal*100)-100,y=func_output,col=inputVal2))+
+g2<-ggplot(senseOutRainX,aes(x=(inputVal*100)-100,y=func_output,col=Model))+
   geom_point(alpha=1)+
   geom_smooth()+
   ylab(expression(paste("NPP [tDM"," ",ha^-1,"]",sep="")))+
   xlab("Rainfall change (%)")+
-  theme_bw()
+  theme_bw()+
+  ggtitle("Four year avg")+
+  scale_color_viridis_d()
 
-g2<-ggplot(senseOutTemp,aes(x=(inputVal*100)-100,y=func_output))+
+g2<-ggplot(senseOutRain,aes(x=(inputVal*100)-100,y=func_output))+
   geom_point(col="red",alpha=0.8)+ 
   geom_smooth()+
   ylab(expression(paste("NPP [tDM"," ",ha^-1,"]",sep="")))+
   xlab("Temperature change (%)")+
   theme_bw()
 
-ggarrange(g1,g2)
+ggarrange(g1,g2,common.legend = T, legend ="bottom")

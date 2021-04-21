@@ -18,7 +18,7 @@ library(sensitivity)
 library(viridis)
 
 ##choose timestep size ("monthly", "weekly" or "daily")
-timeStep<-"monthly"
+timeStep<-"weekly"
 
 #create unique save filename based on system time...maybe not necessary, just trying to avoid overwriting of outputs from diff sessions by JASMIN
 fName=paste0("outx_",stringr::str_sub(Sys.time(), 0, -10),stringr::str_sub(Sys.time(), 15, -4),stringr::str_sub(Sys.time(), 18, -1),".RDS")
@@ -44,7 +44,7 @@ nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","s
       "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
 
 #read in current MCMC chains
-out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\monthly_outx_2021-02-265949.RDS")
+out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_3outx_2021-03-220324.RDS")
 #get some previous run parameter estimates from chains
 codM<-as.data.frame(mergeChains(out$chain))
 names(codM)<-nm
@@ -118,8 +118,8 @@ set.seed(50)
 morrisOut <- morris(
   model = morris_setup$posterior$density,
   factors = nm, 
-  r = 5, 
-  design = list(type = "oat", levels = 20, grid.jump = 3), 
+  r = 25, 
+  design = list(type = "oat", levels = 25, grid.jump = 3), 
   binf = pMinima[1:47], 
   bsup = pMaxima[1:47], 
   scale = TRUE)
@@ -134,8 +134,9 @@ morrisOut_df <- data.frame(
 
 
 #plot results
-morrisOut_df %>%
+wSitka<-morrisOut_df %>%
   gather(variable, value, -parameter) %>%
+  top_n(n=20, value) %>%
   ggplot(aes(reorder(parameter, value), value, fill = variable), color = NA)+
   geom_bar(position = position_dodge(), stat = 'identity') +
   scale_fill_viridis_d("", option = "D", labels = c('mu.star' = expression(mu * "* (high influence) "), 
@@ -148,4 +149,5 @@ morrisOut_df %>%
     legend.position = c(0.05 ,0.95),legend.justification = c(0.05,0.95)
   )
 
-
+morrisOut_df$mu.star<-log10(1+morrisOut_df$mu.star)
+morrisOut_df$sigma<-log10(1+morrisOut_df$sigma)

@@ -49,6 +49,15 @@ endYear = 2018
 Uprior <- createTruncatedNormalPrior(mean = priors[[3]], sd=(pMaxima-pMinima)*0.1,
                      lower = pMinima, upper = pMaxima)
 
+priorSDfunc<-function(Uprior){
+  prVals<-Uprior$sampler(10000)
+  prVals[,7]<-exp(prVals[,7])
+  prVals[,8]<-exp(prVals[,8])
+  prValsX<-as.data.frame(round(HPDinterval(as.mcmc(prVals)),3))
+  prValsX$med<-colMedians(prVals)
+  prValsX$names<-nm
+}
+
 
 observed <- c(data$gpp,                ## GPP
               data$npp,                ## NPP
@@ -76,7 +85,7 @@ dev <- c(rep(.3,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
          rep(.3,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
          rep(.3,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
          rep(.1,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
-         rep(6,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
+         rep(4,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
          # rep(0.5,(nrow(dplyr::filter(data,year>=startYear&year<=endYear))-1)),
          0.1,0.1,
          10,
@@ -90,12 +99,15 @@ dev <- c(rep(.3,nrow(dplyr::filter(data,year>=startYear&year<=endYear))),
 )
 
 
+observed<-if(sitka$waterBalanceSubMods==FALSE)observed[-c(295:342)] else observed
+dev<-if(sitka$waterBalanceSubMods==FALSE)dev[-c(295:342)] else dev
 
+likelihoodFunc<-ifelse(sitka$waterBalanceSubMods==T,NLL,NLL_noHYD)
 
-likelihoodFunc<-ifelse(timeStep=="monthly",NLL,NLL_weekly)
+outX<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\monthly_pine_outx_2021-03-295236.RDS")
 
-outX<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\daily_outx_2021-02-262358.RDS")
-iters=300000
+for (i in c(1:5)){
+iters=100000
 #Initiate bayesian setup
 BS3PGDN <- createBayesianSetup(likelihood = likelihoodFunc, prior = Uprior, names = nm, parallel = 8, catchDuplicates = F )
 settings = list(
@@ -125,9 +137,10 @@ settings = list(
   message = TRUE)
 
 #run calibration with all parameters and priors based on initial hydro model runs
-out2 <- runMCMC(bayesianSetup = outX, sampler = "DEzs", settings = settings)
+out3 <- runMCMC(bayesianSetup = BS3PGDN, sampler = "DEzs", settings = settings)
 
 
 #Save output
 saveRDS(out2,file=paste0(timeStep,"_",fName))
 
+}

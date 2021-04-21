@@ -6,7 +6,7 @@ N=12 #day length in hours
 n =20#day of the year, starting jan 1st as 1
 S_h =6 #observed monthly average of daily horizontal surface irradiation. (sunshine hours)
 
-#delta is the declination of the sun (180/pi to convert from degrees to radians)
+#delta is the declination of the sun (pi/180 to convert from degrees to radians)
 delta=(23.45*(sin(pi/180*(360*(284+n/365)))))
 lat = (pi/180)*56.459
 
