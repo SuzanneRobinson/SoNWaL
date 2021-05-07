@@ -12,18 +12,21 @@ library(coda)
 library(BayesianTools)
 library(miscTools)
 library(ggpubr)
+library(rlang)
 ## Years of data to use for calibration
 startYear = 2015
 endYear = 2018
 #install.packages("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\fr3PGDN_2.0.tar.gz", repos = NULL, type="source")
-
+timeStep<-"weekly"
 
 ## Met data
-clm_df_full<-getClimDat("monthly")
+clm_df_full<-data.frame(getClimDat(timeStep))
 ## Read Harwood data for Sitka spruce and mutate timestamp to POSIXct
 if(Sys.info()[1]=="Windows"){
   data <- read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\harwood_data.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
-}else
+  flxdata_daily <- read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\harwood_daily.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
+  
+  }else
 {
   data <- read.csv("/home/users/aaronm7/3pgData/harwood_data.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
 }
@@ -49,18 +52,25 @@ sitka<-getParms(weather=clm_df_full,
                 )
 #######################################################
 
-out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\monthly_2_T.RDS")
+out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_3_T.RDS")
 codM<-as.data.frame(mergeChains(out$chain))
 names(codM)<-nm
 codM<-colMedians(as.data.frame(codM))
 
+sitka<-getParms(waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
+#sitka$weather<-clm_df_pine
+sitka[nm]<-codM[nm]
+
 output<-do.call(fr3PGDN,sitka)
 tail(output$GPP)
-results<-plotResults(output,ShortTS=F)
+results<-plotResults(output,ShortTS=T,out=out)
 #results
-ggarrange(results[[2]],results[[4]],results[[5]],results[[12]])
+ggarrange(results[[1]],results[[2]],results[[3]],results[[4]],results[[5]])
 
 
+#cv is ratio of sd to mean, cv * value of meanNEE
+#sdmin_NEE               <- cv_EC * abs(data_NEEmean_value) #gives you the standard deviation for the averaged data points (assuming cv 20%)
+#data_NEEmean_sd <- sapply( 1:length(sdmin_NEE), function(i) max(sdmin_NEE[i],0.5) )
 
 
 ##aggregate data by year for total annual ranfall

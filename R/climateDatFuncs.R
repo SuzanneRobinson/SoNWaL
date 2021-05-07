@@ -23,50 +23,108 @@ clm_df_full$date<-as.Date(paste(clm_df_full$Year,"-",clm_df_full$Month,"-01",sep
 clm_df_full$week<-week(clm_df_full$date)
 clm_df_daily$Date<-as.Date(clm_df_daily$DOY, origin = paste0(clm_df_daily$Year,"-01-01"))
 clm_df_daily$week<-week(clm_df_daily$Date)
+clm_df_daily$month<-month(clm_df_daily$Date)
 
-clm_df_dailyX<-clm_df_daily[!duplicated(clm_df_daily[c(1,12)]),]
-
-weeklyRfall<-aggregate(clm_df_daily$Rain~clm_df_daily$week+clm_df_daily$Year,FUN=sum)
-names(weeklyRfall)<-c("week","Year","Rain")
-
-weeklyRfall$SolarRad<-aggregate(clm_df_daily$SolarRad~clm_df_daily$week+clm_df_daily$Year,FUN=mean)[,3]
-weeklyRfall$Tmax<-aggregate(clm_df_daily$Tmax~clm_df_daily$week+clm_df_daily$Year,FUN=max)[,3]
-weeklyRfall$Tmin<-aggregate(clm_df_daily$Tmin~clm_df_daily$week+clm_df_daily$Year,FUN=min)[,3]
-weeklyRfall$Tmean<-aggregate(clm_df_daily$Tmean~clm_df_daily$week+clm_df_daily$Year,FUN=mean)[,3]
-
-weeklyRfall$Month<-month(clm_df_dailyX$Date)
-weeklyRfall$FrostDays<-(aggregate(clm_df_daily$FrostHours~clm_df_daily$week+clm_df_daily$Year,FUN=sum)[,3])/24
-weeklyRfall$MonthIrrig<-0
-
-#Split into weekly data
-clm_df_fullX<-NULL
-clm_df<-clm_df_full
-for(i in c(1:nrow(clm_df_full))){
-  reps<-ifelse(clm_df_full$Month[i]!=12,clm_df_full[i+1,"week"]-clm_df_full[i,"week"],4)
-  clm_df[i,]$Rain<-clm_df[i,]$Rain/reps
-  clm_df[i,]$MonthIrrig<-clm_df[i,]$MonthIrrig/reps
+clm_df_weekly<-clm_df_daily%>%
+  group_by(Year,week)%>%
+  summarise(Year=median(Year),Month=median(month(Date)),Tmax=max(Tmax),Tmin=min(Tmin),
+            Tmean=mean(Tmean),Rain=sum(Rain),SolarRad=mean(SolarRad)
+          ,FrostDays=mean(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100))
   
-  clm_df_fullX<-rbind(clm_df_fullX,do.call("rbind",(replicate(reps, clm_df[i,], simplify = FALSE))))
-}
-clm_df_fullX$week<-c(1:51)
 
-weeklyRfall<-weeklyRfall[,c(names(clm_df_fullX[,c(1:9)]))]
-names(clm_df_daily)<-c("Year","DOY","Tmax","Tmin","Tmean","Rain","SolarRad","VPD","FrostDays","MonthIrrig","Date","week")
 
-clm_df_daily$Month<-month(clm_df_daily$Date)
-clm_df_daily<-clm_df_daily[,c(names(clm_df_fullX[,c(1:9)]))]
+clm_df_full<-clm_df_daily%>%
+  group_by(Year,month)%>%
+  summarise(Year=median(Year),Month=median(month(Date)),Tmax=max(Tmax),Tmin=min(Tmin),
+            Tmean=mean(Tmean),Rain=sum(Rain),SolarRad=mean(SolarRad)
+            ,FrostDays=mean(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100))
 
-#User longer term daily data for historical rainfall and temp
-#clm_df_full$Rain<-aggregate(weeklyRfall$Rain~weeklyRfall$Month+weeklyRfall$Year,FUN=sum)[,3]
-#clm_df_full$Tmax<-aggregate(weeklyRfall$Tmax~weeklyRfall$Month+weeklyRfall$Year,FUN=max)[,3]
-#clm_df_full$Tmin<-aggregate(weeklyRfall$Tmax~weeklyRfall$Month+weeklyRfall$Year,FUN=min)[,3]
-#clm_df_full$Tmean<-aggregate(weeklyRfall$Tmax~weeklyRfall$Month+weeklyRfall$Year,FUN=mean)[,3]
+
+clm_df_daily<-clm_df_daily%>%
+  group_by(Year,DOY)%>%
+  summarise(Year=median(Year),Month=median(month(Date)),Tmax=max(Tmax),Tmin=min(Tmin),
+            Tmean=mean(Tmean),Rain=sum(Rain),SolarRad=mean(SolarRad)
+            ,FrostDays=mean(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100))
 
 
 if(timeStep=="monthly") return (clm_df_full)
-if(timeStep=="weekly") return (weeklyRfall)
+if(timeStep=="weekly") return (clm_df_weekly)
 if(timeStep=="daily") return (clm_df_daily)
+#if(timeStep=="pseudo") return (clm_df_daily)
 
 }
 ################################################################################
 
+
+getClmPine<-function(timeStep="monthly"){
+  
+  ## 1996-2012
+  NinetySixtoEnd <- getData(site=sites[site],dataset="CLIMATE_LOCAL")
+  ## 2001-2005
+  twentyZeroOnetoZeroFive <- filter(NinetySixtoEnd, year %in% seq(2001,2005))
+  ## 2001-2010
+  twentyZeroOnetoTen      <- filter(NinetySixtoEnd, year %in% seq(2001,2010))
+  ## 1996-2010
+  nineteenNinetySixtoTen  <- filter(NinetySixtoEnd, year %in% seq(1996,2010))
+  ## combine to give twenty yrs
+  twentyYrs                     <- rbind(twentyZeroOnetoZeroFive,nineteenNinetySixtoTen)
+  ## 1981 to 1995
+  nineteenEightyOnetoNinetyFive <- rbind(twentyZeroOnetoTen, twentyZeroOnetoZeroFive)
+  ## 1961 to 2012
+  
+  weathdata                     <- rbind(twentyYrs, nineteenEightyOnetoNinetyFive, NinetySixtoEnd)
+  extendDates                   <- seq(as.Date("1961/1/1"), as.Date(NinetySixtoEnd$date[length(NinetySixtoEnd$date)]), "days")
+  extendYrs                     <- as.integer(format(extendDates,format="%Y"))
+  weathdata                     <- weathdata %>% mutate(date = extendDates, year = extendYrs)
+  
+  weathdata$week<-week(weathdata$date)
+  weathdata$week[weathdata$week==53]<-52
+  
+  if(timeStep=="monthly"){
+    clm_df_pine<-aggregate(weathdata$tmean_degC~weathdata$mo+weathdata$year,FUN=mean)
+    clm_df_pine<-data.frame(Year=clm_df_pine$`weathdata$year`,Month=clm_df_pine$`weathdata$mo`,Tmean=clm_df_pine$`weathdata$tmean_degC`)
+    
+    clm_df_pine$Tmax         <- aggregate(weathdata$tmax_degC~weathdata$mo+weathdata$year,FUN=max)[,3]
+    clm_df_pine$Tmin         <- aggregate(weathdata$tmin_degC~weathdata$mo+weathdata$year,FUN=min)[,3]
+    clm_df_pine$Rain      <- aggregate(weathdata$p_mm~weathdata$mo+weathdata$year,FUN=sum)[,3]
+    clm_df_pine$SolarRad        <- aggregate(weathdata$rad_Jcm2*((100*100)/1000000)~weathdata$mo+weathdata$year,FUN=mean)[,3] # convert to MJ/m*m/day
+    clm_df_pine$FrostDays<-0
+    clm_df_pine$MonthIrrig<-0
+    clm_df_pine$date<-as.Date(paste0(clm_df_pine$Year,"-",clm_df_pine$Month,"-01"))
+    
+    
+  }
+  
+  if(timeStep=="weekly"){
+    clm_df_pine<-aggregate(weathdata$tmean_degC~weathdata$week+weathdata$year,FUN=mean)
+    clm_df_pine<-data.frame(Year=clm_df_pine$`weathdata$year`,Week=clm_df_pine$`weathdata$week`,Tmean=clm_df_pine$`weathdata$tmean_degC`)
+    
+    clm_df_pine$Tmax         <- aggregate(weathdata$tmax_degC~weathdata$week+weathdata$year,FUN=max)[,3]
+    clm_df_pine$Tmin         <- aggregate(weathdata$tmin_degC~weathdata$week+weathdata$year,FUN=min)[,3]
+    clm_df_pine$Rain      <- aggregate(weathdata$p_mm~weathdata$week+weathdata$year,FUN=sum)[,3]
+    clm_df_pine$SolarRad        <- aggregate(weathdata$rad_Jcm2*((100*100)/1000000)~weathdata$week+weathdata$year,FUN=mean)[,3] # convert to MJ/m*m/day
+    clm_df_pine$FrostDays<-0
+    clm_df_pine$MonthIrrig<-0
+    clm_df_pine$date<-as.Date(paste(clm_df_pine$Year, clm_df_pine$Week, 1, sep="-"), "%Y-%U-%u")
+    
+    clm_df_pine$Month<-month(clm_df_pine$date)
+    clm_df_pine<-clm_df_pine[,c(1,11,3:10,2)]
+    
+  }
+  
+  if(timeStep=="daily"){
+    clm_df_pine<-aggregate(weathdata$tmean_degC~weathdata$week+weathdata$year,FUN=mean)
+    clm_df_pine<-data.frame(Year=clm_df_pine$`weathdata$year`,Month=clm_df_pine$`weathdata$week`,Tmean=clm_df_pine$`weathdata$tmean_degC`)
+    
+    clm_df_pine$Tmax         <- aggregate(weathdata$tmax_degC~weathdata$week+weathdata$year,FUN=max)[,3]
+    clm_df_pine$Tmin         <- aggregate(weathdata$tmin_degC~weathdata$week+weathdata$year,FUN=min)[,3]
+    clm_df_pine$Rain      <- aggregate(weathdata$p_mm~weathdata$week+weathdata$year,FUN=sum)[,3]
+    clm_df_pine$SolarRad        <- aggregate(weathdata$rad_Jcm2*((100*100)/1000000)~weathdata$week+weathdata$year,FUN=mean)[,3] # convert to MJ/m*m/day
+    clm_df_pine$FrostDays<-0
+    clm_df_pine$MonthIrrig<-0
+    
+  }
+  
+  return(clm_df_pine)
+  
+}

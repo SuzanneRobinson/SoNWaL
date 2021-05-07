@@ -101,11 +101,15 @@ plotResults <- function(df,ShortTS=F){
   ##if plyr is loaded before dplyr can cause problems with groupby
   dt=12
   
+  
   df <- df[c(2:nrow(df)),]
+  df$week<-c(1:53)
+  
   df <- df %>% dplyr::group_by(Year)%>%mutate(cumGPP = cumsum(GPP),
                                               cumNPP = cumsum(NPP),
                                               timestamp = as.POSIXct(paste(sprintf("%02d",Year),sprintf("%02d",Month),sprintf("%02d",1),sep="-"),tz="GMT")) 
   
+  gpp<-aggregate(df$GPP~ df$week+df$Year,FUN=sum)[,3]*100/7
   
   if(ShortTS==T){
     df2<-NULL
@@ -132,10 +136,18 @@ plotResults <- function(df,ShortTS=F){
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
+ dataX<- (data_daily%>% #fairly sure gpp is monthly equiv
+         group_by(year,week) %>%
+         dplyr::summarise(gpp=mean(rs))%>%
+         select(gpp))
+  
+ df$Reco<-df$Reco*100/7
+ df$Rs<-df$Rs*100/7
+ 
   gpp2<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=timestamp,y=aggregate(df$GPP~ df$Month+df$Year,FUN=sum)[,3],group=Year),colour="black",size=1)+
-    geom_point(data=data,aes(x=timestamp,y=gpp),colour="red",size=2)+
-    ## geom_ribbon(data=data,aes(x=timestamp,ymin=gpp-gpp.sd,ymax=gpp+gpp.sd),alpha=0.3)+
+    geom_line(data=df,aes(x=timestamp,y=Rs),colour="blue",size=1)+
+    geom_point(data=dataX,aes(x=df$timestamp, y=gpp),colour="red",size=2)+
+    ## geom_ribbon(data=data,aes(x=timestamp,ymin=gpp-gpp.sd,ymax=gp+gpp.sd),alpha=0.3)+
     scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
     labs(x="Year",y=expression(paste("GPP [tDM"," ",ha^-1,"]",sep="")))+
     theme(axis.title=element_text(size=14),

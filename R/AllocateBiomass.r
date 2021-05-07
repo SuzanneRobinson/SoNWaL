@@ -26,7 +26,7 @@ function (state, site, parms, weather) #requires weather too for current month, 
     difWsbr <- NPP * pS
     gammaFx <- parms[["gammaFx"]]*12/parms[["timeStp"]] #adjust to get time step rates from monthly rates?
     gammaF0 <- parms[["gammaF0"]]*12/parms[["timeStp"]]
-    tgammaF <- parms[["tgammaF"]]*12/parms[["timeStp"]]
+    tgammaF <- parms[["tgammaF"]]
     
     
     ##Problem here for shorter time steps, as litterfall is updated based on the previous month, so weekly or daily time-steps may cause issues?
@@ -70,7 +70,8 @@ function (state, site, parms, weather) #requires weather too for current month, 
       t <- state[["t"]]
       #For info on the litterfall eq. See A.3 in Sands and Landsberg (2002). Parameterisation of 3-PG forplantation grown Eucalyptus globules.
       Littfall <- gammaFx * gammaF0/(gammaF0 + (gammaFx - gammaF0) * 
-                                       exp(-parms[["timeStp"]] * log(1 + gammaFx/gammaF0) * t/tgammaF))
+                                       exp(-12* log(1 + gammaFx/gammaF0) * t/tgammaF))
+
       difLitter <- Littfall * Wl
       #For root turnover:
       Wr <- state[["Wr"]]

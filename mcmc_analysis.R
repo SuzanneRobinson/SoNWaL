@@ -9,7 +9,8 @@ library(ggpubr)
 library(MCMCvis)
 
 ## Met data
-clm_df_full<-getClimDat("weekly")
+timeStep="monthly"
+clm_df_full<-getClimDat(timeStep)
 ## Read Harwood data for Sitka spruce and mutate timestamp to POSIXct
 if(Sys.info()[1]=="Windows"){
   data <- read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\harwood_data.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
@@ -18,7 +19,6 @@ if(Sys.info()[1]=="Windows"){
   data <- read.csv("/home/users/aaronm7/3pgData/harwood_data.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
 }
 
-timeStep="weekly"
 ###########################
 ## Initialise Parameters ##
 ###########################
@@ -40,8 +40,6 @@ sitka<-getParms(weather=clm_df_full,
                 timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365 #time step, 52 for weekly, 12 for monthly and 365 for daily
 )
 #######################################################
-clm_df_full<-getClimDat(timeStep)
-
 
 nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
       "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
@@ -54,7 +52,7 @@ pMinima<-priors[[2]]
 pMaxima[[30]]<-0.1
 Uprior <- createPrior(lower = pMinima, upper = pMaxima)
 
-out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_3_F.RDS")
+out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\monthly_1_T.RDS")
 
 codM<-getSample(out, start = 100, coda = TRUE, thin = 10)
 priorSamp<-Uprior$sampler(35000)
@@ -63,10 +61,17 @@ codM<-as.data.frame(mergeChains(out$chain))
 names(codM)<-nm
 codM<-colMedians(as.data.frame(codM))
 sitka[nm]<-codM[nm]
-
+sitka$waterBalanceSubMods<-T
 sitkaBICcomp(data,startY=2015,endY=2018,pNum=36,sitka)
 
 
-#output<-do.call(fr3PGDN,sitka)
-#tail(output$GPP)
-#results<-plotResults(output,ShortTS=T)
+
+output<-do.call(fr3PGDN,sitka)
+tail(output$GPP)
+results<-plotResults(output,ShortTS=F)
+ggarrange(results[[2]],results[[6]],results[[5]],results[[12]])
+
+
+pine[nm]<-codM[nm]
+
+pineBICcomp(data,startY=1996,endY=2014,pNum=36,pine)

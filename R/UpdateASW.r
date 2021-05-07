@@ -35,8 +35,8 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     VPDconv <- parms[["VPDconv"]]
     BLcond <- parms[["BLcond"]]
     VPD <- weather[["VPD"]]
-    Etransp <- (e20 * netRad + rhoAir * lambda * VPDconv * VPD * 
-        BLcond)/(1 + e20 + BLcond/CanCond)
+    Etransp <- ((e20 * netRad + rhoAir * lambda * VPDconv * VPD * 
+        BLcond)/(1 + e20 + BLcond/CanCond))*12/parms[["timeStp"]]
     CanTransp <- Etransp/lambda * h
     #less accurate but easier to have flexible time-steps?
     Transp <- CanTransp*365/parms[["timeStp"]] #general.info$daysinmonth[month] * CanTransp

@@ -118,7 +118,12 @@ pValues <- as.vector(unlist(sitka[nm]))
 pMaxima[1:11] <- f.increase[1:11]
 pMinima[1:11] <- f.decrease[1:11]
 
-return(list(pMaxima,pMinima,pValues))
+pMaxima[[30]]<-0.1
+
+priorVals <- createTruncatedNormalPrior(mean = pValues, sd=(pMaxima-pMinima),
+                                        lower = pMinima*0.2, upper = pMaxima*1.8)
+
+return(priorVals)
 
 }
 
@@ -242,7 +247,13 @@ createPriors_pine<-function(pine){
   
   pMaxima[1:11] <- f.increase[1:11]
   pMinima[1:11] <- f.decrease[1:11]
+
+  pMaxima[[30]]<-0.1
+
+  priorVals <- createTruncatedNormalPrior(mean = pValues, sd=(pMaxima-pMinima),
+                                       lower = pMinima*0.2, upper = pMaxima*1.8)
   
-  return(list(pMaxima,pMinima,pValues))
+  
+  return(priorVals)
   
 }
