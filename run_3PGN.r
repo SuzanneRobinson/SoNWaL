@@ -21,6 +21,7 @@ timeStep<-"weekly"
 
 ## Met data
 clm_df_full<-data.frame(getClimDat(timeStep))
+clm_df_full%>%filter(Year<2019)
 ## Read Harwood data for Sitka spruce and mutate timestamp to POSIXct
 if(Sys.info()[1]=="Windows"){
   data <- read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\harwood_data.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
@@ -44,7 +45,7 @@ sitka<-getParms(weather=clm_df_full,
                 maxRootDepth=2.5,
                 sigma_zR =0.3, #area/depth explored by 1kg of root biomass
                 SWC_nr=10, #SWC of non-rooting zone at time 0
-                E_S1 =1, #Cumulitive evap threshold (kg^m-2) - sensitive to length of time-step, e.g. monthly time-step means wetting event only occurs at end of month
+                E_S1 =4.5, #Cumulitive evap threshold (kg^m-2) - sensitive to length of time-step, e.g. monthly time-step means wetting event only occurs at end of month
                 E_S2 =1, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
                 MaxASW_state=50,
                 K_drain=0.16,
@@ -65,7 +66,7 @@ output<-do.call(fr3PGDN,sitka)
 tail(output$GPP)
 results<-plotResults(output,ShortTS=T,out=out)
 #results
-ggarrange(results[[1]],results[[2]],results[[3]],results[[4]],results[[5]])
+ggarrange(results[[1]],results[[2]],results[[7]],results[[8]],results[[5]],results[[6]])
 
 
 #cv is ratio of sd to mean, cv * value of meanNEE

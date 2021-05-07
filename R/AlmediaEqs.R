@@ -157,16 +157,16 @@ soilEvap<-function(parms,weather,state,interRad,h){
   e0<- (e20 * interRad + rhoAir * lambda * VPDconv * VPD * 
          soilBoundaryCond)/(1 + e20 + soilBoundaryCond/soilCond)
   
+
   #E_S0 is E_S at the start of the time-step
   E_S0 = state[["E_S"]]
 
   #Duration of phase 1 evaporation
  t_S1 = E_S1 / e0
  #Solved for t equation A.10 in Almedia, to get equivalent t for E_S0 value
- t0 = as.numeric(round(((-2 * E_S0 * E_S1) + (E_S0 ^ 2) + (2 * E_S0) +
+ t0 = max(0,as.numeric(round(((-2 * E_S0 * E_S1) + (E_S0 ^ 2) + (2 * E_S0) +
                           (E_S1 ^ 2) - (2 * E_S1) + 1 + (2 * e0 * E_S2 * t_S1) - (E_S2 ^ 2)
- ) / (2 * e0 * E_S2)))
- 
+ ) / (2 * e0 * E_S2))))
  #Integrate equation A.9 to get value at time t (assuming t is number of days in month)
  #and Calc E_S using t+t0 to get amount of evaporation between t0 and t
  E_S = if ((t + t0) <= t_S1)

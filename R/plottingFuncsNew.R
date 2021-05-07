@@ -151,18 +151,18 @@ df <- df[c(2:nrow(df)),]
                                               cumNPP = cumsum(NPP),
                                               timestamp = as.POSIXct(paste(sprintf("%02d",Year),sprintf("%02d",Month),sprintf("%02d",1),sep="-"),tz="GMT")) 
   df2<-df%>%filter(Year>=2015)
+  
   flxdata<-flxdata_daily%>%
     mutate(week=week(as.Date(yday, origin = paste0(year,"-01-01"))))%>%
     mutate(month=month(as.Date(yday, origin = paste0(year,"-01-01"))))
   
-  dataX<- (flxdata%>% 
+  dataX<- flxdata%>% 
              group_by(year,month) %>%
-             dplyr::summarise(gpp=mean(gpp),et=sum(et),reco=mean(reco),rs=mean(rs),
-                              swc=mean(swc),NEE=mean(nee)))
-  
+             dplyr::summarise(gppOb=mean(gpp),nppOb=mean(npp),etOb=sum(et),recoOb=mean(reco),rsOb=mean(rs),
+                              swcOb=mean(swc),neeOb=mean(nee))%>%mutate(cumGppObs=cumsum(gppOb),cumNppObs=cumsum(nppOb))
   df2<- (df2%>% 
              group_by(Year,Month) %>%
-             dplyr::summarise(GPP=mean(GPP),Etransp=sum(Etransp),Reco=mean(Reco),Rs=mean(Rs),
+             dplyr::summarise(GPP=mean(GPP),Etransp=sum(Etransp),Reco=mean(Reco),Rs=mean(Rs),NPP=mean(NPP),
                               volSWC_rz=mean(volSWC_rz),NEE=mean(NEE),timestamp=median(timestamp),LAI=mean(LAI),t.proj=median(t.proj)))
   
   modif<-ifelse(nrow(df)<555,100/30,100/7)
@@ -170,6 +170,9 @@ df <- df[c(2:nrow(df)),]
   dataX<-dataX %>% right_join(df2, by=c("year"="Year","month"="Month"))
   
   dataX$simGpp<-df2$GPP*modif
+  dataX$simCGpp<-pull(df2%>%mutate(gppC=cumsum(GPP*modif))%>%select(gppC))
+  dataX$simCNpp<-pull(df2%>%mutate(nppC=cumsum(NPP*modif))%>%select(nppC))
+  
   dataX$simReco<-df2$Reco*modif
   dataX$simNEE<-df2$NEE*modif
   dataX$simEtransp<-df2$Etransp
@@ -218,29 +221,50 @@ predPos  <- intvsS[[1]]$posteriorPredictiveCredibleInterval[3,]*modif + 2  * 0.3
 predNeg  <- intvsS[[1]]$posteriorPredictiveCredibleInterval[1,]*modif - 2 * 0.3
 predm  <- intvsS[[1]]$posteriorPredictiveCredibleInterval[2,]*modif# - 2 * 0.3
 
- dataX2<-dataX%>% 
-   group_by(year,month) %>%
-   dplyr::summarise(simGpp=mean(simGpp),timestamp=median(timestamp),gpp=mean(gpp))
 
+# dataX2<-dataX%>% 
+#   group_by(year,month) %>%
+#   dplyr::summarise(simGpp=mean(simGpp),timestamp=median(timestamp),gpp=mean(gpp))
+#
 gpp1<-ggplot()+theme_bw()+
   geom_line(data=dataX,aes(x=timestamp,y=predm),colour="purple",size=1)+
-  geom_point(data=dataX,aes(x=timestamp, y=gpp),colour="black",size=2)+
+  geom_point(data=dataX,aes(x=timestamp, y=gppOb),colour="black",size=2)+
   geom_ribbon(aes(ymin=predNeg,ymax=predPos,x=dataX$timestamp),fill="orange",alpha=0.3)+
   ## geom_ribbon(data=data,aes(x=timestamp,ymin=gpp-gpp.sd,ymax=gp+gpp.sd),alpha=0.3)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2021-01-01",tz="GMT")))+    
+    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
     labs(x="Year",y=expression(paste("GPP [gDM"," ",m^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
+
+gppC<-ggplot()+theme_bw()+
+  geom_line(data=dataX,aes(x=timestamp,y=simCGpp,group=year),colour="purple",size=1)+
+  geom_point(data=dataX,aes(x=timestamp, y=cumGppObs),colour="black",size=2)+
+  ## geom_ribbon(data=data,aes(x=timestamp,ymin=gpp-gpp.sd,ymax=gp+gpp.sd),alpha=0.3)+
+  scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
+  labs(x="Year",y=expression(paste("Cumulative GPP [gDM"," ",m^-2,"]",sep="")))+
+  theme(axis.title=element_text(size=14),
+        axis.text=element_text(size=14))
+
+
+nppC<-ggplot()+theme_bw()+
+  geom_line(data=dataX,aes(x=timestamp,y=simCNpp,group=year),colour="purple",size=1)+
+  geom_point(data=dataX,aes(x=timestamp, y=cumNppObs),colour="black",size=2)+
+  ## geom_ribbon(data=data,aes(x=timestamp,ymin=gpp-gpp.sd,ymax=gp+gpp.sd),alpha=0.3)+
+  scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
+  labs(x="Year",y=expression(paste("Cumlative NPP [gDM"," ",m^-2,"]",sep="")))+
+  theme(axis.title=element_text(size=14),
+        axis.text=element_text(size=14))
+
 predPosEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[3,] + 2  * 4
 predNegEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[1,] - 2 * 4
 predmEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(dataX$gpp)
   
   etrans<-ggplot()+theme_bw()+
     geom_line(data=dataX,aes(x=timestamp,y=predmEtransp),colour="purple",size=1)+
-    geom_point(data=dataX,aes(x=df2$timestamp, y=et),colour="black",size=2)+
+    geom_point(data=dataX,aes(x=df2$timestamp, y=etOb),colour="black",size=2)+
     geom_ribbon(aes(ymin=predNegEtransp,ymax=predPosEtransp,x=dataX$timestamp),fill="orange",alpha=0.3)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2021-01-01",tz="GMT")))+    
+    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
     labs(x="Year",y=expression(paste(E[t]," [mm]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
@@ -258,7 +282,7 @@ predmEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(d
     geom_line(data=dataX,aes(x=timestamp,y=predmSWC),colour="purple",size=1)+
     geom_point(data=dataX,aes(x=df2$timestamp, y=newSWC$swc),colour="black",size=2)+
     geom_ribbon(aes(ymin=predNegSWC,ymax=predPosSWC,x=dataX$timestamp),fill="orange",alpha=0.3)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2021-01-01",tz="GMT")))+    
+    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
     labs(x="Year",y=expression(paste(E[t]," [mm]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
@@ -270,9 +294,9 @@ predmEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(d
   
   NEEPlot<-ggplot()+theme_bw()+
     geom_line(data=dataX,aes(x=timestamp,y=predmNEE),colour="purple",size=1)+
-    geom_point(data=dataX,aes(x=df2$timestamp, y=NEE.x),colour="black",size=2)+
+    geom_point(data=dataX,aes(x=df2$timestamp, y=neeOb),colour="black",size=2)+
    geom_ribbon(aes(ymin=predNegNEE,ymax=predPosNEE,x=dataX$timestamp),fill="orange",alpha=0.3)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2021-01-01",tz="GMT")))+    
+    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
     labs(x="Year",y=expression(paste("NEE [gDM"," ",m^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
@@ -284,9 +308,9 @@ predmEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(d
   
   recoPlot<-ggplot()+theme_bw()+
     geom_line(data=dataX,aes(x=timestamp,y=predmreco),colour="purple",size=1)+
-    geom_point(data=dataX,aes(x=df2$timestamp, y=reco),colour="black",size=2)+
+    geom_point(data=dataX,aes(x=df2$timestamp, y=recoOb),colour="black",size=2)+
     geom_ribbon(aes(ymin=predNegreco,ymax=predPosreco,x=dataX$timestamp),fill="orange",alpha=0.3)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2021-01-01",tz="GMT")))+    
+    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
     labs(x="Year",y=expression(paste("Reco [gDM"," ",m^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
@@ -299,9 +323,9 @@ predmEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(d
   
   rsPlot<-ggplot()+theme_bw()+
     geom_line(data=dataX,aes(x=timestamp,y=predmRs),colour="purple",size=1)+
-    geom_point(data=dataX,aes(x=df2$timestamp, y=rs),colour="black",size=2)+
+    geom_point(data=dataX,aes(x=df2$timestamp, y=rsOb),colour="black",size=2)+
     geom_ribbon(aes(ymin=predNegRs,ymax=predPosRs,x=dataX$timestamp),fill="orange",alpha=0.3)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2021-01-01",tz="GMT")))+    
+    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
     labs(x="Year",y=expression(paste("Rs [gDM"," ",m^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
@@ -402,7 +426,7 @@ predmEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(d
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
-  return(list(gpp1,swcPlot,NEEPlot,etrans,recoPlot,rsPlot, pLAI,pStemNo,pDBH,pWr,ptotC,ptotN))
+  return(list(gpp1,swcPlot,NEEPlot,etrans,recoPlot,rsPlot,gppC,nppC, pLAI,pStemNo,pDBH,pWr,ptotC,ptotN))
 }
 
 ## Function to plot the key output pools and nutritional modifier of the model
