@@ -53,7 +53,7 @@ sitka<-getParms(weather=clm_df_full,
                 )
 #######################################################
 
-out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_3_T.RDS")
+out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_2_T.RDS")
 codM<-as.data.frame(mergeChains(out$chain))
 names(codM)<-nm
 codM<-colMedians(as.data.frame(codM))
@@ -66,7 +66,7 @@ output<-do.call(fr3PGDN,sitka)
 tail(output$GPP)
 results<-plotResults(output,ShortTS=T,out=out)
 #results
-ggarrange(results[[1]],results[[2]],results[[7]],results[[8]],results[[5]],results[[6]])
+ggarrange(results[[1]],results[[2]],results[[5]],results[[4]])
 
 
 #cv is ratio of sd to mean, cv * value of meanNEE

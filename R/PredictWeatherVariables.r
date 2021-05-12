@@ -9,7 +9,7 @@ PredictWeatherVariables <-
       if(RH==F){
         VPD.Tmax <- 6.1078 * exp(17.269 * weather$Tmax/(237.3 + weather$Tmax))
         VPD.Tmin <- 6.1078 * exp(17.269 * weather$Tmin/(237.3 + weather$Tmin))
-        VPD <- (VPD.Tmax - VPD.Tmin)/2
+        VPD <- (VPD.Tmax - VPD.Tmin)
         weather$VPDx <- VPD.Tmax
         weather$VPDn <- VPD.Tmin
         weather$VPD <- VPD
@@ -29,6 +29,11 @@ PredictWeatherVariables <-
       
     }
     
-    weather<-rbind(vpdFunc(weather1,RH=F),  vpdFunc(weather2,RH=T))
+    #linear model to predict historical RH from other weather variables
+    mod1<-lm(RH~SolarRad+Rain+Tmean,data=weather2)
+    weather1$RH<- as.vector(predict(mod1,weather1))
+    weather<-rbind(vpdFunc(weather1,RH=T),  vpdFunc(weather2,RH=T))
     return(weather)
   }
+
+

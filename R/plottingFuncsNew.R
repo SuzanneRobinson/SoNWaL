@@ -72,6 +72,9 @@ plotResultsPine <- function(df,ShortTS=F){
     intvs<-map(c("GPP","NEE","volSWC_rz"),runMltMod)
     
     
+    
+    
+    
     predPosGPP  <- intvs[[1]]$posteriorPredictiveCredibleInterval[3,]*100/7 #+ .5  * sd(obsDat$GPP)
     predNegGPP  <- intvs[[1]]$posteriorPredictiveCredibleInterval[1,]*100/7 #- .5 * sd(obsDat$GPP)
 
@@ -146,7 +149,7 @@ plotResults <- function(df,out,ShortTS=F){
   ##if plyr is loaded before dplyr can cause problems with groupby
   dt=12
 df <- df[c(2:nrow(df)),]
- if(nrow(df)>555) df$week<-c(1:53) else df$week<-1
+ if(nrow(df)>600) df$week<-c(1:53) else df$week<-1
   df <- df %>% dplyr::group_by(Year)%>%mutate(cumGPP = cumsum(GPP),
                                               cumNPP = cumsum(NPP),
                                               timestamp = as.POSIXct(paste(sprintf("%02d",Year),sprintf("%02d",Month),sprintf("%02d",1),sep="-"),tz="GMT")) 
@@ -165,7 +168,7 @@ df <- df[c(2:nrow(df)),]
              dplyr::summarise(GPP=mean(GPP),Etransp=sum(Etransp),Reco=mean(Reco),Rs=mean(Rs),NPP=mean(NPP),
                               volSWC_rz=mean(volSWC_rz),NEE=mean(NEE),timestamp=median(timestamp),LAI=mean(LAI),t.proj=median(t.proj)))
   
-  modif<-ifelse(nrow(df)<555,100/30,100/7)
+  modif<-ifelse(nrow(df)<600,100/30,100/7)
   
   dataX<-dataX %>% right_join(df2, by=c("year"="Year","month"="Month"))
   
@@ -186,7 +189,7 @@ df <- df[c(2:nrow(df)),]
  
  nmc = nrow(out$chain[[1]])
  outSample   <- getSample(out,start=nmc/2)
- numSamples = 15# min(1000, nrow(outSample))
+ numSamples = 50# min(1000, nrow(outSample))
  
  runModel<- function(p){
    sitka[.GlobalEnv$nm]<-p
@@ -215,10 +218,18 @@ df <- df[c(2:nrow(df)),]
  }
  
  intvsS<-map(c("GPP","NEE","volSWC_rz","Etransp","Reco","Rs"),runMltMod)
+ 
+ data<-flxdata_daily%>%
+   mutate(grp=month(as.Date(flxdata_daily$yday, origin = paste0(flxdata_daily$year,"-01-01"))))
+ sdMin<-data%>% group_by(year,grp) %>%
+   dplyr::summarise(sdgpp=mean(gpp),sdnpp=mean(npp),sdnee=mean(nee),sdreco=mean(reco),
+                    sdrs=mean(rs),sdet=sum(et),sdswc=mean(swc))
+ 
+ 
+ coefVar<-0.1
 
-
-predPos  <- intvsS[[1]]$posteriorPredictiveCredibleInterval[3,]*modif + 2  * 0.3
-predNeg  <- intvsS[[1]]$posteriorPredictiveCredibleInterval[1,]*modif - 2 * 0.3
+predPos  <- intvsS[[1]]$posteriorPredictiveCredibleInterval[3,]*modif + 2  * sapply( 1:length(sdMin$sdgpp), function(i) max( 0.03* abs(sdMin$sdgpp[i]),0.05))
+predNeg  <- intvsS[[1]]$posteriorPredictiveCredibleInterval[1,]*modif - 2 * sapply( 1:length(sdMin$sdgpp), function(i) max( 0.03* abs(sdMin$sdgpp[i]),0.05))
 predm  <- intvsS[[1]]$posteriorPredictiveCredibleInterval[2,]*modif# - 2 * 0.3
 
 
@@ -256,8 +267,8 @@ nppC<-ggplot()+theme_bw()+
   theme(axis.title=element_text(size=14),
         axis.text=element_text(size=14))
 
-predPosEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[3,] + 2  * 4
-predNegEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[1,] - 2 * 4
+predPosEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[3,] + 2  * sapply( 1:length(sdMin$sdet), function(i) max( 0.2* abs(sdMin$sdet[i]),0.1))
+predNegEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[1,] - 2 * sapply( 1:length(sdMin$sdet), function(i) max( 0.2* abs(sdMin$sdet[i]),0.1))
 predmEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(dataX$gpp)
   
   etrans<-ggplot()+theme_bw()+
@@ -269,8 +280,8 @@ predmEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(d
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
-  predPosSWC  <- intvsS[[3]]$posteriorPredictiveCredibleInterval[3,] + 2  * 0.01
-  predNegSWC  <- intvsS[[3]]$posteriorPredictiveCredibleInterval[1,] - 2 * 0.01
+  predPosSWC  <- intvsS[[3]]$posteriorPredictiveCredibleInterval[3,] + 2  * sapply( 1:length(sdMin$sdswc), function(i) max( coefVar* abs(sdMin$sdswc[i]),0.01))
+  predNegSWC  <- intvsS[[3]]$posteriorPredictiveCredibleInterval[1,] - 2 * sapply( 1:length(sdMin$sdswc), function(i) max( coefVar* abs(sdMin$sdswc[i]),0.01))
   predmSWC  <- intvsS[[3]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(dataX$gpp)
   newSWC<-clm_df_full%>%
     filter(Year>=2015)%>%
@@ -288,8 +299,8 @@ predmEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(d
           axis.text=element_text(size=14))
   
   
-  predPosNEE  <- intvsS[[2]]$posteriorPredictiveCredibleInterval[3,]*modif + 2  * 0.3
-  predNegNEE  <- intvsS[[2]]$posteriorPredictiveCredibleInterval[1,]*modif - 2 * 0.3
+  predPosNEE  <- intvsS[[2]]$posteriorPredictiveCredibleInterval[3,]*modif + 2  * sapply( 1:length(sdMin$sdnee), function(i) max( 0.03* abs(sdMin$sdnee[i]),0.05))
+  predNegNEE  <- intvsS[[2]]$posteriorPredictiveCredibleInterval[1,]*modif - 2 * sapply( 1:length(sdMin$sdnee), function(i) max( 0.03* abs(sdMin$sdnee[i]),0.05))
   predmNEE  <- intvsS[[2]]$posteriorPredictiveCredibleInterval[2,]*modif# - 2 * sd(dataX$gpp)
   
   NEEPlot<-ggplot()+theme_bw()+
@@ -302,8 +313,8 @@ predmEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(d
           axis.text=element_text(size=14))
   
   
-  predPosreco  <- intvsS[[5]]$posteriorPredictiveCredibleInterval[3,]*modif + 2  * 0.3
-  predNegreco  <- intvsS[[5]]$posteriorPredictiveCredibleInterval[1,]*modif - 2 * 0.3
+  predPosreco  <- intvsS[[5]]$posteriorPredictiveCredibleInterval[3,]*modif + 2  * sapply( 1:length(sdMin$sdreco), function(i) max( coefVar* abs(sdMin$sdreco[i]),0.1))
+  predNegreco  <- intvsS[[5]]$posteriorPredictiveCredibleInterval[1,]*modif - 2 * sapply( 1:length(sdMin$sdreco), function(i) max( coefVar* abs(sdMin$sdreco[i]),0.1))
   predmreco  <- intvsS[[5]]$posteriorPredictiveCredibleInterval[2,]*modif# - 2 * sd(dataX$gpp)
   
   recoPlot<-ggplot()+theme_bw()+
@@ -317,8 +328,8 @@ predmEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(d
   
   
   
-  predPosRs  <- intvsS[[6]]$posteriorPredictiveCredibleInterval[3,]*modif + 2  * 0.3
-  predNegRs  <- intvsS[[6]]$posteriorPredictiveCredibleInterval[1,]*modif - 2 * 0.3
+  predPosRs  <- intvsS[[6]]$posteriorPredictiveCredibleInterval[3,]*modif + 2  * sapply( 1:length(sdMin$sdrs), function(i) max( coefVar* abs(sdMin$sdrs[i]),0.3))
+  predNegRs  <- intvsS[[6]]$posteriorPredictiveCredibleInterval[1,]*modif - 2 * sapply( 1:length(sdMin$sdrs), function(i) max( coefVar* abs(sdMin$sdrs[i]),0.3))
   predmRs  <- intvsS[[6]]$posteriorPredictiveCredibleInterval[2,]*modif# - 2 * sd(dataX$gpp)
   
   rsPlot<-ggplot()+theme_bw()+

@@ -12,6 +12,13 @@ observedVals<-function(timeStep,data){
       mutate(grp=month(as.Date(data$yday, origin = paste0(data$year,"-01-01"))))
   }
   
+
+  sdMin<-data%>% group_by(year,grp) %>%
+              dplyr::summarise(sdgpp=mean(gpp),sdnpp=mean(npp),sdnee=mean(nee),sdreco=mean(reco),sdrs=mean(rs),sdet=sum(et),sdswc=mean(swc))
+             
+  
+  
+  
     observed <- c(pull(data%>% 
                          group_by(year,grp) %>%
                          dplyr::summarise(gpp=mean(gpp))%>%
@@ -51,31 +58,13 @@ observedVals<-function(timeStep,data){
 
     )
     
-    
-    dev <- c(rep(.3,length(pull(data%>%
-                                  group_by(year,grp) %>%
-                                  dplyr::summarise(gpp=mean(gpp))%>%
-                                  select(gpp)))),
-             rep(.3,length( pull(data%>%
-                                   group_by(year,grp) %>%
-                                   dplyr::summarise(npp=mean(npp))%>%
-                                   select(npp)))),
-             rep(.3,length(pull(data%>%
-                                  group_by(year,grp) %>%
-                                  dplyr::summarise(nee=mean(nee))%>%
-                                  select(nee)))),
-             rep(.3,length(pull(data%>%
-                                  group_by(year,grp) %>%
-                                  dplyr::summarise(reco=mean(reco))%>%
-                                  select(reco)))),
-             rep(.1,length(pull(data%>%
-                                  group_by(year,grp) %>%
-                                  dplyr::summarise(rs=mean(rs))%>%
-                                  select(rs)))),
-             rep(4,length(pull(data%>%
-                                 group_by(year,grp) %>%
-                                 dplyr::summarise(et=sum(et))%>%
-                                 select(et)))),
+    coefVar=0.1
+    dev <- c(sapply( 1:length(sdMin$sdgpp), function(i) max( 0.03* abs(sdMin$sdgpp[i]),0.05) ),
+             sapply( 1:length(sdMin$sdnpp), function(i) max( 0.03* abs(sdMin$sdnpp[i]),0.05) ),
+             sapply( 1:length(sdMin$sdnee), function(i) max( 0.03* abs(sdMin$sdnee[i]),0.05) ),
+             sapply( 1:length(sdMin$sdreco), function(i) max( coefVar* abs(sdMin$sdreco[i]),0.1) ),
+             sapply( 1:length(sdMin$sdrs), function(i) max( coefVar* abs(sdMin$sdrs[i]),0.1) ),
+             sapply( 1:length(sdMin$sdet), function(i) max( 0.2* abs(sdMin$sdet[i]),0.1) ),
              # rep(0.5,(nrow(dplyr::filter(data,year>=startYear&year<=endYear))-1)),
              0.1,0.1,
              5,
@@ -84,10 +73,7 @@ observedVals<-function(timeStep,data){
              #  1,
              5,
              0.3,
-             rep(0.01,length(pull(data%>%
-                                  group_by(year,grp) %>%
-                                  dplyr::summarise(swc=mean(swc))%>%
-                                  select(swc))))
+             sapply( 1:length(sdMin$sdswc), function(i) max( 0.1* abs(sdMin$sdswc[i]),0.01) )
              
     )
  
@@ -173,9 +159,9 @@ observedPine <- c(GPP$GPP,                ## GPP - monthly avg
 startYear<-1996
 endYear<-2014
 
-devPine <- c(rep(.3,nrow(dplyr::filter(GPP,year>=startYear&year<=endYear&year!=2007))),
-             rep(.3,nrow(dplyr::filter(NEE,year>=startYear&year<=endYear&year!=2007))),
-             rep(.3,nrow(dplyr::filter(reco,year>=startYear&year<=endYear&year!=2007))),
+devPine <- c(rep(.1,nrow(dplyr::filter(GPP,year>=startYear&year<=endYear&year!=2007))),
+             rep(.1,nrow(dplyr::filter(NEE,year>=startYear&year<=endYear&year!=2007))),
+             rep(.1,nrow(dplyr::filter(reco,year>=startYear&year<=endYear&year!=2007))),
              rep(.1,nrow(LAI)),
              rep(.3,nrow(dbh)),
              20,

@@ -67,8 +67,8 @@ f.increase <-
     10,#K_s
     5,#V_nr
     0.9,#sigma_zR
-    7,#E_S1
-    6,#E_S2
+    4,#E_S1
+    3,#E_S2
     6, #shared_area
     4, #maxRootDepth
     0.8, #K_drain
@@ -120,7 +120,11 @@ pMinima[1:11] <- f.decrease[1:11]
 
 pMaxima[[30]]<-0.1
 
-priorVals <- createTruncatedNormalPrior(mean = pValues, sd=(pMaxima-pMinima),
+sdVals<-pMaxima-pMinima
+#ES1 and 2 on very different scales so set manually
+sdVals[7]<-2
+sdVals[8]<-2
+priorVals <- createTruncatedNormalPrior(mean = pValues, sd=sdVals,
                                         lower = pMinima*0.2, upper = pMaxima*1.8)
 
 return(priorVals)
