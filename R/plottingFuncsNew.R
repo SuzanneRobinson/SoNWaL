@@ -193,7 +193,7 @@ df <- df[c(2:nrow(df)),]
 # outSample[,48]<-round(outSample[,48])
  runModel<- function(p){
    sitka[.GlobalEnv$nm]<-p
-   if(prm!="Etransp"){
+   if(prm!="Transp"){
   res<- pull(do.call(fr3PGDN,sitka)%>%
           filter(Year>=2015)%>%
           group_by(Year,Month) %>%
@@ -217,7 +217,7 @@ df <- df[c(2:nrow(df)),]
    return(pred)
  }
  
- intvsS<-map(c("GPP","NEE","volSWC_rz","Etransp","Reco","Rs"),runMltMod)
+ intvsS<-map(c("GPP","NEE","volSWC_rz","Transp","Reco","Rs"),runMltMod)
  
  data<-flxdata_daily%>%
    mutate(grp=month(as.Date(flxdata_daily$yday, origin = paste0(flxdata_daily$year,"-01-01"))))

@@ -36,8 +36,9 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     BLcond <- parms[["BLcond"]]
     VPD <- weather[["VPD"]]
     Etransp <- ((e20 * netRad + rhoAir * lambda * VPDconv * VPD * 
-        BLcond)/(1 + e20 + BLcond/CanCond))*12/parms[["timeStp"]]
-    CanTransp <- Etransp/lambda * h
+        BLcond)/(1 + e20 + BLcond/CanCond))#*12/parms[["timeStp"]]
+    CanTransp <- max(Etransp/lambda * h,0)
+
     #less accurate but easier to have flexible time-steps?
     Transp <- CanTransp*365/parms[["timeStp"]] #general.info$daysinmonth[month] * CanTransp
     EvapTransp <- min(Transp + RainIntcptn, state[["SWC_rz"]]+Rain-RainIntcptn) # NOT SURE IF THIS NEEDS A MINIUM VALUE???? if so, ASW+rain or SWC+rain? remember ASW is now volumetric

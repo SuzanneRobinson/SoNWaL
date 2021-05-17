@@ -56,7 +56,7 @@ sampleOutputMonth<-function(df,sY,eY){
        aggregate(df$NEE~ df$Month+df$Year,FUN=mean)[,3],
        aggregate(df$Reco~ df$Month+df$Year,FUN=mean)[,3],
        aggregate(df$Rs~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$Etransp~ df$Month+df$Year,FUN=sum)[,3],
+       aggregate(df$Transp~ df$Month+df$Year,FUN=sum)[,3],
        filter(df,Year==2015&Month==8)$LAI[1],
        filter(df,Year==2018&Month==8)$LAI[1],
        filter(df,Year==2018&Month==8)$N[1],

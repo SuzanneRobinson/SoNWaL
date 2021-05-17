@@ -16,7 +16,7 @@ library(ggpubr)
 startYear = 2015
 endYear = 2018
 #install.packages("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\fr3PGDN_2.0.tar.gz", repos = NULL, type="source")
-timeStep<-"monthly"
+timeStep<-"weekly"
 
 ## Met data
 clm_df_full<-data.frame(getClimDat(timeStep))
@@ -57,8 +57,8 @@ codM<-as.data.frame(mergeChains(out$chain))
 names(codM)<-nm
 codM<-colMedians(as.data.frame(codM))
 
-priorSamp<-priorVals$sampler(35000)
-MCMCtrace(getSample(out,coda = T,thin=10,start=10000),wd="C:\\Users\\aaron.morris", post_zm=F,iter=5000,priors = priorSamp)
+#priorSamp<-priorVals$sampler(35000)
+#MCMCtrace(getSample(out,coda = T,thin=10,start=10000),wd="C:\\Users\\aaron.morris", post_zm=F,iter=5000,priors = priorSamp)
 
 sitka<-getParms(waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
 #sitka$weather<-clm_df_pine
@@ -68,6 +68,7 @@ output<-do.call(fr3PGDN,sitka)
 tail(output$GPP)
 ff<-filter(output,Year>2014)
 plot(ff$fSW)
+plot(ff$Transp)
 results<-plotResults(output,ShortTS=T,out=out)
 #results
 ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]],results[[6]])
