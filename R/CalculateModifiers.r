@@ -53,6 +53,7 @@ function (state, weather, site, parms, general.info)
       MoistRatio<-ifelse(ASW>=0,MoistRatio,0)
       MoistRatio<-ifelse(ASW>MaxASW,1,MoistRatio)
       fSW<-SWGmod(SWconst,SWpower,MoistRatio)
+      
     
     }else
     {

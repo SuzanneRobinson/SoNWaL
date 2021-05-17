@@ -403,7 +403,7 @@ sampleOutputPine_noHyd<-function(df,sY,eY){
 ## Likelihood function
 NLL<- function(p){
   sitka[.GlobalEnv$nm]<-p
-  
+  sitka$SWpower0<-round(sitka$SWpower0)
   NlogLik <- tryCatch(
     {
       output<-do.call(fr3PGDN,sitka)

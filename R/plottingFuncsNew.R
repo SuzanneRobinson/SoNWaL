@@ -189,8 +189,8 @@ df <- df[c(2:nrow(df)),]
  
  nmc = nrow(out$chain[[1]])
  outSample   <- getSample(out,start=nmc/2)
- numSamples = 50# min(1000, nrow(outSample))
- 
+ numSamples = 25# min(1000, nrow(outSample))
+# outSample[,48]<-round(outSample[,48])
  runModel<- function(p){
    sitka[.GlobalEnv$nm]<-p
    if(prm!="Etransp"){
@@ -223,7 +223,7 @@ df <- df[c(2:nrow(df)),]
    mutate(grp=month(as.Date(flxdata_daily$yday, origin = paste0(flxdata_daily$year,"-01-01"))))
  sdMin<-data%>% group_by(year,grp) %>%
    dplyr::summarise(sdgpp=mean(gpp),sdnpp=mean(npp),sdnee=mean(nee),sdreco=mean(reco),
-                    sdrs=mean(rs),sdet=sum(et),sdswc=mean(swc))
+                    sdrs=mean(rs),sdet=sum(et),sdswc=mean(swc,na.rm=T))
  
  
  coefVar<-0.1
@@ -280,8 +280,8 @@ predmEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(d
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
-  predPosSWC  <- intvsS[[3]]$posteriorPredictiveCredibleInterval[3,] + 2  * sapply( 1:length(sdMin$sdswc), function(i) max( coefVar* abs(sdMin$sdswc[i]),0.01))
-  predNegSWC  <- intvsS[[3]]$posteriorPredictiveCredibleInterval[1,] - 2 * sapply( 1:length(sdMin$sdswc), function(i) max( coefVar* abs(sdMin$sdswc[i]),0.01))
+  predPosSWC  <- intvsS[[3]]$posteriorPredictiveCredibleInterval[3,] + 2  * sapply( 1:length(sdMin$sdswc), function(i) max( 0.05* abs(sdMin$sdswc[i]),0.01))
+  predNegSWC  <- intvsS[[3]]$posteriorPredictiveCredibleInterval[1,] - 2 * sapply( 1:length(sdMin$sdswc), function(i) max( 0.05* abs(sdMin$sdswc[i]),0.01))
   predmSWC  <- intvsS[[3]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(dataX$gpp)
   newSWC<-clm_df_full%>%
     filter(Year>=2015)%>%

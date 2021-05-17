@@ -73,7 +73,7 @@ observedVals<-function(timeStep,data){
              #  1,
              5,
              0.3,
-             sapply( 1:length(sdMin$sdswc), function(i) max( 0.1* abs(sdMin$sdswc[i]),0.01) )
+             sapply( 1:length(sdMin$sdswc), function(i) max( 0.05* abs(sdMin$sdswc[i]),0.01) )
              
     )
  

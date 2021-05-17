@@ -66,7 +66,6 @@ UpdateSoil <-
         MoistRatio<-ifelse(ASW>=0,MoistRatio,0)
         MoistRatio<-ifelse(ASW>MaxASW,1,MoistRatio)
         fSW<-SWGmod(SWconst,SWpower,MoistRatio)
-        
       }else
       {
         MaxASW <- site[["MaxASW"]]

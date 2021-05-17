@@ -12,16 +12,15 @@ library(coda)
 library(BayesianTools)
 library(miscTools)
 library(ggpubr)
-library(rlang)
 ## Years of data to use for calibration
 startYear = 2015
 endYear = 2018
 #install.packages("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\fr3PGDN_2.0.tar.gz", repos = NULL, type="source")
-timeStep<-"weekly"
+timeStep<-"monthly"
 
 ## Met data
 clm_df_full<-data.frame(getClimDat(timeStep))
-clm_df_full%>%filter(Year<2019)
+clm_df_full<-clm_df_full%>%filter(Year<2019)
 ## Read Harwood data for Sitka spruce and mutate timestamp to POSIXct
 if(Sys.info()[1]=="Windows"){
   data <- read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\harwood_data.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
@@ -58,16 +57,22 @@ codM<-as.data.frame(mergeChains(out$chain))
 names(codM)<-nm
 codM<-colMedians(as.data.frame(codM))
 
+priorSamp<-priorVals$sampler(35000)
+MCMCtrace(getSample(out,coda = T,thin=10,start=10000),wd="C:\\Users\\aaron.morris", post_zm=F,iter=5000,priors = priorSamp)
+
 sitka<-getParms(waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
 #sitka$weather<-clm_df_pine
 sitka[nm]<-codM[nm]
-
+#sitka$SWpower0<-round(sitka$SWpower0)
 output<-do.call(fr3PGDN,sitka)
 tail(output$GPP)
+ff<-filter(output,Year>2014)
+plot(ff$fSW)
 results<-plotResults(output,ShortTS=T,out=out)
 #results
-ggarrange(results[[1]],results[[2]],results[[5]],results[[4]])
+ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]],results[[6]])
 
+ggarrange(results[[9]],results[[10]],results[[11]],results[[12]],results[[13]],results[[14]])
 
 #cv is ratio of sd to mean, cv * value of meanNEE
 #sdmin_NEE               <- cv_EC * abs(data_NEEmean_value) #gives you the standard deviation for the averaged data points (assuming cv 20%)

@@ -57,6 +57,7 @@ f.decrease <- c(
   0.893875965852296, #qbc
   0.991080780202615, #el
   0.990457295759556 #er
+
 )
 
 f.increase <-
@@ -107,7 +108,8 @@ f.increase <-
     0.498299819223935,#qh
     1.12248068295408,#qbc
     0.783843959477034,#el
-    0.90854084808886#er
+    0.90854084808886 #er
+
   )
 
 ##Need to check what priors we are using!
@@ -120,10 +122,12 @@ pMinima[1:11] <- f.decrease[1:11]
 
 pMaxima[[30]]<-0.1
 
+
 sdVals<-pMaxima-pMinima
 #ES1 and 2 on very different scales so set manually
 sdVals[7]<-2
 sdVals[8]<-2
+
 priorVals <- createTruncatedNormalPrior(mean = pValues, sd=sdVals,
                                         lower = pMinima*0.2, upper = pMaxima*1.8)
 

@@ -50,6 +50,7 @@ soilWC<-function(parms,weather,state){
   
   #rooting depth / volume - Almedia describes this as depth, assumed to be proportional in paper to biomass
   z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone/max root depth
+  z_r=min(z_r,V_nr)
   
   V_rz = z_r #Almedia and Sands paper suggests volume of root zone is equivalent to z_r
   

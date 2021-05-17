@@ -30,7 +30,9 @@ PredictWeatherVariables <-
     }
     
     #linear model to predict historical RH from other weather variables
-    mod1<-lm(RH~SolarRad+Rain+Tmean,data=weather2)
+   if(nrow(clm_df_full<600)) mod1<-lm(RH~SolarRad+Tmin,data=weather2)
+   if(nrow(clm_df_full>600)) mod1<-lm(RH~SolarRad+Tmin+Rain,data=weather2)
+    
     weather1$RH<- as.vector(predict(mod1,weather1))
     weather<-rbind(vpdFunc(weather1,RH=T),  vpdFunc(weather2,RH=T))
     return(weather)
