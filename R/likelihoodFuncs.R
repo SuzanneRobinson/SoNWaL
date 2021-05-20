@@ -34,18 +34,18 @@ sampleOutputMonth<-function(df,sY,eY){
   
   if(nrow(df)<600){
   df<-df%>%
-    mutate(GPP=GPP*100/days_in_month(Month))%>%
-    mutate(NPP=NPP*100/days_in_month(Month))%>%
-    mutate(NEE=NEE*100/days_in_month(Month))%>%
-    mutate(Rs=Rs*100/days_in_month(Month))%>%
-    mutate(Reco=Reco*100/days_in_month(Month))
+    mutate(GPP=GPP/2*100/days_in_month(Month))%>%
+    mutate(NPP=NPP/2*100/days_in_month(Month))%>%
+    mutate(NEE=NEE/2*100/days_in_month(Month))%>%
+    mutate(Rs=Rs/2*100/days_in_month(Month))%>%
+    mutate(Reco=Reco/2*100/days_in_month(Month))
   } else {
      df<-df%>%
-      mutate(GPP=GPP*100/7)%>%
-      mutate(NPP=NPP*100/7)%>%
-      mutate(NEE=NEE*100/7)%>%
-      mutate(Rs=Rs*100/7)%>%
-      mutate(Reco=Reco*100/7)
+      mutate(GPP=GPP/2*100/7)%>%
+      mutate(NPP=NPP/2*100/7)%>%
+      mutate(NEE=NEE/2*100/7)%>%
+      mutate(Rs=Rs/2*100/7)%>%
+      mutate(Reco=Reco/2*100/7)
   }
   
   df<- filter(df,Year>=sY&Year<=eY)
@@ -56,7 +56,7 @@ sampleOutputMonth<-function(df,sY,eY){
        aggregate(df$NEE~ df$Month+df$Year,FUN=mean)[,3],
        aggregate(df$Reco~ df$Month+df$Year,FUN=mean)[,3],
        aggregate(df$Rs~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$Transp~ df$Month+df$Year,FUN=sum)[,3],
+       aggregate(df$EvapTransp~ df$Month+df$Year,FUN=sum)[,3],
        filter(df,Year==2015&Month==8)$LAI[1],
        filter(df,Year==2018&Month==8)$LAI[1],
        filter(df,Year==2018&Month==8)$N[1],

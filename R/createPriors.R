@@ -10,9 +10,9 @@ nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","s
 
 
 f.decrease <- c(
-  0.08, #wiltPoint
-  0.2, #fieldCap
-  0.3,#satPoint
+  0.06, #wiltPoint
+  0.26, #fieldCap
+  0.4,#satPoint
   0.001, #K_s
   2, #V_nr
   0.1, #sigma_zR
@@ -63,16 +63,16 @@ f.decrease <- c(
 f.increase <-
   c(
     0.25,#wiltPoint
-    0.35,#fieldCap
-    0.6,#satPoint
+    0.4,#fieldCap
+    0.7,#satPoint
     10,#K_s
-    5,#V_nr
+    8,#V_nr
     0.9,#sigma_zR
-    4,#E_S1
+    5,#E_S1
     3,#E_S2
     6, #shared_area
-    4, #maxRootDepth
-    0.8, #K_drain
+    6, #maxRootDepth
+    20, #K_drain
     0.573973679288588,#pFS2
     0.235352308855631,#pFS20
     1.86098081013281,#aS
@@ -120,16 +120,17 @@ pValues <- as.vector(unlist(sitka[nm]))
 pMaxima[1:11] <- f.increase[1:11]
 pMinima[1:11] <- f.decrease[1:11]
 
-pMaxima[[30]]<-0.1
+pMaxima[[30]]<-0.5
+pMinima[[31]]<-0.01
 
 
-sdVals<-pMaxima-pMinima
+sdVals<-(pMaxima-pMinima)*0.5
 #ES1 and 2 on very different scales so set manually
 sdVals[7]<-2
 sdVals[8]<-2
 
 priorVals <- createTruncatedNormalPrior(mean = pValues, sd=sdVals,
-                                        lower = pMinima*0.2, upper = pMaxima*1.8)
+                                        lower = pMinima, upper = pMaxima)
 
 return(priorVals)
 

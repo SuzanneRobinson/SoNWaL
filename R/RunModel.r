@@ -2,7 +2,7 @@ RunModel <-
 function (stand.init, weather, site, parms, general.info = parms.general, 
     presc = presc, cod.pred = "3PG", cod.clim = "Month") 
 {
-    weather <- PredictWeatherVariables(weather = weather)
+
 
         state.init <- InitializeState(stand = stand.init, site = site, 
         parms = parms, general.info = general.info, weather = weather)
@@ -43,10 +43,19 @@ function (stand.init, weather, site, parms, general.info = parms.general,
             weather = weather.i, site = site, parms = parms, 
             general.info = general.info)
         state.npp <- EstimateNPP(state = state.mods, parms = parms)
-        state.asw <- UpdateASW(state = state.npp, weather = weather.i, 
-            site = site, parms = parms, general.info = general.info)
+
+     #  if(parms[["timeStp"]]==52) weather.i2<-clm_df_daily%>%filter(Year==weather.i$Year & week==weather.i$week)
+     #  if(parms[["timeStp"]]==12) weather.i2<-clm_df_daily%>%filter(Year==weather.i$Year & Month==weather.i$Month)
+     #  if(parms[["timeStp"]]==365)weather.i2=weather.i
+     #   
+     #   weather.i2 <- split(weather.i2, seq(nrow(weather.i2)))
+     #     
+     #   state.asw<- map(weather.i2, ~UpdateASW(.x,state = state.npp, 
+     #                                             site = site, parms = parms, general.info = general.info))[[length(weather.i2)]]
+
+        state.asw<-  UpdateASW(weather=weather.i,state = state.npp, 
+                               site = site, parms = parms, general.info = general.info)
         
-     
         #could have biomass allocation only occur at the end of the month?
         
       #  wMnth= ifelse(i!=N,weather$Month[i+1],1)

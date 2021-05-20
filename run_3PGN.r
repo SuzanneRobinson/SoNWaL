@@ -16,10 +16,12 @@ library(ggpubr)
 startYear = 2015
 endYear = 2018
 #install.packages("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\fr3PGDN_2.0.tar.gz", repos = NULL, type="source")
-timeStep<-"weekly"
+timeStep<-"monthly"
 
 ## Met data
 clm_df_full<-data.frame(getClimDat(timeStep))
+
+
 clm_df_full<-clm_df_full%>%filter(Year<2019)
 ## Read Harwood data for Sitka spruce and mutate timestamp to POSIXct
 if(Sys.info()[1]=="Windows"){
@@ -51,8 +53,13 @@ sitka<-getParms(weather=clm_df_full,
                 timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365 #time step, 52 for weekly, 12 for monthly and 365 for daily
                 )
 #######################################################
+#names of parameters to fit
+nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
+      "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
+      "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
+      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
 
-out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_2_T.RDS")
+#out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\monthly_1_T.RDS")
 codM<-as.data.frame(mergeChains(out$chain))
 names(codM)<-nm
 codM<-colMedians(as.data.frame(codM))
@@ -68,7 +75,7 @@ output<-do.call(fr3PGDN,sitka)
 tail(output$GPP)
 ff<-filter(output,Year>2014)
 plot(ff$fSW)
-plot(ff$Transp)
+plot(ff$EvapTransp)
 results<-plotResults(output,ShortTS=T,out=out)
 #results
 ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]],results[[6]])

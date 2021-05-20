@@ -24,6 +24,10 @@ clm_df_full$week<-week(clm_df_full$date)
 clm_df_daily$Date<-as.Date(clm_df_daily$DOY, origin = paste0(clm_df_daily$Year,"-01-01"))
 clm_df_daily$week<-week(clm_df_daily$Date)
 clm_df_daily$month<-month(clm_df_daily$Date)
+clm_df_daily[which(clm_df_daily$DOY==365&clm_df_daily$week==1),"week"]<-52
+
+clm_df_daily <- PredictWeatherVariables(weather = clm_df_daily)
+
 
 clm_df_weekly<-clm_df_daily%>%
   group_by(Year,week)%>%
@@ -42,7 +46,7 @@ clm_df_full<-clm_df_daily%>%
 
 clm_df_daily<-clm_df_daily%>%
   group_by(Year,DOY)%>%
-  summarise(Year=median(Year),Month=median(month(Date)),Tmax=max(Tmax),Tmin=min(Tmin),
+  summarise(Year=median(Year),week=median(week),Month=median(month(Date)),Tmax=max(Tmax),Tmin=min(Tmin),
             Tmean=mean(Tmean),Rain=sum(Rain),SolarRad=mean(SolarRad)
             ,FrostDays=mean(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100))
 
