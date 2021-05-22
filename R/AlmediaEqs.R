@@ -155,7 +155,7 @@ soilEvap<-function(parms,weather,state,interRad,h){
   #get potential evaporation rate using penman-monteith with soil specific params - following eq in landsberg and sands (7.2.1), adjusted to output evap volume rate
   #e0<-h*(((s*interRad+gb_s*P_a*C_pa*D)/(s+gamma*(1+gb_s/g_C)))/lambda)
  # print(paste0("eox= ",e0x))
-  e0<- (e20 * interRad + rhoAir * lambda * VPDconv * VPD * 
+  e0<- (e20 * interRad + rhoAir * lambda  * VPD * 
          soilBoundaryCond)/(1 + e20 + soilBoundaryCond/soilCond)
   e0<-max(e0/lambda * h,0)
  # 

@@ -37,7 +37,7 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     BLcond <- parms[["BLcond"]]
     VPD <- weather[["VPD"]]
     #Penman-monteith 
-    Etransp <- ((e20 * netRad + rhoAir * lambda * VPDconv * VPD * 
+    Etransp <- ((e20 * netRad + rhoAir * lambda  * VPD * 
        BLcond)/(1 + e20 + BLcond/CanCond))#*12/parms[["timeStp"]]
     #CanTransp <- h*(CanCond*(145*netRad+BLcond*1.204*1004*(VPD*100))/(2.45*((66.1+145)*CanCond+66.1*BLcond))) #Etransp/lambda * h
     CanTransp <- Etransp/lambda * h
