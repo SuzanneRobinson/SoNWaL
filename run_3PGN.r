@@ -59,23 +59,28 @@ nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","s
       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
       "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
 
-#out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\monthly_1_T.RDS")
+#out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\monthly_3_T.RDS")
 codM<-as.data.frame(mergeChains(out$chain))
 names(codM)<-nm
-codM<-colMedians(as.data.frame(codM))
+codM<-tail(as.data.frame(codM),1)
 
 #priorSamp<-priorVals$sampler(35000)
 #MCMCtrace(getSample(out,coda = T,thin=10,start=10000),wd="C:\\Users\\aaron.morris", post_zm=F,iter=5000,priors = priorSamp)
 
 sitka<-getParms(waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
+#sitka$E_S1<-2
 #sitka$weather<-clm_df_pine
 sitka[nm]<-codM[nm]
 #sitka$SWpower0<-round(sitka$SWpower0)
+sitka$E_S2<-2
+sitka$E_S1<-2
+#sitka$weather[sitka$weather$Year==2015,"Rain"][1]<-filter(clm_df_full,Year==2014)$Rain[1]
+
 output<-do.call(fr3PGDN,sitka)
 tail(output$GPP)
 ff<-filter(output,Year>2014)
 plot(ff$fSW)
-plot(ff$EvapTransp)
+plot(ff$volSWC_rz)
 results<-plotResults(output,ShortTS=T,out=out)
 #results
 ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]],results[[6]])

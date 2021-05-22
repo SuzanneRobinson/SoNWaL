@@ -27,7 +27,7 @@ function (stand, site, parms, general.info, weather)
     state.init["SWC_nr"] <- site[["SWC_nr"]]
     state.init["SWC_rz"] <- site[["SWC_rz"]]
     state.init["MaxASW_state"] <- site[["MaxASW"]]
-    state.init["E_S"] <- site[["E_S"]]
+    state.init["E_S"] <- 0
     state.init["volSWC_rz"] <- 0
     state.init["soilRad"] <- 100
     state.init["totalRad"] <- 100

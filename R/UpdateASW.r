@@ -37,13 +37,15 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     BLcond <- parms[["BLcond"]]
     VPD <- weather[["VPD"]]
     #Penman-monteith 
-    Etransp <- ((e20 * netRad + rhoAir * lambda * VPD * 
-        BLcond)/(1 + e20 + BLcond/CanCond))#*12/parms[["timeStp"]]
+    Etransp <- ((e20 * netRad + rhoAir * lambda * VPDconv * VPD * 
+       BLcond)/(1 + e20 + BLcond/CanCond))#*12/parms[["timeStp"]]
+    #CanTransp <- h*(CanCond*(145*netRad+BLcond*1.204*1004*(VPD*100))/(2.45*((66.1+145)*CanCond+66.1*BLcond))) #Etransp/lambda * h
     CanTransp <- Etransp/lambda * h
+    
+    #CanTransp<-h*(CanCond*(145*netRad+BLcond*1.204*1004*(VPD*1000))/(2.45*((66.1+145)*CanCond+66.1*BLcond)))
     #less accurate but easier to have flexible time-steps?
     Transp <- CanTransp*365/parms[["timeStp"]] #general.info$daysinmonth[month] * CanTransp
-    EvapTransp <- min(Transp + RainIntcptn, state[["SWC_rz"]]+Rain-RainIntcptn) 
-    #evap from soil and drainage occur after transpiration so max is just plus rain...?
+    
     
     #non-Intercepted radiation
     interRad<-(RAD.day * 1e+06/h)-max((RAD.day * 1e+06/h)*(1-exp(-parms[["k"]]*LAI)),0)
@@ -71,7 +73,12 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       
       #evaporation Minus monthly rainfall and irrigation from cumulative E_S value
       E_S <- max(E_S + RainIntcptn - Rain - MonthIrrig,0) # rainfall needs to be added after as biomass allocation function requires months rainfall
-      state[["E_S"]] = E_S
+      state[["E_S"]] <- E_S
+      
+      EvapTransp <- min(Transp + E_S, state[["SWC_rz"]]+Rain-RainIntcptn) 
+      EvapTransp<-ifelse(EvapTransp<0,0,EvapTransp)
+      
+      #evap from soil and drainage occur after transpiration so max is just plus rain...?
      
       #Calculate drainage from root zone to non-root zone and out of non-root zone, where SWC of root zone exceeds field capacity of the soil zone (eq A.11)
       rz_nrz_drain <- max(drainageFunc(parms, weather, SWC=state[["SWC_rz"]],soilVol=z_r),0)

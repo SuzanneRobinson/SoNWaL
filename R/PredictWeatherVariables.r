@@ -7,15 +7,23 @@ PredictWeatherVariables <-
     
     vpdFunc<-function(weather){
 
-        VPD.Tmax <- 0.61078 * exp(17.269 * weather$Tmax/(237.3 + weather$Tmax))
-        VPD.Tmin <- 0.61078 * exp(17.269 * weather$Tmin/(237.3 + weather$Tmin))
-        VPDSat <- (VPD.Tmax - VPD.Tmin)
+        VPD.Tmax <- 6.1078 * exp(17.269 * weather$Tmax/(237.3 + weather$Tmax))
+        VPD.Tmin <- 6.1078 * exp(17.269 * weather$Tmin/(237.3 + weather$Tmin))
+      #  VPDSat <- (VPD.Tmax - VPD.Tmin)/2
   
-        VPD.Tmean <- 0.61078 * exp(17.269 * weather$Tmean/(237.3 + weather$Tmean))
-        
-        VPD <- VPD.Tmean*(1-weather$RH/100)
+        VPDact <-( (6.1078 * exp(17.269 * weather$Tmean/(237.3 + weather$Tmean)))*(1-weather$RH/100))
+
+      #  Tmean = 25
+      #  RH =80
+      # #  VPD <- 610.7*10^(7.5*Tmean/(237.3+Tmean)) #*((100-RH)/100)*0.01
+     #    VPDsat <- 0.61078 * exp(17.269 * Tmean/(237.3 + Tmean))
+      #   VPDair <- 0.61078 * exp(17.269 * Tmean/(237.3 + Tmean))*(1-RH/100)
+      #   VPDsat-VPDair
+         
+         weather$Tmax<-VPD.Tmax
+        weather$Tmin<-VPD.Tmin
        # VPD<-VPDSat-VP
-        weather$VPD <- VPD*0.1 #convert from Pa to mbar
+        weather$VPD <-VPDact#( VPDSat-VPDact) #convert from kPa to mbar
       
       return(weather)
       
@@ -25,7 +33,8 @@ PredictWeatherVariables <-
   mod1<-lm(RH~SolarRad+log(1+Rain)+Tmean+Tmax+Tmin,data=weather2)
 
       weather1$RH<- as.vector(predict(mod1,weather1))
-    weather<-rbind(vpdFunc(weather1),  weather2)
+    weather<-rbind(vpdFunc(weather1),  vpdFunc(weather2))
+    weather$VPD[weather$VPD<0]<-0
     return(weather)
   }
 

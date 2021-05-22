@@ -16,8 +16,8 @@ f.decrease <- c(
   0.001, #K_s
   2, #V_nr
   0.1, #sigma_zR
-  -3, #E_S1
-  -3, #E_S2
+  0.01, #E_S1
+  0.001, #E_S2
   2, #shared_area
   1.5, #maxRootDepth
   0.1, #K_drain
@@ -68,8 +68,8 @@ f.increase <-
     10,#K_s
     8,#V_nr
     0.9,#sigma_zR
-    5,#E_S1
-    3,#E_S2
+    10,#E_S1
+    10,#E_S2
     6, #shared_area
     6, #maxRootDepth
     20, #K_drain

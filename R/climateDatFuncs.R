@@ -26,7 +26,35 @@ clm_df_daily$week<-week(clm_df_daily$Date)
 clm_df_daily$month<-month(clm_df_daily$Date)
 clm_df_daily[which(clm_df_daily$DOY==365&clm_df_daily$week==1),"week"]<-52
 
+modDat<-filter(clm_df_daily,Year>2014)
+predDat<-filter(clm_df_daily,Year<=2006)
+missingDat<-clm_df_daily%>%filter(Year>=2007&Year<2015)
+repYear<-clm_df_daily%>%filter(Year==2019)
+fillDat<-rbind(do.call("rbind",replicate(4,repYear ,simplify=F)),clm_df_daily%>%filter(Year==2019&DOY==1),
+               do.call("rbind",replicate(4, repYear,simplify=F)),clm_df_daily%>%filter(Year==2019&DOY==1))
+
+fillDat$Year<-missingDat$Year
+
+##use last 5 years to fill in climate gaps?
+#clm_df_dailyYavg<-clm_df_daily%>%filter(Year<2007&Year>2002)%>%
+#  group_by(DOY)%>%
+#  summarise(Tmax=median(Tmax),Tmean=median(Tmean),Tmin=median(Tmin),Rain=median(Rain))
+#
+#clm_df_u<-filter(clm_df_daily,Year>=2007&Year<2015)%>%left_join(clm_df_dailyYavg,by=c("DOY"="DOY"),keep=F)%>%
+#  mutate(Year=Year,Tmax=Tmax.y,Tmin=Tmin.y,Tmean=Tmean.y,Rain=Rain.y)%>%
+#  select(Year,DOY,Tmax,Tmin,Tmean,Rain,SolarRad,VPD,FrostHours,DayIrrig,RH,SWC,Date,week,month)
+
+
+mod1<-lm(SolarRad~Tmax+Tmean+Rain,data=modDat[-c(1275,2103,615),])
+
+predDat$SolarRad<-predict(mod1,newdata = predDat)
+
+
+clm_df_daily<-rbind(predDat,fillDat,modDat)
+
+clm_df_daily$SolarRad[clm_df_daily$SolarRad<0]<-0
 clm_df_daily <- PredictWeatherVariables(weather = clm_df_daily)
+
 
 
 clm_df_weekly<-clm_df_daily%>%

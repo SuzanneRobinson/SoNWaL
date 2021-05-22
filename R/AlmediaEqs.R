@@ -128,8 +128,8 @@ soilEvap<-function(parms,weather,state,interRad,h){
   lambda <- parms[["lambda"]]#Volumetric latent heat of vaporization. Energy required per water volume vaporized (see penman monteith)
   VPDconv <- parms[["VPDconv"]]
   VPD <- weather[["VPD"]]
-  E_S1 = exp(parms[["E_S1"]])
-  E_S2 = exp(parms[["E_S2"]])
+  E_S1 = (parms[["E_S1"]])
+  E_S2 = (parms[["E_S2"]])
 
   
   #size of time-step. This is for monthly time steps
@@ -138,27 +138,30 @@ soilEvap<-function(parms,weather,state,interRad,h){
   if (parms[["timeStp"]] ==365) t =  1
   if (is.numeric(t)==F) print ("unsupported time step used")
   #parameter values from landsberg and sands book (7.2.1)
-  s<-145
-  gb_s<-0.01#soil boundary layer conductance
-  g_C<-Inf
-  P_a = 1.204
-  C_pa = 1004
-  gamma= 66.1
-  s=145
-  D=VPD
-  lambda=2.45
+ # s<-145
+ # gb_s<-0.01#soil boundary layer conductance
+ # g_C<-Inf
+ # P_a = 1.204
+ # C_pa = 1004
+ # gamma= 66.1
+ # s=145
+ # D=VPD*100
+ # lambda=2.45
   
   soilBoundaryCond<-0.01
   soilCond<-Inf
   #convert joules m^2 per hour to watts m^2 (1 Wm^2 = 1 J m^2 per second)
 
   #get potential evaporation rate using penman-monteith with soil specific params - following eq in landsberg and sands (7.2.1), adjusted to output evap volume rate
-#  e0<-(s*interRad+gb_s*P_a*C_pa*D)/(s+gamma*(1+gb_s/g_C)*lambda)
-  
+  #e0<-h*(((s*interRad+gb_s*P_a*C_pa*D)/(s+gamma*(1+gb_s/g_C)))/lambda)
+ # print(paste0("eox= ",e0x))
   e0<- (e20 * interRad + rhoAir * lambda * VPDconv * VPD * 
          soilBoundaryCond)/(1 + e20 + soilBoundaryCond/soilCond)
+  e0<-max(e0/lambda * h,0)
+ # 
+  #print(paste0("eo= ",e0))
   
-
+  #e0<-max(h*(soilCond*(145*interRad+soilBoundaryCond*1.204*1004*((VPD*100)*VPDconv))/(2.45*((66.1+145)*soilCond+66.1*soilBoundaryCond))),1)
   #E_S0 is E_S at the start of the time-step
   E_S0 = state[["E_S"]]
 
@@ -170,6 +173,9 @@ soilEvap<-function(parms,weather,state,interRad,h){
  ) / (2 * e0 * E_S2)))
  #Integrate equation A.9 to get value at time t (assuming t is number of days in month)
  #and Calc E_S using t+t0 to get amount of evaporation between t0 and t
+ 
+ 
+ 
  E_S = if ((t + t0) <= t_S1)
    e0 * (t + t0)
  else
