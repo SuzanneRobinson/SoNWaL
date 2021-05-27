@@ -151,22 +151,22 @@ soilEvap<-function(parms,weather,state,interRad,h){
   soilBoundaryCond<-0.01
   soilCond<-Inf
   #convert joules m^2 per hour to watts m^2 (1 Wm^2 = 1 J m^2 per second)
-
-  #get potential evaporation rate using penman-monteith with soil specific params - following eq in landsberg and sands (7.2.1), adjusted to output evap volume rate
+interRad<-max(interRad,1)
+    #get potential evaporation rate using penman-monteith with soil specific params - following eq in landsberg and sands (7.2.1), adjusted to output evap volume rate
   #e0<-h*(((s*interRad+gb_s*P_a*C_pa*D)/(s+gamma*(1+gb_s/g_C)))/lambda)
  # print(paste0("eox= ",e0x))
   e0<- (e20 * interRad + rhoAir * lambda  * VPD * 
          soilBoundaryCond)/(1 + e20 + soilBoundaryCond/soilCond)
   e0<-max(e0/lambda * h,0)
- # 
-  #print(paste0("eo= ",e0))
-  
+
   #e0<-max(h*(soilCond*(145*interRad+soilBoundaryCond*1.204*1004*((VPD*100)*VPDconv))/(2.45*((66.1+145)*soilCond+66.1*soilBoundaryCond))),1)
   #E_S0 is E_S at the start of the time-step
   E_S0 = state[["E_S"]]
 
   #Duration of phase 1 evaporation
  t_S1 = E_S1 / e0
+
+ 
  #Solved for t equation A.10 in Almedia, to get equivalent t for E_S0 value
  t0 = as.numeric(round(((-2 * E_S0 * E_S1) + (E_S0 ^ 2) + (2 * E_S0) +
                           (E_S1 ^ 2) - (2 * E_S1) + 1 + (2 * e0 * E_S2 * t_S1) - (E_S2 ^ 2)
@@ -191,6 +191,6 @@ soilEvap<-function(parms,weather,state,interRad,h){
 
 ##Soil water growth modifier
 SWGmod<-function(SWconst,SWpower,MoistRatio){
-  f_theta<-(1-(1-MoistRatio)^SWpower)/(1+(1-2*SWconst^SWpower)*(1-MoistRatio/SWconst)^SWpower)
+  f_theta<-(1-(1-MoistRatio)^SWpower)/(1+((1-MoistRatio)/SWconst)^SWpower)
   return(f_theta)
 }

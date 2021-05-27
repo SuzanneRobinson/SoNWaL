@@ -76,7 +76,7 @@ function (weather, presc, t = 0, N = 2500, Wl = 0.01, WlDormant = 0, Wr = 0.01, 
                                                                      "Non standard", "No effect of ASW"),
                                                   soilclass = c(1, 2, 3, 4, -1, 0),
                                                   SWconst = c(0.7, 0.6, 0.5, 0.4, parms[["SWconst0"]], 1),
-                                                  SWpower = c(9, 7, 5, 3, parms[["SWpower0"]], 1)))
+                                                  SWpower = c(9, 7, 5, 3, round(parms[["SWpower0"]]), 1)))
 
     ##For spatial increase sensitivity analysis, temp and rainfall mods
     weather$Rain<-weather$Rain*rainMod

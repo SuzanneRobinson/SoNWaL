@@ -4,7 +4,7 @@ createPriors_sitka<-function(sitka){
 nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
       "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
+      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0")
 
 
 
@@ -17,7 +17,7 @@ f.decrease <- c(
   2, #V_nr
   0.1, #sigma_zR
   0.01, #E_S1
-  0.001, #E_S2
+  0.01, #E_S2
   2, #shared_area
   1.5, #maxRootDepth
   0.1, #K_drain
@@ -56,8 +56,9 @@ f.decrease <- c(
   0.950056672692535, #qh
   0.893875965852296, #qbc
   0.991080780202615, #el
-  0.990457295759556 #er
-
+  0.990457295759556, #er
+  0.2,
+  1
 )
 
 f.increase <-
@@ -108,8 +109,9 @@ f.increase <-
     0.498299819223935,#qh
     1.12248068295408,#qbc
     0.783843959477034,#el
-    0.90854084808886 #er
-
+    0.90854084808886, #er
+    0.9,
+    10
   )
 
 ##Need to check what priors we are using!
@@ -129,6 +131,17 @@ sdVals<-(pMaxima-pMinima)*0.5
 sdVals[7]<-2
 sdVals[8]<-2
 
+sdVals[48]<-.3
+sdVals[49]<-2.5
+
+pMinima[[48]]<-0.1
+pMaxima[[48]]<-1
+pMinima[[49]]<-3
+pMaxima[[49]]<-10
+pValues[49]<-6
+pValues[48]<-0.5
+
+
 priorVals <- createTruncatedNormalPrior(mean = pValues, sd=sdVals,
                                         lower = pMinima, upper = pMaxima)
 
@@ -143,7 +156,7 @@ createPriors_pine<-function(pine){
   nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
         "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
         "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
+        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0")
   
   
   
@@ -195,8 +208,10 @@ createPriors_pine<-function(pine){
     0.950056672692535, #qh
     0.893875965852296, #qbc
     0.991080780202615, #el
-    0.990457295759556 #er
-  )
+    0.990457295759556, #er
+  0.2,
+  1
+    )
   
   f.increase <-
     c(
@@ -246,7 +261,9 @@ createPriors_pine<-function(pine){
       0.498299819223935,#qh
       1.12248068295408,#qbc
       0.783843959477034,#el
-      0.90854084808886#er
+      0.90854084808886,#er
+      0.9,
+      10
     )
   
   ##Need to check what priors we are using!
@@ -259,6 +276,17 @@ createPriors_pine<-function(pine){
 
   pMaxima[[30]]<-0.1
 
+ sdVals[48]<-.3
+ sdVals[49]<-2.5
+ 
+ pMinima[[48]]<-0.1
+ pMaxima[[48]]<-1
+ pMinima[[49]]<-3
+ pMaxima[[49]]<-10
+ pValues[49]<-6
+ pValues[48]<-0.5
+  
+  
   priorVals <- createTruncatedNormalPrior(mean = pValues, sd=(pMaxima-pMinima),
                                        lower = pMinima*0.2, upper = pMaxima*1.8)
   

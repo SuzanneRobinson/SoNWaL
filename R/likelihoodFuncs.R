@@ -31,6 +31,7 @@ sampleOutputTS<-function(df,sY,eY){
 #monthly data is in tons per hectare per month which matches 3pg output so no need to convert
 sampleOutputMonth<-function(df,sY,eY){
   #convert to average grams per m2 per day depending on timestep of model
+  df<- filter(df,Year>=sY&Year<=eY)
   
   if(nrow(df)<600){
   df<-df%>%
@@ -78,12 +79,21 @@ sampleOutputMonth<-function(df,sY,eY){
 sampleOutputWeekly<-function(df,sY,eY){
   df<- filter(df,Year>=sY&Year<=eY)
   df$week<-c(1:53)
-  m<-c(aggregate(df$GPP~ df$week+df$Year,FUN=mean)[,3]*100/7,
-       aggregate(df$NPP~ df$week+df$Year,FUN=mean)[,3]*100/7,
-       aggregate(df$NEE~ df$week+df$Year,FUN=mean)[,3]*100/7,
-       aggregate(df$Reco~ df$week+df$Year,FUN=mean)[,3]*100/7,
-       aggregate(df$Rs~ df$week+df$Year,FUN=mean)[,3]*100/7,
-       aggregate(df$Etransp~ df$week+df$Year,FUN=sum)[,3],
+  
+  df<-df%>%
+    mutate(GPP=GPP/2*100/7)%>%
+    mutate(NPP=NPP/2*100/7)%>%
+    mutate(NEE=NEE/2*100/7)%>%
+    mutate(Rs=Rs/2*100/7)%>%
+    mutate(Reco=Reco/2*100/7)
+  
+  
+  m<-c(aggregate(df$GPP~ df$week+df$Year,FUN=mean)[,3],
+       aggregate(df$NPP~ df$week+df$Year,FUN=mean)[,3],
+       aggregate(df$NEE~ df$week+df$Year,FUN=mean)[,3],
+       aggregate(df$Reco~ df$week+df$Year,FUN=mean)[,3],
+       aggregate(df$Rs~ df$week+df$Year,FUN=mean)[,3],
+       aggregate(df$EvapTransp~ df$week+df$Year,FUN=sum)[,3],
        filter(df,Year==2015&Month==8)$LAI[1],
        filter(df,Year==2018&Month==8)$LAI[1],
        filter(df,Year==2018&Month==8)$N[1],

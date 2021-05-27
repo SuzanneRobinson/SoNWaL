@@ -6,12 +6,12 @@
 
 ## Load necessary packages
 library(fr3PGDN,quietly=TRUE)
-library(tidyverse,quietly=TRUE)
-library(lubridate)
-library(coda)
-library(BayesianTools)
-library(miscTools)
-library(ggpubr)
+install.packages("tidyverse")
+install.packages("lubridate")
+install.packages("coda")
+install.packages("BayesianTools")
+install.packages("miscTools")
+install.packages("ggpubr")
 ## Years of data to use for calibration
 startYear = 2015
 endYear = 2018
@@ -59,7 +59,7 @@ nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","s
       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
       "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
 
-#out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\monthly_3_T.RDS")
+#out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\monthly_2_T.RDS")
 codM<-as.data.frame(mergeChains(out$chain))
 names(codM)<-nm
 codM<-tail(as.data.frame(codM),1)
@@ -72,8 +72,8 @@ sitka<-getParms(waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 e
 #sitka$weather<-clm_df_pine
 sitka[nm]<-codM[nm]
 #sitka$SWpower0<-round(sitka$SWpower0)
-sitka$E_S2<-2
-sitka$E_S1<-2
+#sitka$E_S2<-2
+#sitka$E_S1<-2
 #sitka$weather[sitka$weather$Year==2015,"Rain"][1]<-filter(clm_df_full,Year==2014)$Rain[1]
 
 output<-do.call(fr3PGDN,sitka)
@@ -86,6 +86,13 @@ results<-plotResults(output,ShortTS=T,out=out)
 ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]],results[[6]])
 
 ggarrange(results[[9]],results[[10]],results[[11]],results[[12]],results[[13]],results[[14]])
+
+ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]],results[[6]],results[[9]],results[[10]],results[[11]],results[[12]],results[[13]],results[[14]])
+fileNm<-"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\detailedOut\\1xVPD_03CV_01CVswc_flexPowConst\\monthly\\"
+saveRDS(out,file=paste0(fileNm,timeStep,"_",iters,".RDS"))
+ggsave(paste0(fileNm,timeStep,"_",iters,".png"),width = 400,
+       height = 300,
+       units = "mm")
 
 #cv is ratio of sd to mean, cv * value of meanNEE
 #sdmin_NEE               <- cv_EC * abs(data_NEEmean_value) #gives you the standard deviation for the averaged data points (assuming cv 20%)
