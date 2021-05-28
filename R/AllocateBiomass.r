@@ -70,7 +70,7 @@ function (state, site, parms, weather) #requires weather too for current month, 
       t <- state[["t"]]
       #For info on the litterfall eq. See A.3 in Sands and Landsberg (2002). Parameterisation of 3-PG forplantation grown Eucalyptus globules.
       Littfall <- gammaFx * gammaF0/(gammaF0 + (gammaFx - gammaF0) * 
-                                       exp(-12* log(1 + gammaFx/gammaF0) * t/tgammaF))
+                                       exp(-parms[["timeStp"]]* log(1 + gammaFx/gammaF0) * t/tgammaF))
 
       difLitter <- Littfall * Wl
       #For root turnover:

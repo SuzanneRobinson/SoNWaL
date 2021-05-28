@@ -35,18 +35,18 @@ sampleOutputMonth<-function(df,sY,eY){
   
   if(nrow(df)<600){
   df<-df%>%
-    mutate(GPP=GPP/2*100/days_in_month(Month))%>%
-    mutate(NPP=NPP/2*100/days_in_month(Month))%>%
-    mutate(NEE=NEE/2*100/days_in_month(Month))%>%
-    mutate(Rs=Rs/2*100/days_in_month(Month))%>%
-    mutate(Reco=Reco/2*100/days_in_month(Month))
+    mutate(GPP=GPP)%>%
+    mutate(NPP=NPP)%>%
+    mutate(NEE=NEE)%>%
+    mutate(Rs=Rs)%>%
+    mutate(Reco=Reco)
   } else {
      df<-df%>%
-      mutate(GPP=GPP/2*100/7)%>%
-      mutate(NPP=NPP/2*100/7)%>%
-      mutate(NEE=NEE/2*100/7)%>%
-      mutate(Rs=Rs/2*100/7)%>%
-      mutate(Reco=Reco/2*100/7)
+      mutate(GPP=GPP)%>%
+      mutate(NPP=NPP)%>%
+      mutate(NEE=NEE)%>%
+      mutate(Rs=Rs)%>%
+      mutate(Reco=Reco)
   }
   
   df<- filter(df,Year>=sY&Year<=eY)

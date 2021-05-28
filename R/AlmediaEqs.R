@@ -45,14 +45,18 @@ soilWC<-function(parms,weather,state){
   #soil water in rooting zone at t0 (start of time-step)
   SWC_rz0 = state[["SWC_rz"]]
   
-  #Soil conductivity - see Landsberg book for more details on this 
-  K_s = parms[["K_s"]]
-  
+
   #rooting depth / volume - Almedia describes this as depth, assumed to be proportional in paper to biomass
   z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone/max root depth
   z_r=min(z_r,V_nr)
   
   V_rz = z_r #Almedia and Sands paper suggests volume of root zone is equivalent to z_r
+  
+  Ksat<-18.6
+  nk<-13.2
+  #Soil conductivity - see Landsberg book for more details on this 
+  K_s = Ksat*((SWC_rz0/(V_rz*1000))/parms[["satPoint"]])^nk#parms[["K_s"]]
+  
   
   #Shared area, area is in m^2, so area around the tree?
   A = parms[["shared_area"]]
@@ -92,8 +96,11 @@ drainageFunc<-function(parms,weather,SWC,soilVol){
   #Volumetric field capacity
   volSWC_fc= parms[["fieldCap"]]
   
+  Ksat<-18.6
+  nk<-13.2
+  
   #Drainage parameter based on soil texture
-  K_drain<-parms[["K_drain"]]
+  K_drain<-Ksat*((SWC/(soilVol*1000))/parms[["satPoint"]])^nk
   
   ##calculate drainage, convert soilVol to mm
   Qd<-(SWC-(volSWC_fc*soilVol*1000))*(1-exp(-K_drain*t))

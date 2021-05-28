@@ -28,7 +28,7 @@ clm_df_daily[which(clm_df_daily$DOY==365&clm_df_daily$week==1),"week"]<-52
 
 
 modDat<-filter(clm_df_daily,Year>2014)
-predDat<-filter(clm_df_daily,Year<=2014)
+predDat<-filter(clm_df_daily,Year<=2006)
 missingDat<-clm_df_daily%>%filter(Year>=2007&Year<2015)
 repYear<-clm_df_daily%>%filter(Year==2019)
 fillDat<-rbind(do.call("rbind",replicate(4,repYear ,simplify=F)),clm_df_daily%>%filter(Year==2019&DOY==1),
@@ -51,7 +51,7 @@ fillDat$Year<-missingDat$Year
  predDat$SolarRad<-predict(mod1,newdata = predDat)
 
  
- clm_df_daily<-rbind(predDat,modDat)
+ clm_df_daily<-rbind(predDat,fillDat,modDat)
 
 clm_df_daily$SolarRad[clm_df_daily$SolarRad<0]<-0
 

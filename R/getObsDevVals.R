@@ -22,23 +22,23 @@ observedVals<-function(timeStep,data){
     observed <- c(pull(data%>% 
                          group_by(year,grp) %>%
                          dplyr::summarise(gpp=mean(gpp))%>%
-                         select(gpp)),                ## GPP
+                         select(gpp))*0.14,                ## GPP
                   pull(data%>%
                          group_by(year,grp) %>%
                          dplyr::summarise(npp=mean(npp))%>%
-                         select(npp)),                ## NPP
+                         select(npp))*0.14,                ## NPP
                   pull(data%>%
                          group_by(year,grp) %>%
                          dplyr::summarise(nee=mean(nee))%>%
-                         select(nee)),                ## NEE
+                         select(nee))*0.14,                ## NEE
                   pull(data%>%
                          group_by(year,grp) %>%
                          dplyr::summarise(reco=mean(reco))%>%
-                         select(reco)),               ## Reco
+                         select(reco))*0.14,               ## Reco
                   pull(data%>%
                          group_by(year,grp) %>%
                          dplyr::summarise(rs=mean(rs))%>%
-                         select(rs)),                 ## Rs
+                         select(rs))*0.14,                 ## Rs
                   pull(data%>%
                          group_by(year,grp) %>%
                          dplyr::summarise(et=sum(et))%>%
@@ -58,22 +58,22 @@ observedVals<-function(timeStep,data){
 
     )
     
-    coefVar=0.1
-    dev <- c(sapply( 1:length(sdMin$sdgpp), function(i) max( 0.03* abs(sdMin$sdgpp[i]),0.05) ),
-             sapply( 1:length(sdMin$sdnpp), function(i) max( 0.03* abs(sdMin$sdnpp[i]),0.05) ),
-             sapply( 1:length(sdMin$sdnee), function(i) max( 0.03* abs(sdMin$sdnee[i]),0.05) ),
+    coefVar=0.2
+    dev <- c(sapply( 1:length(sdMin$sdgpp), function(i) max( 0.02* abs(sdMin$sdgpp[i]),0.05) ),
+             sapply( 1:length(sdMin$sdnpp), function(i) max( 0.02* abs(sdMin$sdnpp[i]),0.05) ),
+             sapply( 1:length(sdMin$sdnee), function(i) max( 0.02* abs(sdMin$sdnee[i]),0.05) ),
              sapply( 1:length(sdMin$sdreco), function(i) max( coefVar* abs(sdMin$sdreco[i]),0.1) ),
              sapply( 1:length(sdMin$sdrs), function(i) max( coefVar* abs(sdMin$sdrs[i]),0.1) ),
-             sapply( 1:length(sdMin$sdet), function(i) max( 0.05* abs(sdMin$sdet[i]),0.01) ),
+             sapply( 1:length(sdMin$sdet), function(i) max( 0.2* abs(sdMin$sdet[i]),0.01) ),
              # rep(0.5,(nrow(dplyr::filter(data,year>=startYear&year<=endYear))-1)),
-             0.1,0.1,
-             10,
+             0.05,0.05,
+             5,
              1,
              #  2,
              #  1,
              10,
              1,
-             sapply( 1:length(sdMin$sdswc), function(i) max( 0.1* abs(sdMin$sdswc[i]),0.01) )
+             sapply( 1:length(sdMin$sdswc), function(i) max( 0.05* abs(sdMin$sdswc[i]),0.001) )
              
     )
  
