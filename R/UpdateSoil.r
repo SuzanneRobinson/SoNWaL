@@ -18,7 +18,7 @@ UpdateSoil <-
     difRoots <- state[["difRoots"]]
     dg <- state[["dg"]]
     fT <- state[["fT"]]
-    fSW <- state[["fSW"]]
+    fSW <- if(state[["t"]]>45) state[["fSW"]]*parms[["fsMod"]] else state[["fSW"]]
     klmax <- parms[["klmax"]]*12/parms[["timeStp"]] # switch from monthly rates to time-step rates
     krmax <- parms[["krmax"]]*12/parms[["timeStp"]]
     komax <- parms[["komax"]]*12/parms[["timeStp"]]
@@ -66,8 +66,8 @@ UpdateSoil <-
         MoistRatio<-ifelse(ASW>=0,MoistRatio,0)
         MoistRatio<-ifelse(ASW>MaxASW,1,MoistRatio)
         fSW<-SWGmod(SWconst,SWpower,MoistRatio)
-      }else
-      {
+      }
+      if(parms[["waterBalanceSubMods"]]==F){
         MaxASW <- site[["MaxASW"]]
         MoistRatio<-ASW/MaxASW
         fSW <- 1/(1 + ((1 - MoistRatio)/SWconst)^SWpower)

@@ -28,7 +28,7 @@ function (state, weather, site, parms, general.info)
     fAge <- 1/(1 + (RelAge/rAge)^nAge)
     CoeffCond <- parms[["CoeffCond"]]
     VPD <- weather[["VPD"]]
-    fVPD <- exp(-CoeffCond * VPD)
+    fVPD <- exp(-CoeffCond * (VPD*0.001))
     
 
     
@@ -41,22 +41,21 @@ function (state, weather, site, parms, general.info)
 
     ##change moistratio and soil water growth mod if using updated sub-models
     if(parms[["waterBalanceSubMods"]]==T){
-
+      
       #calc soil profile VOLUMETRIC SWC at wp and fc 
       volSWC_wp= parms[["wiltPoint"]]
       volSWC_fc= parms[["fieldCap"]]
       MaxASW <- (volSWC_fc-volSWC_wp)
       
-      #calc moist ratio (or relative ASW)
-      MoistRatio<- ASW/MaxASW
+      #calc moist ratio
+      MoistRatio<- (ASW/MaxASW)
+      
       #modify MoistRatio if numerators are above or below certain values (see Landsberg and waring)
       MoistRatio<-ifelse(ASW>=0,MoistRatio,0)
       MoistRatio<-ifelse(ASW>MaxASW,1,MoistRatio)
       fSW<-SWGmod(SWconst,SWpower,MoistRatio)
-      
-    
-    }else
-    {
+    }
+    if(parms[["waterBalanceSubMods"]]==F){
       MaxASW <- site[["MaxASW"]]
       MoistRatio<-ASW/MaxASW
       fSW <- 1/(1 + ((1 - MoistRatio)/SWconst)^SWpower)

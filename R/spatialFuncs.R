@@ -15,29 +15,6 @@ library(furrr)
 library(dplyr)
 library(lubridate)
 
-##Need to fix web scraping of data!## Current issues with authentication cert
-#filename<-"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\rainfall\\rainfall_hadukgrid_uk_1km_day_20111201-20111231.nc"
-#fileUrl<-"http://dap.ceda.ac.uk/badc/ukmo-hadobs/data/insitu/MOHC/HadOBS/HadUK-Grid/v1.0.2.1/1km/rainfall/day/v20200731/rainfall_hadukgrid_uk_1km_day_20070401-20070430.nc"
-#certFile<-"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\creds.pem"
-#
-#options(RCurlOptions = list(cainfo = system.file("CurlSSL", "cacert.pem", package = "RCurl")))
-#
-#GET(fileUrl, config(cainfo=credtoken),
-#    write_disk(filename, overwrite = T), timeout(60))
-#
-#x <- getURL(fileUrl, cainfo = system.file("CurlSSL", certFile, package = "RCurl"))
-#
-##make a list of dates to download files
-#datseq <- function(t1, t2) { 
-#  format(seq(as.Date(t1, "%Y%m%d"), 
-#             as.Date(t2, "%Y%m%d"),by="month"), 
-#         "%Y%m") 
-#}
-#
-#fileDats<-datseq(as.Date(paste0("2015","01","01"), "%Y%m%d"),as.Date(paste0("2018","12","01"), "%Y%m%d"))
-#urls<-paste0()
-#
-#Map(function(u, d) download.file(u, d, mode="wb"), urls, destinations)
 
 
 ##read in list of spatial climate file names##
@@ -71,7 +48,6 @@ fx12<-raster("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Pr
 fj<-brick(fx1,fx2,fx3,fx4,fx5,fx6,fx7,fx8,fx9,fx10,fx11,fx12)
 writeRaster(fj, "C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\monthly\\solRad\\pv_hadukgrid_uk_1km_mon_201601-201612.nc", format="CDF",overwrite=TRUE)
 
-#left, ?,?,top
 
 #plot(fj)
 
@@ -238,11 +214,7 @@ FR3PG_spat_run <- function(site, clm,param.draw,clm_df_full){
       
       
       weatherDat$Rain<-weatherDat$Rain#*0.6
-    #  weatherDat$Tmax<-weatherDat$Tmax*1.1
-    #  weatherDat$Tmean<-weatherDat$Tmean*1.1
-    #  weatherDat$Tmin<-weatherDat$Tmin*1.1
-    #  weatherDat$SolarRad<-weatherDat$SolarRad*1.1
-      
+
       sitka$weather<-weatherDat
       
     

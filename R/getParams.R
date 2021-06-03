@@ -38,8 +38,8 @@ getParms<-function(weather=clm_df_full,
                    Topt = 15,
                    Tmax = 35,
                    kF = 1,
-                   SWconst0 = 0.550,
-                   SWpower0 = 6,
+                   SWconst0 = 0.5,
+                   SWpower0 = 5,
                    m0 = 0.392548265174109,
                    MaxAge = 265.6,
                    nAge = 3.545,
@@ -125,8 +125,8 @@ getParms<-function(weather=clm_df_full,
                    K_drain=0.3,
                    timeStp = 12, # time step, 52 for weekly, 12 for monthly and 365 for daily
                    rainMod =1, #rain adjustment for sensitivity analyses
-                   tempMod =1 #rain adjustment for sensitivity analyses
-                   
+                   tempMod =1, #rain adjustment for sensitivity analyses
+                   fsMod=1
                    ){
   
  list(weather=weather,
@@ -254,7 +254,8 @@ getParms<-function(weather=clm_df_full,
               K_drain=K_drain,
               timeStp = timeStp, # time step, 52 for weekly, 12 for monthly and 365 for daily
       rainMod=rainMod,
-      tempMod=tempMod
+      tempMod=tempMod,
+      fsMod=fsMod
   )
 }
 
@@ -300,8 +301,8 @@ getParmsPine<-function(weather=clm_df_pine,
                    Topt = 15,
                    Tmax = 35,
                    kF = 1,
-                   SWconst0 = 0.7,
-                   SWpower0 = 9,
+                   SWconst0 = 0.65,
+                   SWpower0 = 8,
                    m0 = 0.015,
                    MaxAge = 265.6,
                    nAge = 4,
@@ -315,7 +316,7 @@ getParmsPine<-function(weather=clm_df_pine,
                    BLcond = 0.2,
                    wSx1000 = 500,
                    thinPower = 1.5,
-                   mF = 0,
+                   mF = 0.633672385962458,
                    mR = 0.2,
                    mS = 0.2,
                    SLA0 = 6,

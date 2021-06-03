@@ -1,7 +1,7 @@
 
-observedVals<-function(timeStep,data){
+observedVals<-function(timeStep,data,sY=2015,eY=2018){
 
-
+  data<-filter(data,year>=sY&year<=eY)
   if(timeStep =="weekly"){
     data<-data%>%
       mutate(grp=week(as.Date(data$yday, origin = paste0(data$year,"-01-01"))))
@@ -13,11 +13,16 @@ observedVals<-function(timeStep,data){
   }
   
 
+
+
+  #add missing swc values, can cause problems otherwise
+  mod1<-lm(swc~npp+nee+reco,data=data)
+
+  data<-data %>% 
+    mutate(swc = coalesce(swc,predict(mod1,newdata = data)))
+
   sdMin<-data%>% group_by(year,grp) %>%
-              dplyr::summarise(sdgpp=mean(gpp),sdnpp=mean(npp),sdnee=mean(nee),sdreco=mean(reco),sdrs=mean(rs),sdet=sum(et),sdswc=mean(swc))
-             
-  
-  
+    dplyr::summarise(sdgpp=mean(gpp),sdnpp=mean(npp),sdnee=mean(nee),sdreco=mean(reco),sdrs=mean(rs),sdet=sum(et),sdswc=mean(swc))
   
     observed <- c(pull(data%>% 
                          group_by(year,grp) %>%
@@ -58,13 +63,15 @@ observedVals<-function(timeStep,data){
 
     )
     
-    coefVar=0.2
-    dev <- c(sapply( 1:length(sdMin$sdgpp), function(i) max( 0.02* abs(sdMin$sdgpp[i]),0.05) ),
-             sapply( 1:length(sdMin$sdnpp), function(i) max( 0.02* abs(sdMin$sdnpp[i]),0.05) ),
-             sapply( 1:length(sdMin$sdnee), function(i) max( 0.02* abs(sdMin$sdnee[i]),0.05) ),
-             sapply( 1:length(sdMin$sdreco), function(i) max( 0.3* abs(sdMin$sdreco[i]),0.1) ),
-             sapply( 1:length(sdMin$sdrs), function(i) max( 0.3* abs(sdMin$sdrs[i]),0.1) ),
-             sapply( 1:length(sdMin$sdet), function(i) max( 0.2* abs(sdMin$sdet[i]),0.01) ),
+    coefVar1=0.1
+    coefVar2=0.2
+    
+    dev <- c(sapply( 1:length(sdMin$sdgpp), function(i) max( coefVar1* abs(sdMin$sdgpp[i]),0.05) ),
+             sapply( 1:length(sdMin$sdnpp), function(i) max( coefVar1* abs(sdMin$sdnpp[i]),0.05) ),
+             sapply( 1:length(sdMin$sdnee), function(i) max( coefVar1* abs(sdMin$sdnee[i]),0.05) ),
+             sapply( 1:length(sdMin$sdreco), function(i) max( coefVar1* abs(sdMin$sdreco[i]),0.1) ),
+             sapply( 1:length(sdMin$sdrs), function(i) max( coefVar2* abs(sdMin$sdrs[i]),0.01) ),
+             sapply( 1:length(sdMin$sdet), function(i) max( coefVar2* abs(sdMin$sdet[i]),0.01) ),
              # rep(0.5,(nrow(dplyr::filter(data,year>=startYear&year<=endYear))-1)),
              0.05,0.05,
              5,
@@ -73,7 +80,7 @@ observedVals<-function(timeStep,data){
              #  1,
              10,
              1,
-             sapply( 1:length(sdMin$sdswc), function(i) max( 0.05* abs(sdMin$sdswc[i]),0.001) )
+             sapply( 1:length(sdMin$sdswc), function(i) max( coefVar1* abs(sdMin$sdswc[i]),0.001) )
              
     )
  
@@ -167,7 +174,7 @@ devPine <- c(rep(.1,nrow(dplyr::filter(GPP,year>=startYear&year<=endYear&year!=2
              20,
              5,
              rep(5,nrow(treeDen)),
-             rep(.01,nrow(dplyr::filter(swc,year>=startYear&year<=endYear&year!=2007)))
+             rep(.1,nrow(dplyr::filter(swc,year>=startYear&year<=endYear&year!=2007)))
              )
 
 

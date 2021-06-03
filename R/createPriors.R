@@ -4,7 +4,7 @@ createPriors_sitka<-function(sitka){
 nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
       "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
+      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0")
 
 
 
@@ -56,8 +56,9 @@ f.decrease <- c(
   0.950056672692535, #qh
   0.893875965852296, #qbc
   0.991080780202615, #el
-  0.990457295759556 #er
-
+  0.990457295759556, #er
+0.1,
+2
 )
 
 f.increase <-
@@ -68,8 +69,8 @@ f.increase <-
     10,#K_s
     8,#V_nr
     0.9,#sigma_zR
-    10,#E_S1
-    10,#E_S2
+    50,#E_S1
+    50,#E_S2
     6, #shared_area
     6, #maxRootDepth
     20, #K_drain
@@ -108,8 +109,9 @@ f.increase <-
     0.498299819223935,#qh
     1.12248068295408,#qbc
     0.783843959477034,#el
-    0.90854084808886 #er
-
+    0.90854084808886, #er
+0.6,
+6
   )
 
 ##Need to check what priors we are using!
@@ -123,11 +125,17 @@ pMinima[1:11] <- f.decrease[1:11]
 pMaxima[[30]]<-0.5
 pMinima[[31]]<-0.01
 
+pMaxima[[48]]<-0.6
+pMinima[[48]]<-0.1
+
+pMaxima[[49]]<-6
+pMinima[[49]]<-1
+
 
 sdVals<-(pMaxima-pMinima)*0.5
 #ES1 and 2 on very different scales so set manually
-sdVals[7]<-2
-sdVals[8]<-2
+sdVals[7]<-15
+sdVals[8]<-15
 
 priorVals <- createTruncatedNormalPrior(mean = pValues, sd=sdVals,
                                         lower = pMinima, upper = pMaxima)
@@ -140,23 +148,24 @@ return(priorVals)
 
 createPriors_pine<-function(pine){
   
+  
   nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
         "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
         "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
+        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0")
   
   
   
   
   f.decrease <- c(
-    0.100136, #wiltPoint
-    0.2446601, #fieldCap
-    0.3,#satPoint
+    0.06, #wiltPoint
+    0.26, #fieldCap
+    0.4,#satPoint
     0.001, #K_s
     2, #V_nr
     0.1, #sigma_zR
-    -3, #E_S1
-    -3, #E_S2
+    0.01, #E_S1
+    0.01, #E_S2
     2, #shared_area
     1.5, #maxRootDepth
     0.1, #K_drain
@@ -195,22 +204,24 @@ createPriors_pine<-function(pine){
     0.950056672692535, #qh
     0.893875965852296, #qbc
     0.991080780202615, #el
-    0.990457295759556 #er
-  )
+    0.990457295759556, #er
+    0.1,
+    2
+    )
   
   f.increase <-
     c(
-      0.120136,#wiltPoint
-      0.2846601,#fieldCap
-      0.6,#satPoint
-      50,#K_s
-      5,#V_nr
+      0.25,#wiltPoint
+      0.4,#fieldCap
+      0.7,#satPoint
+      10,#K_s
+      8,#V_nr
       0.9,#sigma_zR
-      7,#E_S1
-      6,#E_S2
+      50,#E_S1
+      50,#E_S2
       6, #shared_area
-      4, #maxRootDepth
-      0.8, #K_drain
+      6, #maxRootDepth
+      20, #K_drain
       0.573973679288588,#pFS2
       0.235352308855631,#pFS20
       1.86098081013281,#aS
@@ -246,33 +257,40 @@ createPriors_pine<-function(pine){
       0.498299819223935,#qh
       1.12248068295408,#qbc
       0.783843959477034,#el
-      0.90854084808886#er
-    )
+      0.90854084808886,#er
+      0.6,
+      6
+      )
   
   ##Need to check what priors we are using!
-  pMaxima <- as.vector(unlist(sitka[nm])*(1+(f.increase)))
-  pMinima <- as.vector(unlist(sitka[nm])*(1-(f.decrease)))
-  pValues <- as.vector(unlist(sitka[nm]))
+  pMaxima <- as.vector(unlist(pine[nm])*(1+(f.increase)))
+  pMinima <- as.vector(unlist(pine[nm])*(1-(f.decrease)))
+  pValues <- as.vector(unlist(pine[nm]))
   
   pMaxima[1:11] <- f.increase[1:11]
   pMinima[1:11] <- f.decrease[1:11]
-
-  pMaxima[[30]]<-0.1
-
-
-# sdVals[48]<-.3
-# sdVals[49]<-2.5
-# 
-# pMinima[[48]]<-0.1
-# pMaxima[[48]]<-1
-# pMinima[[49]]<-3
-# pMaxima[[49]]<-10
-# pValues[49]<-6
-# pValues[48]<-0.5
+  
+  #pMaxima[[22]]<-0.5
+  #pMinima[[22]]<-0.01
+  
+  pMaxima[[48]]<-0.9
+  pMinima[[48]]<-0.45
+  
+  pMaxima[[49]]<-9
+  pMinima[[49]]<-5
   
   
-  priorVals <- createTruncatedNormalPrior(mean = pValues, sd=(pMaxima-pMinima),
-                                       lower = pMinima*0.1, upper = pMaxima*1.8)
+  sdVals<-(pMaxima-pMinima)*0.5
+  #ES1 and 2 on very different scales so set manually
+  sdVals[7]<-15
+  sdVals[8]<-15
+  
+  
+  sdVals[[49]]<-3
+  
+  priorVals <- createTruncatedNormalPrior(mean = pValues, sd=sdVals,
+                                          lower = pMinima, upper = pMaxima)
+  
   
   
   return(priorVals)

@@ -6,17 +6,17 @@
 
 ## Load necessary packages
 library(fr3PGDN,quietly=TRUE)
-install.packages("tidyverse")
-install.packages("lubridate")
-install.packages("coda")
-install.packages("BayesianTools")
-install.packages("miscTools")
-install.packages("ggpubr")
+library("tidyverse")
+library("lubridate")
+library("coda")
+library("BayesianTools")
+library("miscTools")
+library("ggpubr")
 ## Years of data to use for calibration
 startYear = 2015
 endYear = 2018
 #install.packages("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\fr3PGDN_2.0.tar.gz", repos = NULL, type="source")
-timeStep<-"monthly"
+timeStep<-"weekly"
 
 ## Met data
 clm_df_full<-data.frame(getClimDat(timeStep))
@@ -57,12 +57,12 @@ sitka<-getParms(weather=clm_df_full,
 nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
       "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
+      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0")
 
-#out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\monthly_2_T.RDS")
+#out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_3_T.RDS")
 codM<-as.data.frame(mergeChains(out$chain))
 names(codM)<-nm
-codM<-tail(as.data.frame(codM),1)
+codM<-colMedians(as.data.frame(codM))
 
 #priorSamp<-priorVals$sampler(35000)
 #MCMCtrace(getSample(out,coda = T,thin=10,start=10000),wd="C:\\Users\\aaron.morris", post_zm=F,iter=5000,priors = priorSamp)
@@ -72,7 +72,7 @@ sitka<-getParms(waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 e
 #sitka$weather<-clm_df_pine
 sitka[nm]<-codM[nm]
 #sitka$SWpower0<-round(sitka$SWpower0)
-#sitka$E_S2<-2
+#sitka$E_S2<-0.1
 #sitka$E_S1<-2
 #sitka$weather[sitka$weather$Year==2015,"Rain"][1]<-filter(clm_df_full,Year==2014)$Rain[1]
 
@@ -81,6 +81,8 @@ tail(output$GPP)
 ff<-filter(output,Year>2014)
 plot(ff$fSW)
 plot(ff$volSWC_rz)
+plot(ff$GPP*1.66)
+
 results<-plotResults(output,ShortTS=T,out=out)
 #results
 ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]],results[[6]])

@@ -31,26 +31,19 @@ sampleOutputTS<-function(df,sY,eY){
 #monthly data is in tons per hectare per month which matches 3pg output so no need to convert
 sampleOutputMonth<-function(df,sY,eY){
   #convert to average grams per m2 per day depending on timestep of model
+  modif<- if(nrow(df)<600) 1.6 else 7.142857
+
   df<- filter(df,Year>=sY&Year<=eY)
   
-  if(nrow(df)<600){
-  df<-df%>%
-    mutate(GPP=GPP*1.66)%>%
-    mutate(NPP=NPP*1.66)%>%
-    mutate(NEE=NEE*1.66)%>%
-    mutate(Rs=Rs*1.66)%>%
-    mutate(Reco=Reco*1.66)
-  } else {
      df<-df%>%
-      mutate(GPP=GPP*7.142857)%>%
-      mutate(NPP=NPP*7.142857)%>%
-      mutate(NEE=NEE*7.142857)%>%
-      mutate(Rs=Rs*7.142857)%>%
-      mutate(Reco=Reco*7.142857)
-  }
+      mutate(GPP=GPP*modif)%>%
+      mutate(NPP=NPP*modif)%>%
+      mutate(NEE=NEE*modif)%>%
+      mutate(Rs=Rs*modif)%>%
+      mutate(Reco=Reco*modif)
   
-  df<- filter(df,Year>=sY&Year<=eY)
   
+
   
   m<-c(aggregate(df$GPP~ df$Month+df$Year,FUN=mean)[,3],
        aggregate(df$NPP~ df$Month+df$Year,FUN=mean)[,3],
@@ -77,15 +70,17 @@ sampleOutputMonth<-function(df,sY,eY){
 ## Extract simulated data for use in likelihood function for shorter time-steps
 #IF USING WEEKLY/daily, YOU USE DAILY DATA WHICH IS IN gCm-2d-1, so need to convert prafor output from tons per hectare per week (timestep)
 sampleOutputWeekly<-function(df,sY,eY){
+  modif<- 7.142857
+  
   df<- filter(df,Year>=sY&Year<=eY)
   df$week<-c(1:53)
   
   df<-df%>%
-    mutate(GPP=GPP/2*100/7)%>%
-    mutate(NPP=NPP/2*100/7)%>%
-    mutate(NEE=NEE/2*100/7)%>%
-    mutate(Rs=Rs/2*100/7)%>%
-    mutate(Reco=Reco/2*100/7)
+    mutate(GPP=GPP*modif)%>%
+    mutate(NPP=NPP*modif)%>%
+    mutate(NEE=NEE*modif)%>%
+    mutate(Rs=Rs*modif)%>%
+    mutate(Reco=Reco*modif)
   
   
   m<-c(aggregate(df$GPP~ df$week+df$Year,FUN=mean)[,3],
@@ -115,21 +110,15 @@ sampleOutputWeekly<-function(df,sY,eY){
 
 ## Extract simulated data for use in likelihood function for shorter time-steps
 sampleOutputTS_noHyd<-function(df,sY,eY){
-  if(nrow(df)<600){
-    df<-df%>%
-      mutate(GPP=GPP*100/days_in_month(Month))%>%
-      mutate(NPP=NPP*100/days_in_month(Month))%>%
-      mutate(NEE=NEE*100/days_in_month(Month))%>%
-      mutate(Rs=Rs*100/days_in_month(Month))%>%
-      mutate(Reco=Reco*100/days_in_month(Month))
-  } else {
-    df<-df%>%
-      mutate(GPP=GPP*100/7)%>%
-      mutate(NPP=NPP*100/7)%>%
-      mutate(NEE=NEE*100/7)%>%
-      mutate(Rs=Rs*100/7)%>%
-      mutate(Reco=Reco*100/7)
-  }
+  modif<- if(nrow(df)<600) 1.6
+  modif<- if(nrow(df)>600) 7.142857
+  df<-df%>%
+    mutate(GPP=GPP*modif)%>%
+    mutate(NPP=NPP*modif)%>%
+    mutate(NEE=NEE*modif)%>%
+    mutate(Rs=Rs*modif)%>%
+    mutate(Reco=Reco*modif)
+  
   df<- filter(df,Year>=sY&Year<=eY)
   
   m<-c(aggregate(df$GPP~ df$Month+df$Year,FUN=mean)[,3],
@@ -234,19 +223,14 @@ df$week<-c(1:52)
 sampleOutputPine<-function(df,sY,eY){
   #convert to match hytialla data format
 
-    if(nrow(df)<600){
-      df<-df%>%
-        mutate(GPP=GPP*100/days_in_month(Month))%>%
-        mutate(NPP=NPP*100/days_in_month(Month))%>%
-        mutate(NEE=NEE*100/days_in_month(Month))%>%
-        mutate(Reco=Reco*100/days_in_month(Month))
-    } else {
-      df<-df%>%
-        mutate(GPP=GPP*100/7)%>%
-        mutate(NPP=NPP*100/7)%>%
-        mutate(NEE=NEE*100/7)%>%
-        mutate(Reco=Reco*100/7)
-    }
+  modif<- if(nrow(df)<600) 1.6
+  modif<- if(nrow(df)>600) 7.142857
+  df<-df%>%
+    mutate(GPP=GPP*modif)%>%
+    mutate(NPP=NPP*modif)%>%
+    mutate(NEE=NEE*modif)%>%
+    mutate(Rs=Rs*modif)%>%
+    mutate(Reco=Reco*modif)
     
   m<-c(
     pull(filter(df,Year>=sY&Year<=eY&Year!=2007)%>%
@@ -352,19 +336,14 @@ sampleOutputPineWeek_noHyd<-function(df,sY,eY){
 
 sampleOutputPine_noHyd<-function(df,sY,eY){
   #convert to match hytialla data format
-  if(nrow(df)<600){
-    df<-df%>%
-      mutate(GPP=GPP*100/days_in_month(Month))%>%
-      mutate(NPP=NPP*100/days_in_month(Month))%>%
-      mutate(NEE=NEE*100/days_in_month(Month))%>%
-      mutate(Reco=Reco*100/days_in_month(Month))
-  } else {
-    df<-df%>%
-      mutate(GPP=GPP*100/7)%>%
-      mutate(NPP=NPP*100/7)%>%
-      mutate(NEE=NEE*100/7)%>%
-      mutate(Reco=Reco*100/7)
-  }
+  modif<- if(nrow(df)<600) 1.6
+  modif<- if(nrow(df)>600) 7.142857
+  df<-df%>%
+    mutate(GPP=GPP*modif)%>%
+    mutate(NPP=NPP*modif)%>%
+    mutate(NEE=NEE*modif)%>%
+    mutate(Rs=Rs*modif)%>%
+    mutate(Reco=Reco*modif)
   
   m<-c(
     pull(filter(df,Year>=sY&Year<=eY&Year!=2007)%>%

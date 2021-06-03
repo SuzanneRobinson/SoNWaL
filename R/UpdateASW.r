@@ -45,9 +45,7 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     #CanTransp<-h*(CanCond*(145*netRad+BLcond*1.204*1004*(VPD*1000))/(2.45*((66.1+145)*CanCond+66.1*BLcond)))
     #less accurate but easier to have flexible time-steps?
     Transp <- CanTransp*365/parms[["timeStp"]] #general.info$daysinmonth[month] * CanTransp
-    
-    EvapTransp <- min(Transp +  state[["E_S"]] , state[["SWC_rz"]]+Rain-RainIntcptn) 
-    EvapTransp<-ifelse(EvapTransp<0,0,EvapTransp)
+
     
     #non-Intercepted radiation
     interRad<-(RAD.day * 1e+06/h)-max((RAD.day * 1e+06/h)*(1-exp(-parms[["k"]]*LAI)),0)
@@ -77,7 +75,12 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       E_S <- max(E_S + RainIntcptn - Rain - MonthIrrig,0) # rainfall needs to be added after as biomass allocation function requires months rainfall
       state[["E_S"]] <- E_S
       
+      
+      EvapTransp <- min(Transp +  state[["E_S"]] , state[["SWC_rz"]]+Rain-RainIntcptn) 
+      EvapTransp<-ifelse(EvapTransp<0,0,EvapTransp)
 
+      EvapTransp <- if(state[["t"]]>46) EvapTransp*parms[["fsMod"]] else EvapTransp
+      
       #evap from soil and drainage occur after transpiration so max is just plus rain...?
      
       #Calculate drainage from root zone to non-root zone and out of non-root zone, where SWC of root zone exceeds field capacity of the soil zone (eq A.11)
@@ -94,8 +97,8 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       
 
       #Volumetric SWC of rooting zone (z_r converted to mm as SWC in mm), equiv to SWC fraction in observed data - water to soil ratio
-      volSWC_rz<-(SWC_rz/(z_r*1000))
-      
+      volSWC_rz<-min((SWC_rz /(z_r*1000)),volSWC_fc)
+      # 
       #ASW calculated as SWC in the root zone divided by depth (mm) minus volumetric SWC of soil profile at wilting point
       # See Almedia and Sands eq A.2 and landsdown and sands 7.1.1
       state[["ASW"]] <-max(volSWC_rz-volSWC_wp,0)
@@ -110,11 +113,12 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     }
     
     
-    scaleSW <- EvapTransp/(Transp + RainIntcptn)
-    GPP <- state[["GPP"]]
-    NPP <- state[["NPP"]]
-    state[["GPP"]] <- GPP * scaleSW
-    state[["NPP"]] <- NPP * scaleSW
+    scaleSW <-EvapTransp/(Transp + RainIntcptn+state[["E_S"]])
+    #print(scaleSW)
+   GPP <- state[["GPP"]]
+   NPP <- state[["NPP"]]
+   state[["GPP"]] <- GPP# * scaleSW
+   state[["NPP"]] <- NPP #* scaleSW
     state[c("RainIntcptn", "netRad", "CanCond", "Etransp", "CanTransp", 
         "Transp", "EvapTransp", "excessSW", "scaleSW")] <- c(RainIntcptn, 
         netRad, CanCond, Etransp, CanTransp, Transp, EvapTransp, 
