@@ -28,50 +28,21 @@ fileNames <- sub("\\/.*", "",list.files(path = dataDir, pattern = "\\.nc$", full
                     recursive = T))
 
 
-fx1<-raster("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\prevDat\\scotland_spatial_data\\scotland_spatial_data\\Solar radiation\\jansolrad\\w001001.adf")
-fx2<-raster("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\prevDat\\scotland_spatial_data\\scotland_spatial_data\\Solar radiation\\febsolrad\\w001001.adf")
-fx3<-raster("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\prevDat\\scotland_spatial_data\\scotland_spatial_data\\Solar radiation\\marsolrad\\w001001.adf")
-fx4<-raster("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\prevDat\\scotland_spatial_data\\scotland_spatial_data\\Solar radiation\\aprsolrad\\w001001.adf")
-fx5<-raster("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\prevDat\\scotland_spatial_data\\scotland_spatial_data\\Solar radiation\\maysolrad\\w001001.adf")
-fx6<-raster("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\prevDat\\scotland_spatial_data\\scotland_spatial_data\\Solar radiation\\junsolrad\\w001001.adf")
-fx7<-raster("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\prevDat\\scotland_spatial_data\\scotland_spatial_data\\Solar radiation\\julsolrad\\w001001.adf")
-fx8<-raster("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\prevDat\\scotland_spatial_data\\scotland_spatial_data\\Solar radiation\\augsolrad\\w001001.adf")
-fx9<-raster("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\prevDat\\scotland_spatial_data\\scotland_spatial_data\\Solar radiation\\sepsolrad\\w001001.adf")
-fx10<-raster("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\prevDat\\scotland_spatial_data\\scotland_spatial_data\\Solar radiation\\octsolrad\\w001001.adf")
-fx11<-raster("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\prevDat\\scotland_spatial_data\\scotland_spatial_data\\Solar radiation\\novsolrad\\w001001.adf")
-fx12<-raster("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\prevDat\\scotland_spatial_data\\scotland_spatial_data\\Solar radiation\\decsolrad\\w001001.adf")
-
-#hadUKRast <- crop(fj, extent(2.3e+05, 3.5e+5, 6.6e+05, 7.3e+5))
-#plot(hadUKRast[[1]])
-
-
-fj<-brick(fx1,fx2,fx3,fx4,fx5,fx6,fx7,fx8,fx9,fx10,fx11,fx12)
-writeRaster(fj, "C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\monthly\\solRad\\pv_hadukgrid_uk_1km_mon_201601-201612.nc", format="CDF",overwrite=TRUE)
-
-
-#plot(fj)
-
+#loop through files and read in data
 for(i in c(1:length(files))){
 print(fileNames[i])
 #read in files as rasters into list
-
 hadUKRast <- lapply(files[i], function(x) { brick(x) })
 
 #Crop each raster layer (currently approximately around scotland)
-
 hadUKRast <- lapply(hadUKRast, function(x) {crop(x, fj) })
 hadUKRast <- lapply(hadUKRast, function(x) {crop(x, extent(2.3e+05, 3.5e+5, 6.6e+05, 7.3e+5)) })
 
-#crs_input<-crs("+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +a=6377563.396 +b=6356256.909")
-#crs_output<-crs("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84")
-#hadUKRast_decLatLong <- inborutils::reproject_coordinates(as.data.frame(coordinates(hadUKRast)),col_long = "x", col_lat = "y", crs_input=crs_input, crs_output=crs_output)
 
 #layer rasters into single raster
-
 hadUKRast<-raster::brick(hadUKRast)
 
 #get climate values from raster 
-
 rasValue=as.data.frame(raster::extract(hadUKRast,extent(2.3e+05, 3.5e+5, 6.6e+05, 7.3e+5),cellnumbers=F)) 
 
 #Transpose data before putting into table
@@ -79,15 +50,6 @@ rasValue<-rasValue %>% purrr::transpose()
 #Convert transposed data for each cell into a dataframe
 colNm<-fileNames[i]
 rasValue2<-lapply(rasValue,function(x) setNames(data.frame(unlist(x)),fileNames[i]))
-
-#addSolar<-function(rasValue2,hadUKRast_decLatLong){
-#  
-#  hadUKRast <- lapply(rasValue2, function(x) {crop(x, extent(0.5e+05, 4.5e+05, 6e+05, 1000000)) })
-#  
-#  sirad::ap(as.Date("2016-01-16", "%Y-%m-%d"),  -8.043887,58.74152, extraT=NULL, A=NA, B=NA, 145.72)
-#  
-#  
-#}
 
 
 #add to tibble
@@ -102,8 +64,6 @@ simDat$data<-Map(cbind,simDat$data,rasValue2)
 }
 names(simDat)<-c("grid_id","clm")
 
-
-
 #Get spatial coordinate data from rasters for plotting
 simDat$x<-coordinates(hadUKRast)[,1]
 simDat$y<-coordinates(hadUKRast)[,2]
@@ -114,7 +74,7 @@ return(simDat)
 }
 
 
-##create some random generic site data for each gridcell -obvs need to get some real data
+##create some random generic site data for each gridcell -obvs need to get some "real" data
 #'@param from takes a random date between this value and +10 years as plantation establishment
 #'@param to takes a random date between this value and +10 years for the end of plantation growth
 genRandSiteDat<-function(from,to){
@@ -171,7 +131,8 @@ YCfunc<-function(out){
 #Currently there is some data manipulation going on to spread a single years data over multiple years until all data is downloaded
 #' @param site site data
 #' @param clm climate data
-FR3PG_spat_run <- function(site, clm,param.draw,clm_df_full){
+#' @param param_draw parameter draws
+FR3PG_spat_run <- function(site, clm,param_draw){
   library(lubridate)
   
     if(is.na(clm[1,3])==T) return (tibble::as_tibble(data.frame(
@@ -190,7 +151,7 @@ FR3PG_spat_run <- function(site, clm,param.draw,clm_df_full){
       #get default parameters
       sitka<- getParms(timeStp = 12)
 
-      #Update parameters with proposals - In this data might be missing parameters which are named differently??
+      #Update parameters with proposals 
       nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
             "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
             "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
@@ -210,29 +171,17 @@ FR3PG_spat_run <- function(site, clm,param.draw,clm_df_full){
       weatherDat$date<-as.Date(paste0(weatherDat$Year,"-01-",weatherDat$Month),"%Y-%d-%m")
       weatherDat$FrostDays<-0
       weatherDat$week<-week(weatherDat$date)
-      
-      
-      
-      weatherDat$Rain<-weatherDat$Rain#*0.6
+
+      weatherDat$Rain<-weatherDat$Rain
 
       sitka$weather<-weatherDat
       
-    
-      
-      
       #run model and output data
       out<-do.call(fr3PGDN,sitka)
-     # out<-out[-1,]
-     # out$an_dbh<-rep(aggregate(out$dg~out$Year,FUN=max)[,2],each=12)
-      # out$an_dbh<-rep(aggregate(out$dg~out$Year,FUN=max)[,2],each=12)
       out$age<-rev(as.numeric(2018-out$Year))
-      #out$sVol<-2000*((out$dg/2)^2*pi*out$hdom)/100
       out$MAI<-(out$Vu)/out$age
       out$CAI<-c(rep(0,12),diff(out$Vu,lag=12))
 
-      
-
-      
       out$yc<-YCfunc(out)
       
       
@@ -288,6 +237,7 @@ FR3PG_spat_run <- function(site, clm,param.draw,clm_df_full){
       
     )
 },
+#add na values where there is no data, in the sea etc. 
 error = function(cond){
   site_out <- tibble::as_tibble(data.frame(Wsbr_q05=NA,Wsbr_q95=NA,Wsbr_value=NA,
                                            GPP_q05=NA,GPP_q95=NA,GPP_value=NA,
@@ -302,17 +252,3 @@ error = function(cond){
   
 }
 
-
-
-years <- 2010:2012
-
-if(Sys.info()[1]=="Windows"){
-clm.df.full<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\clm_df_full.csv")
-}else
-{
-clm.df.full<-read.csv("/home/users/aaronm7/3pgData/clm_df_full.csv")
-}
-
-#Add date
-clm.df.full$date<-as.Date(paste(clm.df.full$Year,"-",clm.df.full$Month,"-01",sep=""))
-clm.df.full$week<-week(clm.df.full$date)

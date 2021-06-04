@@ -80,7 +80,7 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
              #  1,
              10,
              1,
-             sapply( 1:length(sdMin$sdswc), function(i) max( coefVar1* abs(sdMin$sdswc[i]),0.001) )
+             sapply( 1:length(sdMin$sdswc), function(i) max( 0.05* abs(sdMin$sdswc[i]),0.001) )
              
     )
  
