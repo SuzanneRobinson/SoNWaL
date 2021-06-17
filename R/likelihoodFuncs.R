@@ -34,22 +34,20 @@ sampleOutputMonth<-function(df,sY,eY){
   modif<- if(nrow(df)<600) 1.6 else 7.142857
 
   df<- filter(df,Year>=sY&Year<=eY)
-  
+  #df<-df[-1,]
      df<-df%>%
       mutate(GPP=GPP*modif)%>%
-      mutate(NPP=NPP*modif)%>%
       mutate(NEE=NEE*modif)%>%
       mutate(Rs=Rs*modif)%>%
       mutate(Reco=Reco*modif)
+       
   
-  
-
-  
-  m<-c(aggregate(df$GPP~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$NPP~ df$Month+df$Year,FUN=mean)[,3],
+  m<-c(aggregate(df$Reco/df$Rs~ df$Year,FUN=mean)[,2],
+       aggregate(df$GPP~ df$Month+df$Year,FUN=mean)[,3],
+       #aggregate(df$NPP~ df$Month+df$Year,FUN=mean)[,3],
        aggregate(df$NEE~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$Reco~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$Rs~ df$Month+df$Year,FUN=mean)[,3],
+      # aggregate(df$Reco~ df$Month+df$Year,FUN=mean)[,3],
+       #aggregate(df$Rs~ df$Month+df$Year,FUN=mean)[,3],
        aggregate(df$EvapTransp~ df$Month+df$Year,FUN=sum)[,3],
        filter(df,Year==2015&Month==8)$LAI[1],
        filter(df,Year==2018&Month==8)$LAI[1],

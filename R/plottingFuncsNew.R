@@ -496,28 +496,20 @@ plotResultsST <- function(df,out,ShortTS=F){
   ##if plyr is loaded before dplyr can cause problems with groupby
   dt=12
   df <- df[c(2:nrow(df)),]
-  if(nrow(df)>600) df$week<-c(1:53) else df$week<-1
+  df$week<-c(1:53) 
   df <- df %>% dplyr::group_by(Year)%>%mutate(cumGPP = cumsum(GPP),
                                               cumNPP = cumsum(NPP),
                                               timestamp = as.POSIXct(paste(sprintf("%02d",Year),sprintf("%02d",Month),sprintf("%02d",1),sep="-"),tz="GMT")) 
   df2<-df%>%filter(Year>=2015)
+  df2$week<-week(df2$timestamp)
   
   flxdata<-flxdata_daily%>%
     mutate(week=week(as.Date(yday, origin = paste0(year,"-01-01"))))%>%
     mutate(month=month(as.Date(yday, origin = paste0(year,"-01-01"))))
   
-  if(nrow(df)<600){
-    dataX<- flxdata%>% 
-      group_by(year,month) %>%
-      dplyr::summarise(gppOb=mean(gpp),nppOb=mean(npp),etOb=sum(et),recoOb=mean(reco),rsOb=mean(rs),
-                       swcOb=mean(swc),neeOb=mean(nee))%>%mutate(cumGppObs=cumsum(gppOb),cumNppObs=cumsum(nppOb))
-    df2<- (df2%>% 
-             group_by(Year,Month) %>%
-             dplyr::summarise(GPP=mean(GPP),Etransp=sum(Etransp),Reco=mean(Reco),Rs=mean(Rs),NPP=mean(NPP),
-                              volSWC_rz=mean(volSWC_rz),NEE=mean(NEE),timestamp=median(timestamp),LAI=mean(LAI),t.proj=median(t.proj)))
-  }
+
   
-  if(nrow(df)>600){
+
     dataX<- flxdata%>% 
       group_by(year,week) %>%
       dplyr::summarise(gppOb=mean(gpp),nppOb=mean(npp),etOb=sum(et),recoOb=mean(reco),rsOb=mean(rs),
@@ -526,32 +518,31 @@ plotResultsST <- function(df,out,ShortTS=F){
              group_by(Year,week) %>%
              dplyr::summarise(GPP=mean(GPP),Etransp=sum(Etransp),Reco=mean(Reco),Rs=mean(Rs),NPP=mean(NPP),
                               volSWC_rz=mean(volSWC_rz),NEE=mean(NEE),timestamp=median(timestamp),LAI=mean(LAI),t.proj=median(t.proj)))
-  }
-  
-  modif<-ifelse(nrow(df)<600,1.66,7.142857)
-  
-  if(nrow(df)<600)dataX<-dataX %>% right_join(df2, by=c("year"="Year","month"="Month"))
-  if(nrow(df)>600) dataX<-dataX %>% right_join(df2, by=c("year"="Year","week"="week"))
   
   
-  dataX$simGpp<-df2$GPP*modif
-  dataX$simCGpp<-pull(df2%>%mutate(gppC=cumsum(GPP*modif))%>%select(gppC))
-  dataX$simCNpp<-pull(df2%>%mutate(nppC=cumsum(NPP*modif))%>%select(nppC))
-  
-  dataX$simReco<-df2$Reco*modif
-  dataX$simNEE<-df2$NEE*modif
-  dataX$simEtransp<-df2$Etransp
-  dataX$simswc<-df2$volSWC_rz
-  dataX$simRs<-df2$Rs*modif
-  dataX$timestamp<-df2$timestamp
-  dataX$month<-month(dataX$timestamp)  
+  modif<-7.142857
+ 
+ dataX<-dataX %>% right_join(df2, by=c("year"="Year","week"="week"))
+ 
+ 
+ dataX$simGpp<-df2$GPP*modif
+ dataX$simCGpp<-pull(df2%>%mutate(gppC=cumsum(GPP*modif))%>%select(gppC))
+ dataX$simCNpp<-pull(df2%>%mutate(nppC=cumsum(NPP*modif))%>%select(nppC))
+ 
+ dataX$simReco<-df2$Reco*modif
+ dataX$simNEE<-df2$NEE*modif
+ dataX$simEtransp<-df2$Etransp
+ dataX$simswc<-df2$volSWC_rz
+ dataX$simRs<-df2$Rs*modif
+ dataX$timestamp<-df2$timestamp
+ dataX$month<-month(dataX$timestamp)  
   
   
   
   
   nmc = nrow(out$chain[[1]])
   outSample   <- getSample(out,start=nmc/2)
-  numSamples = 25# min(1000, nrow(outSample))
+  numSamples = 10# min(1000, nrow(outSample))
   # outSample[,48]<-round(outSample[,48])
   runModel<- function(p){
     sitka[.GlobalEnv$nm]<-p
@@ -583,14 +574,10 @@ plotResultsST <- function(df,out,ShortTS=F){
   
   intvsS<-map(c("GPP","NEE","volSWC_rz","EvapTransp","Reco","Rs"),runMltMod)
   
-  if(nrow(df)<600){
-    data<-flxdata_daily%>%
-      mutate(grp=month(as.Date(flxdata_daily$yday, origin = paste0(flxdata_daily$year,"-01-01"))))
-  }
-  if(nrow(df)>600){
+
     data<-flxdata_daily%>%
       mutate(grp=week(as.Date(flxdata_daily$yday, origin = paste0(flxdata_daily$year,"-01-01"))))
-  }
+  
   
   sdMin<-data%>% group_by(year,grp) %>%
     dplyr::summarise(sdgpp=mean(gpp),sdnpp=mean(npp),sdnee=mean(nee),sdreco=mean(reco),
@@ -713,7 +700,7 @@ plotResultsST <- function(df,out,ShortTS=F){
           axis.text=element_text(size=14))
   
   
-  
+  df2$Month<-month(df2$timestamp)
   dfLeaf<-df2%>%group_by(Year,Month) %>%
     dplyr::summarise(LAI=mean(LAI),t.proj=median(t.proj))
   leaf<-data.frame(rbind(
@@ -855,4 +842,84 @@ plotModel<-function(output.df){
   
   
   return(list(flux,lai,rad,g,dg,hdom,fN,nav,totc,totn))
+}
+
+
+###plot flux values
+
+plotFlx<-function(output){
+  
+ # output<-output%>%
+ #   filter(Year>2014)%>%
+ #   group_by(Year,Month)%>%
+ #   summarise(YlCflx=mean(YlCflx,na.rm=T),YlNflx=mean(YlNflx,na.rm=T),
+ #             YrCflx=mean(YrCflx,na.rm=T),YrNflx=mean(YrNflx,na.rm=T),OCflx=mean(OCflx,na.rm=T),
+ #             ONflx=mean(ONflx,na.rm=T),Navflx=mean(Navflx,na.rm=T),difLitter=mean(difLitter,na.rm=T),
+ #             fSW=mean(fSW,na.rm=T),TotalLitter=mean(TotalLitter,na.rm=T),t=median(t))
+  
+  pYlCflx<-ggplot()+theme_bw()+
+    geom_line(data=output,aes(x=t,y=YlCflx))+
+    labs(x="Year",y="YlCflx")+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+  pYlNflx<-ggplot()+theme_bw()+
+    geom_line(data=output,aes(x=t,y=YlNflx))+
+    labs(x="Year",y="YlNflx")+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+  
+  pYrCflx<-ggplot()+theme_bw()+
+    geom_line(data=output,aes(x=t,y=YrCflx))+
+    labs(x="Year",y="YrCflx")+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+  pYrNflx<-ggplot()+theme_bw()+
+    geom_line(data=output,aes(x=t,y=YrNflx))+
+    labs(x="Year",y="YrNflx")+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+  
+  pOCflx<-ggplot()+theme_bw()+
+    geom_line(data=output,aes(x=t,y=OCflx))+
+    labs(x="Year",y="OCflx")+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+  pONflx<-ggplot()+theme_bw()+
+    geom_line(data=output,aes(x=t,y=ONflx))+
+    labs(x="Year",y="ONflx")+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+  
+  
+  pNavflx<-ggplot()+theme_bw()+
+    geom_line(data=output,aes(x=t,y=Navflx))+
+    labs(x="Year",y="Navflx")+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+  pdifLitter<-ggplot()+theme_bw()+
+    geom_line(data=output,aes(x=t,y=difLitter))+
+    labs(x="Year",y="difLitter")+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+
+  pfSW<-ggplot()+theme_bw()+
+    geom_line(data=output,aes(x=t,y=fSW))+
+    labs(x="Year",y="fSW")+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+  TotalLitter<-ggplot()+theme_bw()+
+    geom_line(data=output,aes(x=t,y=TotalLitter),col="red")+
+    labs(x="Year",y="TotalLitter")+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+  ggarrange(pYlCflx,pYlNflx,pYrCflx,pYrNflx,pOCflx,pONflx,pNavflx,pdifLitter,TotalLitter,pfSW)
 }

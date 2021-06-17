@@ -18,7 +18,7 @@ library(miscTools)
 
 
 #Get UK spatial data - needs updating to web scraping
-simDat<-spatDatUK(dataDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\monthly")
+simDat<-spatDatUK(dataDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\")
 #Get climate data for Harwood currently
 clm_df_full<<-getClimDat("monthly")
 

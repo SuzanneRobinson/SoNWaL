@@ -7,11 +7,11 @@ PredictWeatherVariables <-
     
     vpdFunc<-function(weather){
 
-       # VPD.Tmax <- 0.61078 * exp(17.269 * weather$Tmax/(237.3 + weather$Tmax))
-     #   VPD.Tmin <- 0.61078 * exp(17.269 * weather$Tmin/(237.3 + weather$Tmin))
+       # VPD.Tmax <- 6.1078 * exp(17.269 * weather$Tmax/(237.3 + weather$Tmax))
+     #   VPD.Tmin <- 6.1078 * exp(17.269 * weather$Tmin/(237.3 + weather$Tmin))
       #  VPDSat <- (VPD.Tmax - VPD.Tmin)/2
   
-        VPDact <-((( (0.61078 * exp(17.269 * weather$Tmean/(237.3 + weather$Tmean)))*(1-weather$RH/100)))*0.01)
+        VPDact <-((( (0.61078 * exp(17.269 * weather$Tmean/(237.3 + weather$Tmean)))*(1-(weather$RH)/100)))*0.01)
 
       #  Tmean = 25
       #  RH =80

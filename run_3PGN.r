@@ -19,10 +19,14 @@ endYear = 2018
 timeStep<-"weekly"
 
 ## Met data
-clm_df_full<-data.frame(getClimDat(timeStep))
-
-
+clm_df_full<-data.frame(getClimDatX(timeStep))
 clm_df_full<-clm_df_full%>%filter(Year<2019)
+
+
+#clm_df_full<-slice(clm_df_full,rep(row_number(), 20))
+
+#clm_df_full$Year<-rep(1973:2892,each=53)
+
 ## Read Harwood data for Sitka spruce and mutate timestamp to POSIXct
 if(Sys.info()[1]=="Windows"){
   data <- read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\harwood_data.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
@@ -59,13 +63,14 @@ nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","s
       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
       "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0")
 
-#out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_3_T.RDS")
-codM<-as.data.frame(mergeChains(out$chain))
-names(codM)<-nm
+out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_1_T.RDS")
+#codM<-out$chain[[2]][c(1:5000),]
+codM<-as.data.frame(tail(out$chain[[1]]))
 codM<-colMedians(as.data.frame(codM))
+names(codM)<-nm
 
 #priorSamp<-priorVals$sampler(35000)
-#MCMCtrace(getSample(out,coda = T,thin=10,start=10000),wd="C:\\Users\\aaron.morris", post_zm=F,iter=5000,priors = priorSamp)
+#MCMCtrace(getSample(out,coda = T,thin=10,start=100),wd="C:\\Users\\aaron.morris", post_zm=F,iter=5000,priors = priorSamp)
 
 sitka<-getParms(waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
 #sitka$E_S1<-2
@@ -76,12 +81,34 @@ sitka[nm]<-codM[nm]
 #sitka$E_S1<-2
 #sitka$weather[sitka$weather$Year==2015,"Rain"][1]<-filter(clm_df_full,Year==2014)$Rain[1]
 
+
+#presc<-data.frame(cycle=c(1,1),t=c(100,250),pNr=c(0.1,0.9),thinWl=c(1,1),
+#                  thinWsbr=c(1,1),thinWr=c(1,1),t.nsprouts=c(1,1))
+#sitka$presc<-presc
+
+
+
 output<-do.call(fr3PGDN,sitka)
 tail(output$GPP)
 ff<-filter(output,Year>2014)
 plot(ff$fSW)
 plot(ff$volSWC_rz)
-plot(ff$GPP*1.66)
+plot(ff$GPP)
+plot(ff$ON~ff$t)
+
+sum(tail(ff$YlN,1),tail(ff$ON,1),tail(ff$YrN,1))
+sum(tail(ff$YlC,1),tail(ff$OC,1),tail(ff$YrC,1))
+
+
+sum((ff$YlN[13250]),(ff$ON[13250]),(ff$YrN[13250]))
+sum((ff$YlC[13250]),(ff$OC[13250]),(ff$YrC[13250]))
+
+
+output<-do.call(fr3PGDN,sitka)%>%
+  filter(Year>=2015)%>%
+  group_by(Year,Month)%>%
+  dplyr::summarise(mean=sum(EvapTransp,na.rm=TRUE))
+plot(output$mean)
 
 results<-plotResults(output,ShortTS=T,out=out)
 #results

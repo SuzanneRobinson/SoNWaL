@@ -64,7 +64,7 @@ f.decrease <- c(
 f.increase <-
   c(
     0.25,#wiltPoint
-    0.4,#fieldCap
+    0.31,#fieldCap
     0.7,#satPoint
     10,#K_s
     8,#V_nr
@@ -125,17 +125,21 @@ pMinima[1:11] <- f.decrease[1:11]
 pMaxima[[30]]<-0.5
 pMinima[[31]]<-0.01
 
-pMaxima[[48]]<-0.6
-pMinima[[48]]<-0.1
+pMaxima[[48]]<-0.65
+pMinima[[48]]<-0.4
 
-pMaxima[[49]]<-6
-pMinima[[49]]<-1
+pMaxima[[49]]<-7
+pMinima[[49]]<-3
 
 
-sdVals<-(pMaxima-pMinima)*0.5
+sdVals<-(pMaxima-pMinima)*0.8
 #ES1 and 2 on very different scales so set manually
 sdVals[7]<-15
 sdVals[8]<-15
+
+
+sdVals[[48]]<-0.1
+sdVals[[49]]<-1.3
 
 priorVals <- createTruncatedNormalPrior(mean = pValues, sd=sdVals,
                                         lower = pMinima, upper = pMaxima)

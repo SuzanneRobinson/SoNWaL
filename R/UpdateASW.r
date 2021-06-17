@@ -46,9 +46,9 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     #less accurate but easier to have flexible time-steps?
     Transp <- CanTransp*365/parms[["timeStp"]] #general.info$daysinmonth[month] * CanTransp
 
-    
     #non-Intercepted radiation
     interRad<-(RAD.day * 1e+06/h)-max((RAD.day * 1e+06/h)*(1-exp(-parms[["k"]]*LAI)),0)
+
     state[["soilRad"]]<-interRad
     state[["totalRad"]]<-(RAD.day * 1e+06/h)
     
@@ -103,22 +103,26 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       # See Almedia and Sands eq A.2 and landsdown and sands 7.1.1
       state[["ASW"]] <-max(volSWC_rz-volSWC_wp,0)
       state[["volSWC_rz"]]<-volSWC_rz
+      scaleSW <-1
       
-    } else
-    {
+    } 
+    if (parms[["waterBalanceSubMods"]] == F) {
+      EvapTransp <- min(Transp + RainIntcptn, ASWrain)
+      
       MaxASW<- site[["MaxASW"]]
       excessSW <- max(ASWrain - EvapTransp - MaxASW, 0)
       rz_nrz_drain<-excessSW
       state[["ASW"]] <-  max(ASWrain - EvapTransp - excessSW, 0)
-    }
+      scaleSW <-EvapTransp/(Transp + RainIntcptn)
+      
+      }
     
     
-    scaleSW <-EvapTransp/(Transp + RainIntcptn+state[["E_S"]])
     #print(scaleSW)
    GPP <- state[["GPP"]]
    NPP <- state[["NPP"]]
-   state[["GPP"]] <- GPP# * scaleSW
-   state[["NPP"]] <- NPP #* scaleSW
+   state[["GPP"]] <- GPP * scaleSW
+   state[["NPP"]] <- NPP * scaleSW
     state[c("RainIntcptn", "netRad", "CanCond", "Etransp", "CanTransp", 
         "Transp", "EvapTransp", "excessSW", "scaleSW")] <- c(RainIntcptn, 
         netRad, CanCond, Etransp, CanTransp, Transp, EvapTransp, 

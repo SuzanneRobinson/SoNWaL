@@ -163,9 +163,13 @@ interRad<-max(interRad,1)
     #get potential evaporation rate using penman-monteith with soil specific params - following eq in landsberg and sands (7.2.1), adjusted to output evap volume rate
   #e0<-h*(((s*interRad+gb_s*P_a*C_pa*D)/(s+gamma*(1+gb_s/g_C)))/lambda)
  # print(paste0("eox= ",e0x))
+
   e0<- (e20 * interRad + rhoAir * lambda  * VPD * 
          soilBoundaryCond)/(1 + e20 + soilBoundaryCond/soilCond)
+ 
   e0<-max(e0/lambda * h,0)
+
+  
   #e0<-max(h*(soilCond*(145*interRad+soilBoundaryCond*1.204*1004*((VPD*100)*VPDconv))/(2.45*((66.1+145)*soilCond+66.1*soilBoundaryCond))),1)
   #E_S0 is E_S at the start of the time-step
   E_S0 = state[["E_S"]]
@@ -178,10 +182,18 @@ interRad<-max(interRad,1)
  t0 = as.numeric(round(((-2 * E_S0 * E_S1) + (E_S0 ^ 2) + (2 * E_S0) +
                           (E_S1 ^ 2) - (2 * E_S1) + 1 + (2 * e0 * E_S2 * t_S1) - (E_S2 ^ 2)
  ) / (2 * e0 * E_S2)))
+ 
+ t0<-ifelse(t0<0,0,t0)
+ 
  #Integrate equation A.9 to get value at time t (assuming t is number of days in month)
  #and Calc E_S using t+t0 to get amount of evaporation between t0 and t
- 
- 
+ #print(paste0("t ", t))
+ #print(paste0("t0 ", t0))
+ #
+ #print(paste0("t + t0 ", t + t0))
+ #
+ #print(paste0("ts1 ", t_S1))
+ #print(paste0("e0 ", e0))
  
  E_S = if ((t + t0) <= t_S1)
    e0 * (t + t0)

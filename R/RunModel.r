@@ -56,8 +56,7 @@ function (stand.init, weather, site, parms, general.info = parms.general,
         state.asw<-  UpdateASW(weather=weather.i,state = state.npp, 
                                site = site, parms = parms, general.info = general.info)
         
-        #could have biomass allocation only occur at the end of the month?
-        
+
       #  wMnth= ifelse(i!=N,weather$Month[i+1],1)
       #  if(weather$Month[i]!= wMnth || i==1){
         state.walloc <- AllocateBiomass(state = state.asw, site = site, #also requires weather.i, to identify current.month

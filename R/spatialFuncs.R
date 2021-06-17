@@ -1,6 +1,4 @@
 ##UK spatial data extraction
-
-library(r3PG)
 library(tidyr)
 library(purrr)
 library(BayesianTools)
@@ -15,62 +13,96 @@ library(furrr)
 library(dplyr)
 library(lubridate)
 
+##spatial splitting function - split spatial data into chunks
+#spatSplit<-function(dataDir,createFullTS=F){
+#  files <- list.files(path = paste0(dataDir,"\\CHESS"), pattern = "\\.nc$", full.names = TRUE, 
+#                      recursive = T)
+#  fileNames <- sub("\\/.*", "",list.files(path = paste0(dataDir,"\\CHESS"), pattern = "\\.nc$", full.names = F, 
+#                                          recursive = T))
+#  
+#  
+#  if(createFullTS=T){
+#    print("merging layers to create single files with full climate time-series - may take a while :)")
+#  for(i in 1:unique(length(unique(fileNames)))){
+#    print(unique(fileNames)[i])
+#    ifelse(!dir.exists(file.path(dataDir, "fullTS")), dir.create(file.path(dataDir, "fullTS")), FALSE)
+#    
+#    filesTmp <- list.files(path = paste0(dataDir,"\\CHESS"), pattern = unique(fileNames)[i], full.names = TRUE, 
+#                        recursive = T)
+# #combine monthly layers first, then combine climate layers?
+#  rastLayer <- lapply(filesTmp, function(x) { brick(x) })
+#  rastLayer<-raster::brick(rastLayer)
+#  saveRDS(rastLayer, paste0(dataDir,"fullTS\\",unique(fileNames)[i],".RDS"))
+#  
+#  }
+#  }
+#  
+#  files <- list.files(path = paste0(dataDir,"fullTS\\"), full.names = TRUE, 
+#                      recursive = T)
+#
+#  plan(multisession,workers = 7)
+#  
+##create chunks of approx 10,000 grid cells in parallel, saves to file
+#future_map(c(1:2), ~spatDatUK(bottomRow=.x,files=files,fileNames=fileNames),.progress = T)
+#   
+#  
+#
+#}
+
 
 
 ##read in list of spatial climate file names##
 #'@param dataDir directory which stores spatial HadUK climate data from ceda
 #'@return tibble of site id key with associated dataframe of longitudinal climate data
-spatDatUK<-function(dataDir){
+spatDatUK<-function(files,fileNames,bottomRow){
   
-files <- list.files(path = dataDir, pattern = "\\.nc$", full.names = TRUE, 
-                    recursive = T)
-fileNames <- sub("\\/.*", "",list.files(path = dataDir, pattern = "\\.nc$", full.names = F, 
-                    recursive = T))
-
+topRow<-ifelse(bottomRow==1,1,(bottomRow-1)*15)
+#read in files as rasters into list
+mapFile <- lapply(files, function(x) { (readRDS(x)) })
+#Crop each raster layer (currently approximately around scotland)
+mapFile <- lapply(mapFile, function(x) crop(x, extent(x,topRow, bottomRow*15, 1, 656)))
 
 #loop through files and read in data
-for(i in c(1:length(files))){
-print(fileNames[i])
-#read in files as rasters into list
-hadUKRast <- lapply(files[i], function(x) { brick(x) })
-
-#Crop each raster layer (currently approximately around scotland)
-hadUKRast <- lapply(hadUKRast, function(x) {crop(x, fj) })
-hadUKRast <- lapply(hadUKRast, function(x) {crop(x, extent(2.3e+05, 3.5e+5, 6.6e+05, 7.3e+5)) })
-
-
-#layer rasters into single raster
-hadUKRast<-raster::brick(hadUKRast)
-
-#get climate values from raster 
-rasValue=as.data.frame(raster::extract(hadUKRast,extent(2.3e+05, 3.5e+5, 6.6e+05, 7.3e+5),cellnumbers=F)) 
-
-#Transpose data before putting into table
-rasValue<-rasValue %>% purrr::transpose()
-#Convert transposed data for each cell into a dataframe
-colNm<-fileNames[i]
-rasValue2<-lapply(rasValue,function(x) setNames(data.frame(unlist(x)),fileNames[i]))
-
-
-#add to tibble
-if(i==1){
-simDat <- tibble(id = c(1:nrow(coordinates(hadUKRast))),
-             data = rasValue2)
-} 
-else {
-simDat$data<-Map(cbind,simDat$data,rasValue2)
-}
-
+  print(unique(fileNames)[i])
+  
+  #layer rasters into single raster
+  #mapFile<-raster::brick(mapFile)
+  
+  #get climate values from raster 
+  
+  for(i in c(1:length(files))){
+    
+    rasValue=as.data.frame(mapFile[[i]]@data@values) 
+    
+    
+  #Transpose data before putting into table
+  rasValue<-rasValue %>% purrr::transpose()
+  #Convert transposed data for each cell into a dataframe
+  colNm<-fileNames[i]
+  rasValue2<-lapply(rasValue,function(x) setNames(data.frame(unlist(x)),unique(fileNames)[i]))
+  
+  
+  #add to tibble
+  if(i==1){
+    simDat <- tibble(id = c(1:nrow(coordinates(mapFile[[i]]))),
+                     data = rasValue2)
+  } 
+  else {
+    simDat$data<-Map(cbind,simDat$data,rasValue2)
+  }
+  
 }
 names(simDat)<-c("grid_id","clm")
 
 #Get spatial coordinate data from rasters for plotting
-simDat$x<-coordinates(hadUKRast)[,1]
-simDat$y<-coordinates(hadUKRast)[,2]
+simDat$x<-coordinates(mapFile[[i]])[,1]
+simDat$y<-coordinates(mapFile[[i]])[,2]
 
-hadUKRast<<-hadUKRast
 
-return(simDat)
+#return(simDat)
+
+saveRDS(simDat,paste0("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\splitData\\spatialChunk_",bottomRow))
+
 }
 
 
