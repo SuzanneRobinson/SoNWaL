@@ -91,7 +91,6 @@ UpdateSoil <-
       fineDifRoots <- 0
       difWl <- 0
     }
-    #difLitter<-max(difLitter,parms[["gammaFx"]])
     ## Calculate the fineCoarseRootRatio based on DBH    
     fineCoarseRatio <- 0.1276+1462.2671*exp(-1.7958*dg) ## Empirical relationship for Scots Pine - GX !!! Requires a revised method !!!
     coarseDifRoots <- difRoots / (1 + fineCoarseRatio)

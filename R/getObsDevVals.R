@@ -19,6 +19,9 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
   #add missing swc values, can cause problems otherwise
   mod1<-lm(swc~npp+nee+reco,data=data)
 
+  #remove some negative values
+  data$et[data$et<0]<-0
+  
   data<-data %>% 
     mutate(swc = coalesce(swc,predict(mod1,newdata = data)))
 
@@ -69,25 +72,29 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
 
     )
     
-    coefVar1=0.1
-    coefVar2=0.2
+   # observed<-data.frame(observed)
+  #  observed$lab<-c(rep("alphaAn",4),rep("gpp",212),rep("nee",212),rep("et",212),"LAI","LAI","N","dg","totC","totN",rep("swc",212))
+      
+    coefVar1=0.05
+    coefVar2=0.35
+    coefVar3=0.2
     
-    dev <- c(sapply( 1:length(sdAlphaAnn$sdAlphaAnn), function(i) max( 0.05* abs(sdAlphaAnn$sdAlphaAnn[i]),0.05) ),
-             sapply( 1:length(sdMin$sdgpp), function(i) max( 0.05* abs(sdMin$sdgpp[i]),0.05) ),
+    dev <- c(sapply( 1:length(sdAlphaAnn$sdAlphaAnn), function(i) max( coefVar2* abs(sdAlphaAnn$sdAlphaAnn[i]),0.01) ),
+             sapply( 1:length(sdMin$sdgpp), function(i) max( coefVar3* abs(sdMin$sdgpp[i]),0.01) ),
             # sapply( 1:length(sdMin$sdnpp), function(i) max( 0.05* abs(sdMin$sdnpp[i]),0.05) ),
-             sapply( 1:length(sdMin$sdnee), function(i) max( 0.05* abs(sdMin$sdnee[i]),0.05) ),
+             sapply( 1:length(sdMin$sdnee), function(i) max( coefVar3* abs(sdMin$sdnee[i]),0.01) ),
             # sapply( 1:length(sdMin$sdreco), function(i) max( coefVar1* abs(sdMin$sdreco[i]),0.1) ),
             # sapply( 1:length(sdMin$sdrs), function(i) max( coefVar2* abs(sdMin$sdrs[i]),0.01) ),
-             sapply( 1:length(sdMin$sdet), function(i) max( coefVar1* abs(sdMin$sdet[i]),0.01) ),
+             sapply( 1:length(sdMin$sdet), function(i) max( coefVar2* abs(sdMin$sdet[i]),0.15) ),
              # rep(0.5,(nrow(dplyr::filter(data,year>=startYear&year<=endYear))-1)),
-             0.02,0.02,
-             5,
-             0.5,
+            5.7*coefVar1,5.56*coefVar1,
+            1348*0.05,
+            24.1*0.1,
              #  2,
              #  1,
-             5,
-             .5,
-             sapply( 1:length(sdMin$sdswc), function(i) max( 0.05* abs(sdMin$sdswc[i]),0.001) )
+            429.52*.5,
+            14.30*.5,
+             sapply( 1:length(sdMin$sdswc), function(i) max( coefVar2* abs(sdMin$sdswc[i]),0.01) )
              
     )
  
@@ -172,17 +179,16 @@ observedPine <- c(GPP$GPP,                ## GPP - monthly avg
 
 startYear<-1996
 endYear<-2014
-
-devPine <- c(rep(.1,nrow(dplyr::filter(GPP,year>=startYear&year<=endYear&year!=2007))),
-             rep(.1,nrow(dplyr::filter(NEE,year>=startYear&year<=endYear&year!=2007))),
-             rep(.1,nrow(dplyr::filter(reco,year>=startYear&year<=endYear&year!=2007))),
+coefVar=0.1
+devPine <- c(             sapply( 1:length(GPP$GPP), function(i) max( coefVar* abs(GPP$GPP),0.001) ),
+                        sapply( 1:length(NEE$NEE), function(i) max( coefVar* abs(NEE$NEE),0.001) ),
+                        sapply( 1:length(reco$reco), function(i) max( coefVar* abs(reco$reco),0.001) ),
              rep(.1,nrow(LAI)),
              rep(.3,nrow(dbh)),
              20,
              5,
              rep(5,nrow(treeDen)),
-             rep(.1,nrow(dplyr::filter(swc,year>=startYear&year<=endYear&year!=2007)))
-             )
+             sapply( 1:length(swc$swc), function(i) max( coefVar* abs(swc$swc),0.001) ))
 
 
 return(list(observedPine,devPine))

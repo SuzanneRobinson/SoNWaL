@@ -7,12 +7,12 @@ getParms<-function(weather=clm_df_full,
                    Wr = 0.01,
                    Wsbr = 0.1,
                    Wlitt = 0,# could be real small?
-                   YrC = 9.271575e-19,#47.97,
-                   YlC = 102.815,#95.94,
-                   OC = 25.1294,#335.78,
-                   YrN = 2.13912,#2.02,
-                   YlN = 5.022336,#4.05,
-                   ON = 0.8876971,#14.7,
+                   YrC = 47.97,
+                   YlC = 95.94,
+                   OC = 335.78,
+                   YrN = 2.02,
+                   YlN = 4.05,
+                   ON = 14.7,
                    Nav = 12.4,
                    ## ~~ Site ~~ ##
                    N = 2000,
@@ -76,7 +76,7 @@ getParms<-function(weather=clm_df_full,
                    rhoMin = 0.39,
                    rhoMax = 0.39,
                    tRho = 5,
-                   Qa = -90,
+                   Qa = -50,
                    Qb = 0.8,
                    gDM_mol = 24,
                    molPAR_MJ = 2.3,
@@ -113,16 +113,16 @@ getParms<-function(weather=clm_df_full,
                    wiltPoint = 0.14, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
                    fieldCap =0.28,#Field capacity
                    satPoint= 0.45, #field saturation point
-                   K_s=5, #Soil conductivity
+                   K_s=12, #Soil conductivity
                    shared_area=4, #shared area of rooting and non-rooting zone
                    V_nr=3, #Volume of non-rooting zone
                    maxRootDepth=2.5,
-                   sigma_zR =0.5, #area/depth explored by 1kg of root biomass
+                   sigma_zR =0.6, #area/depth explored by 1kg of root biomass
                    SWC_nr=10, #SWC of non-rooting zone at time 0
                    E_S1 =2.5, #Cumulitive evap threshold (kg^m-2) - sensitive to length of time-step, e.g. monthly time-step means wetting event only occurs at end of month
                    E_S2 =1.5, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
                    MaxASW_state=50,
-                   K_drain=0.3,
+                   K_drain=400,
                    timeStp = 12, # time step, 52 for weekly, 12 for monthly and 365 for daily
                    rainMod =1, #rain adjustment for sensitivity analyses
                    tempMod =1, #rain adjustment for sensitivity analyses
@@ -374,8 +374,8 @@ getParmsPine<-function(weather=clm_df_pine,
                    ## ~~ Almedia et al. Parameters ~~ ##
                    waterBalanceSubMods =T, #Whether to run model using updated water balance submodels
                    wiltPoint = 0.14, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
-                   fieldCap =0.28,#Field capacity
-                   satPoint= 0.45, #field saturation point
+                   fieldCap =0.45,#Field capacity
+                   satPoint= 0.65, #field saturation point
                    K_s=0.1, #Soil conductivity
                    shared_area=4, #shared area of rooting and non-rooting zone
                    V_nr=3, #Volume of non-rooting zone
@@ -388,7 +388,8 @@ getParmsPine<-function(weather=clm_df_pine,
                    K_drain=0.3,
                    timeStp = 12, # time step, 52 for weekly, 12 for monthly and 365 for daily
                    rainMod =1, #rain adjustment for sensitivity analyses
-                   tempMod =1 #rain adjustment for sensitivity analyses
+                   tempMod =1, #rain adjustment for sensitivity analyses
+                   fsMod=1
                    
 ){
   
@@ -517,7 +518,9 @@ getParmsPine<-function(weather=clm_df_pine,
        K_drain=K_drain,
        timeStp = timeStp, # time step, 52 for weekly, 12 for monthly and 365 for daily
        rainMod=rainMod,
-       tempMod=tempMod
+       tempMod=tempMod,
+       fsMod=fsMod
+       
   )
 }
 

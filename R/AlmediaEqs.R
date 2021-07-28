@@ -31,7 +31,7 @@
 
 #'@return SWC_rz SWC of rooting zone
 
-soilWC<-function(parms,weather,state){
+soilWC<-function(parms,weather,state,K_s,SWC,soilVol){
   
   #size of time-step. 
   if (parms[["timeStp"]] ==12) t =   days_in_month(weather[["Month"]]) 
@@ -47,16 +47,23 @@ soilWC<-function(parms,weather,state){
   
 
   #rooting depth / volume - Almedia describes this as depth, assumed to be proportional in paper to biomass
-  z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone/max root depth
+  z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]])/0.2,parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone/max root depth
   z_r=min(z_r,V_nr)
   
   V_rz = z_r #Almedia and Sands paper suggests volume of root zone is equivalent to z_r
   
+  Ksat<-4.56
+  nk<-18.4
+  volSWC_rz<-min((SWC_rz0 /(z_r*1000)),parms[["fieldCap"]])
   
-  Ksat<-18.6
-  nk<-13.2
+ #*24 as currently hourly rate, need daily vals
+  K_s=max((Ksat*(volSWC_rz/parms[["satPoint"]])^nk)*24,0.000001)
+  #print(paste0("SWC= ",SWC))
+  #print(paste0("soilVol= ",soilVol))
+  
+#  print(K_s)
   #Soil conductivity - see Landsberg book for more details on this 
-  K_s = parms[["K_s"]]#Ksat*((SWC_rz0/(V_rz*1000))/parms[["satPoint"]])^nk#parms[["K_s"]]
+ # K_s = parms[["K_s"]]#Ksat*((SWC_rz0/(V_rz*1000))/parms[["satPoint"]])^nk#parms[["K_s"]]
   
   
   #Shared area, area is in m^2, so area around the tree?
@@ -64,6 +71,15 @@ soilWC<-function(parms,weather,state){
   
   #Non-root zone decreases as root zone increases, V_nr is max non-root zone volume
   V_nrx<-max(V_nr-V_rz,0)
+  #print(paste0("V_nrx= ", V_nrx ))
+  #print(paste0("SWC_nr0= ", SWC_nr0 ))
+  #print(paste0("SWC_rz0= ", SWC_rz0 ))
+  #print(paste0("V_rz= ", V_rz ))
+  #print(paste0("K_s= ", K_s ))
+  #print(paste0("A= ", A ))
+  #print(paste0("t= ", t ))
+
+  
   #Time constant - based on rate of movement soil water between zones
   t_s0 = (V_rz * V_nrx) / (K_s * A * (V_rz + V_nrx))
   
@@ -73,9 +89,10 @@ soilWC<-function(parms,weather,state){
   #State of soil water content in rooting zone at the end of the time step
   SWC_rz = (((SWC_rz0 * V_nrx - SWC_nr0 * V_rz) / (V_rz + V_nrx)) * exp(-t /t_s0)) +
     (V_rz / (V_rz + V_nrx) * (SWC_rz0 + SWC_nr0)) 
- 
+ # print(paste0("SWC_rz= ", SWC_rz ))
   return(SWC_rz)
 }
+
 
 
 #'@description Calculates drainage out of a soil zone
@@ -86,7 +103,7 @@ soilWC<-function(parms,weather,state){
 #'@param t length of time-step
 #'@return amount of drainage
 
-drainageFunc<-function(parms,weather,SWC,soilVol){
+drainageFunc<-function(parms,weather,SWC,soilVol,K_drain){
   
   #size of time-step. This is for monthly time steps
   if (parms[["timeStp"]] ==12) t =   days_in_month(weather[["Month"]]) 
@@ -96,13 +113,7 @@ drainageFunc<-function(parms,weather,SWC,soilVol){
  
   #Volumetric field capacity
   volSWC_fc= parms[["fieldCap"]]
-  
-  Ksat<-18.6
-  nk<-13.2
-  
-  #Drainage parameter based on soil texture
-  K_drain<-parms[["K_drain"]]#Ksat*((SWC/(soilVol*1000))/parms[["satPoint"]])^nk
-  
+
   ##calculate drainage, convert soilVol to mm
   Qd<-(SWC-(volSWC_fc*soilVol*1000))*(1-exp(-K_drain*t))
   return(Qd)

@@ -34,19 +34,19 @@ plotResultsPine <- function(df,ShortTS=F){
     obsDat$simGPP<-pull(df%>%
     filter(Year>=1996)%>%
     group_by(Year,Month)%>%
-    summarise(gpp=mean(GPP*100/7))%>%
+    summarise(gpp=mean(GPP*7.14))%>%
     select(gpp))
 
     obsDat$simGPP<-pull(df%>%
                           filter(Year>=1996)%>%
                           group_by(Year,Month)%>%
-                          summarise(gpp=mean(GPP*100/7))%>%
+                          summarise(gpp=mean(GPP*7.14))%>%
                           select(gpp))
     
     obsDat$simNEE<-pull(df%>%
                           filter(Year>=1996)%>%
                           group_by(Year,Month)%>%
-                          summarise(nee=mean(NEE*100/7))%>%
+                          summarise(nee=mean(NEE*7.14))%>%
                           select(nee))
     
     obsDat$simSWC<-pull(df%>%
@@ -58,7 +58,7 @@ plotResultsPine <- function(df,ShortTS=F){
     
     nmc = nrow(out$chain[[1]])
     outSample   <- getSample(out,start=nmc/2)
-    numSamples = min(1000, nrow(outSample))
+    numSamples = min(100, nrow(outSample))
     
     runMltMod<-function(prm){
       print(prm)
@@ -75,8 +75,8 @@ plotResultsPine <- function(df,ShortTS=F){
     
     
     
-    predPosGPP  <- intvs[[1]]$posteriorPredictiveCredibleInterval[3,]*100/7 #+ .5  * sd(obsDat$GPP)
-    predNegGPP  <- intvs[[1]]$posteriorPredictiveCredibleInterval[1,]*100/7 #- .5 * sd(obsDat$GPP)
+    predPosGPP  <- intvs[[1]]$posteriorPredictiveCredibleInterval[3,]*7.14 #+ .5  * sd(obsDat$GPP)
+    predNegGPP  <- intvs[[1]]$posteriorPredictiveCredibleInterval[1,]*7.14 #- .5 * sd(obsDat$GPP)
 
   gpp<-ggplot()+theme_bw()+
     geom_line(data=obsDat,aes(x=timestamp,y=simGPP),colour="black",size=1)+
@@ -88,8 +88,8 @@ plotResultsPine <- function(df,ShortTS=F){
           axis.text=element_text(size=14))
   
   
-  predPosNEE  <- intvs[[2]]$posteriorPredictiveCredibleInterval[3,]*100/7# + 2  * sd(obsDat$NEE)
-  predNegNEE  <- intvs[[2]]$posteriorPredictiveCredibleInterval[1,]*100/7# - 2 * sd(obsDat$NEE)
+  predPosNEE  <- intvs[[2]]$posteriorPredictiveCredibleInterval[3,]*7.14# + 2  * sd(obsDat$NEE)
+  predNegNEE  <- intvs[[2]]$posteriorPredictiveCredibleInterval[1,]*7.14# - 2 * sd(obsDat$NEE)
   
   nee<-ggplot()+theme_bw()+
     geom_line(data=obsDat,aes(x=timestamp,y=simNEE),colour="black",size=1)+
@@ -114,7 +114,7 @@ plotResultsPine <- function(df,ShortTS=F){
   predSWC  <- intvs[[3]]$posteriorPredictiveCredibleInterval[2,c(13:228)] #- 2 * sd(obsDat$NEE)
   
   swc<-ggplot()+theme_bw()+
-    geom_line(data=obsDatSWC,aes(x=timestamp,y=predSWC),colour="black",size=1)+
+    geom_line(data=obsDatSWC,aes(x=timestamp,y=simSWC),colour="black",size=1)+
     geom_point(data=obsDatSWC,aes(x=timestamp,y=swc),colour="red",size=2)+
    # geom_ribbon(aes(x=obsDatSWC$timestamp,ymin=predNegSWC,ymax=predPosSWC),alpha=0.5,fill="blue")+
     scale_x_datetime(limits=c(as.POSIXct("1996-01-01",tz="GMT"),as.POSIXct("2015-01-01",tz="GMT")))+    
@@ -144,7 +144,7 @@ YC.finder <- function(HT,AGE)
 
 
 ## Function to plot the model against the Harwood data.
-plotResults <- function(df,out,ShortTS=F){
+plotResultsNew <- function(df,out,ShortTS=F){
   
   ##if plyr is loaded before dplyr can cause problems with groupby
   dt=12
@@ -188,7 +188,7 @@ df <- df[c(2:nrow(df)),]
   
  
  nmc = nrow(out$chain[[1]])
- outSample   <- getSample(out,start=nmc/2)
+ outSample   <- getSample(out,start=nmc/1.2,thin=5)
  numSamples = 25# min(1000, nrow(outSample))
 # outSample[,48]<-round(outSample[,48])
  runModel<- function(p){

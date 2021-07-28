@@ -29,7 +29,7 @@ clm_df_daily[which(clm_df_daily$DOY==365&clm_df_daily$week==1),"week"]<-52
 
 modDat<-filter(clm_df_daily,Year>2014)
 predDat<-filter(clm_df_daily,Year<=2006)
-missingDat<-clm_df_daily%>%filter(Year<=2015)
+missingDat<-clm_df_daily%>%filter(Year<2015)
 repYear<-clm_df_daily%>%filter(Year==2019)
 fillDat<-rbind(do.call("rbind",replicate(4,repYear ,simplify=F)),
                clm_df_daily%>%filter(Year==2019&DOY==1),
@@ -49,7 +49,7 @@ fillDat<-rbind(do.call("rbind",replicate(4,repYear ,simplify=F)),
                clm_df_daily%>%filter(Year==2019&DOY==1),
                do.call("rbind",replicate(4,repYear ,simplify=F)),
                clm_df_daily%>%filter(Year==2019&DOY==1),
-               do.call("rbind",replicate(3,repYear ,simplify=F)),
+               do.call("rbind",replicate(2,repYear ,simplify=F)),
                               do.call("rbind",replicate(4, repYear,simplify=F)),
                clm_df_daily%>%filter(Year==2019&DOY==1))
 
@@ -182,7 +182,11 @@ getClmPine<-function(timeStep="monthly"){
     
   }
   
+ 
   clm_df_pine <- PredictWeatherVariables(weather = clm_df_pine)
+  
+  clm_df_pine$Month<-month(clm_df_pine$date)
+  clm_df_pine<-select(clm_df_pine,c("Year","Week","Month", "Tmax" , "Tmin" ,"Tmean",  "Rain", "SolarRad" ,"FrostDays", "MonthIrrig",      "VPD",    "RH"))
   
   return(clm_df_pine)
   
@@ -334,13 +338,13 @@ getClimDatX<-function(timeStep="monthly"){
   
   
   clm_df_daily <- PredictWeatherVariables(weather = clm_df_daily)
-  
+  clm_df_daily$FrostHours<-ifelse(clm_df_daily$Tmean<=0,1,0)
   
   clm_df_weekly<-clm_df_daily%>%
     group_by(Year,week)%>%
     summarise(Year=median(Year),Month=median(month(Date)),Tmax=max(Tmax),Tmin=min(Tmin),
               Tmean=mean(Tmean),Rain=sum(Rain),SolarRad=mean(SolarRad)
-              ,FrostDays=mean(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100))
+              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100))
   
   
   
@@ -348,14 +352,14 @@ getClimDatX<-function(timeStep="monthly"){
     group_by(Year,month)%>%
     summarise(Year=median(Year),Month=median(month(Date)),Tmax=max(Tmax),Tmin=min(Tmin),
               Tmean=mean(Tmean),Rain=sum(Rain),SolarRad=mean(SolarRad)
-              ,FrostDays=mean(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100))
+              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100))
   
   
   clm_df_daily<-clm_df_daily%>%
     group_by(Year,DOY)%>%
     summarise(Year=median(Year),week=median(week),Month=median(month(Date)),Tmax=max(Tmax),Tmin=min(Tmin),
               Tmean=mean(Tmean),Rain=sum(Rain),SolarRad=mean(SolarRad)
-              ,FrostDays=mean(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100))
+              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100))
   
   
   if(timeStep=="monthly") return (clm_df_full)

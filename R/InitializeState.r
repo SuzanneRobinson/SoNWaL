@@ -33,6 +33,18 @@ function (stand, site, parms, general.info, weather)
     state.init["totalRad"] <- 100
     state.init["potentialEvap"] <- 0.01
     
+    ###use parameter for initial nitrogen and carbon pools
+    state.init["totN"]<-parms[["K_s"]]
+    state.init["totC"]<-parms[["K_drain"]]
+    state.init["YrC"]<-0.2*state.init["totC"]
+    state.init["YlC"]<-0.1*state.init["totC"]
+    state.init["OC"]<-0.7*state.init["totC"]
+    state.init["YrN"]<-0.2*state.init["totN"]
+    state.init["YlN"]<-0.1*state.init["totN"]
+    state.init["ON"]<-0.7*state.init["totN"]
+    state.init["Nav"]<-0.61*state.init["totN"]
+    
+
     
     if (state.init[["t"]] == 0) {
         state.init <- CreateNewPlantation(state = state.init, 

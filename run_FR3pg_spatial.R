@@ -16,6 +16,7 @@ library(fr3PGDN)
 library(tibble)
 library(miscTools)
 
+spatSplit(dataDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data",createFullTS=F)
 
 #Get UK spatial data - needs updating to web scraping
 simDat<-spatDatUK(dataDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\")

@@ -33,9 +33,8 @@ sampleOutputMonth<-function(df,sY,eY){
   #convert to average grams per m2 per day depending on timestep of model
   modif<- if(nrow(df)<600) 1.6 else 7.142857
 
-  df<- filter(df,Year>=sY&Year<=eY)
-  #df<-df[-1,]
      df<-df%>%
+      filter(Year>=sY&Year<=eY)%>%
       mutate(GPP=GPP*modif)%>%
       mutate(NEE=NEE*modif)%>%
       mutate(Rs=Rs*modif)%>%
@@ -81,11 +80,12 @@ sampleOutputWeekly<-function(df,sY,eY){
     mutate(Reco=Reco*modif)
   
   
-  m<-c(aggregate(df$GPP~ df$week+df$Year,FUN=mean)[,3],
-       aggregate(df$NPP~ df$week+df$Year,FUN=mean)[,3],
+  m<-c(aggregate(df$Reco/df$Rs~ df$Year,FUN=mean)[,2],
+       aggregate(df$GPP~ df$week+df$Year,FUN=mean)[,3],
+       #aggregate(df$NPP~ df$Month+df$Year,FUN=mean)[,3],
        aggregate(df$NEE~ df$week+df$Year,FUN=mean)[,3],
-       aggregate(df$Reco~ df$week+df$Year,FUN=mean)[,3],
-       aggregate(df$Rs~ df$week+df$Year,FUN=mean)[,3],
+       # aggregate(df$Reco~ df$Month+df$Year,FUN=mean)[,3],
+       #aggregate(df$Rs~ df$Month+df$Year,FUN=mean)[,3],
        aggregate(df$EvapTransp~ df$week+df$Year,FUN=sum)[,3],
        filter(df,Year==2015&Month==8)$LAI[1],
        filter(df,Year==2018&Month==8)$LAI[1],
@@ -398,7 +398,8 @@ NLL<- function(p){
       modelled <-sampleOutputMonth(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
       
       NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,sum(dnorm(.GlobalEnv$observed,mean=modelled,sd=.GlobalEnv$dev,log=T),na.rm = T))
-      
+      NlogLik<-ifelse(max(output$LAI>8),-Inf,NlogLik)
+      NlogLik<-ifelse(mean(tail(output$LAI))<4,-Inf,NlogLik)
       
     },
     error=function(cond) {
@@ -408,9 +409,23 @@ NLL<- function(p){
 }
 
 
+flogL <- function(sims,data,data_s)
+{ 
+  Ri         <- (sims - data) / data_s
+  i0         <- which( abs(Ri)<1.e-08 )
+  
+  logLi      <- log(1-exp(-0.5*Ri^2)) - log(Ri^2) - 0.5*log(2*pi) - log(data_s)
+  logLi[i0]  <- -0.5*log(2*pi) - log(2*data_s[i0])
+  
+  sum(logLi)
+}
+
+
 ## Likelihood function
 NLL_weekly<- function(p){
   sitka[.GlobalEnv$nm]<-p
+  
+  
   
   NlogLik <- tryCatch(
     {
@@ -419,7 +434,11 @@ NLL_weekly<- function(p){
       modelled <-sampleOutputWeekly(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
       
       NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,sum(dnorm(.GlobalEnv$observed,mean=modelled,sd=.GlobalEnv$dev,log=T),na.rm = T))
-      
+     #      NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,(flogL(data=.GlobalEnv$observed,sims=modelled,data_s=.GlobalEnv$dev)))
+
+        NlogLik<-ifelse(max(output$LAI>8),-Inf,NlogLik)
+        NlogLik<-ifelse(mean(tail(output$LAI))<4,-Inf,NlogLik)
+        
       
     },
     error=function(cond) {
