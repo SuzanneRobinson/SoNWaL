@@ -19,19 +19,13 @@ endYear = 2018
 timeStep<-"weekly"
 
 
-###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#Check depth of soil N and C measurements, make sure to split carbon/nitrogen tons per hectare by depth of rooting zone!
-
-
-###########################################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-##############~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 ## Met data
-clm_df_full<-data.frame(getClimDatX(timeStep))
+clm_df_full<-data.frame(getClimDatX("weekly"))
 clm_df_full<-clm_df_full%>%filter(Year<2019)
 
+#write.csv(clm_df_full,"dailyClmRH.csv")
 
 #clm_df_full<-slice(clm_df_full,rep(row_number(), 20))
 
@@ -71,16 +65,18 @@ sitka<-getParms(weather=clm_df_full,
 nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
       "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb")
+      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn")
 
-out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_1_T.RDS")
+###CHANGE MAX LAI INTERCEPTTTTT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_6_T.RDS")
 
 #out<-getSample(out,start=12000,thin=5,numSamples=500)
 #codM<-out$chain[[2]][c(1:5000),]
-codM<-as.data.frame(out$chain[[5]])
+codM<-as.data.frame(out$chain[[7]])
 codM<-mergeChains(out$chain)
 
-#codM<-colMedians(as.data.frame(out))
+codM<-colMedians(as.data.frame(codM))
 codM<-tail(as.data.frame(codM),1)
 names(codM)<-nm
 
@@ -97,8 +93,8 @@ sitka[nm]<-codM[nm]
 #sitka$weather[sitka$weather$Year==2015,"Rain"][1]<-filter(clm_df_full,Year==2014)$Rain[1]
 
 
-#presc<-data.frame(cycle=c(1,1),t=c(10,15),pNr=c(0.01,0.05),thinWl=c(.1,.1),
-#                  thinWsbr=c(1,1),thinWr=c(.5,.5),t.nsprouts=c(1,.1))
+#presc<-data.frame(cycle=c(1,1),t=c(20,30),pNr=c(0.1,0.15),thinWl=c(.1,.1),
+                # thinWsbr=c(1,1),thinWr=c(.5,.5),t.nsprouts=c(1,.1))
 #sitka$presc<-presc
 
 
@@ -109,20 +105,20 @@ sitka[nm]<-codM[nm]
 #output<-do.call(fr3PGDN,sitka)
 #plot(output$LAI,main=nm[i])
 #}
-
+#sitka$pFS20<-0.1
 output<-do.call(fr3PGDN,sitka)
 ff<-filter(output,Year>2014)
-plot(ff$LAI)
-
 plot(output$LAI)
 
+plot(output$N)
+plot(ff$EvapTransp)
 tail(output$GPP)
 ff<-filter(output,Year>2014)
 plot(ff$fSW)
 plot(ff$volSWC_rz)
+plot(ff$EvapTransp)
+plot(output$totN)
 plot(ff$GPP)
-plot(ff$ON~ff$t)
-plot(ff$N)
 
 #ff<-filter(output,t<=100)
 
@@ -144,7 +140,7 @@ output<-do.call(fr3PGDN,sitka)%>%
   dplyr::summarise(mean=mean(GPP*7.14,na.rm=TRUE))
 plot(output$mean)
 
-results<-plotResultsNew(output,ShortTS=T,out=out)
+results<-plotResultsNewMonthly(output,ShortTS=T,out=out)
 #results
 ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]],results[[6]])
 

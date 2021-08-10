@@ -54,10 +54,10 @@ soilWC<-function(parms,weather,state,K_s,SWC,soilVol){
   
   Ksat<-4.56
   nk<-18.4
-  volSWC_rz<-min((SWC_rz0 /(z_r*1000)),parms[["fieldCap"]])
+  volSWC_rz<-min((SWC_rz0 /(z_r*1000)),parms[["satPoint"]])
   
  #*24 as currently hourly rate, need daily vals
-  K_s=max((Ksat*(volSWC_rz/parms[["satPoint"]])^nk)*24,0.000001)
+ # K_s=max((Ksat*(volSWC_rz/parms[["satPoint"]])^nk)*24,0.000001)
   #print(paste0("SWC= ",SWC))
   #print(paste0("soilVol= ",soilVol))
   
@@ -144,7 +144,7 @@ soilEvap<-function(parms,weather,state,interRad,h){
   
   e20 <- parms[["e20"]]
   rhoAir <- parms[["rhoAir"]]
-  lambda <- parms[["lambda"]]#Volumetric latent heat of vaporization. Energy required per water volume vaporized (see penman monteith)
+  lambda <- parms[["lambda"]]#Volumetric latent heat of vaporization. Energy required per water volume vaporized (J/kg-1) (see penman monteith)
   VPDconv <- parms[["VPDconv"]]
   VPD <- weather[["VPD"]]
   E_S1 = (parms[["E_S1"]])
@@ -156,32 +156,31 @@ soilEvap<-function(parms,weather,state,interRad,h){
   if (parms[["timeStp"]] ==52) t =   7
   if (parms[["timeStp"]] ==365) t =  1
   if (is.numeric(t)==F) print ("unsupported time step used")
-  #parameter values from landsberg and sands book (7.2.1)
- # s<-145
- # gb_s<-0.01#soil boundary layer conductance
- # g_C<-Inf
- # P_a = 1.204
- # C_pa = 1004
- # gamma= 66.1
- # s=145
- # D=VPD*100
- # lambda=2.45
+
   
   soilBoundaryCond<-0.01
-  soilCond<-Inf
+  soilCond<-100
   #convert joules m^2 per hour to watts m^2 (1 Wm^2 = 1 J m^2 per second)
 interRad<-max(interRad,1)
     #get potential evaporation rate using penman-monteith with soil specific params - following eq in landsberg and sands (7.2.1), adjusted to output evap volume rate
   #e0<-h*(((s*interRad+gb_s*P_a*C_pa*D)/(s+gamma*(1+gb_s/g_C)))/lambda)
  # print(paste0("eox= ",e0x))
 
-  e0<- (e20 * interRad + rhoAir * lambda  * VPD * 
-         soilBoundaryCond)/(1 + e20 + soilBoundaryCond/soilCond)
+ # e0<- (e20 * interRad + rhoAir * lambda  * VPD  * 
+ #        soilBoundaryCond)/(1 + e20 + soilBoundaryCond/soilCond)
  
-  e0<-max(e0/lambda * h,0)
+Delta = 145 #Rate of change of saturation specific humidity with air temperature. (Pa/K−1)
+Cp = 1004 #specific heat cap of air J/kg-1
+Pa = 1.204 #Dry air density kg/m-3
+gamma = 66.1 # phsychrometric constant Pa/K-1
 
+#e0<-(((Delta*(interRad)+Pa*Cp*(VPD*1000)*soilBoundaryCond)/
+#        (  (Delta+gamma*(1+soilBoundaryCond/soilCond))*L_nu)))*h
+
+
+  #e0<-max(e0/lambda * h,0) reduced by 30% as it is cooler and shadier under the canopy
+  e0<-max(h*(soilCond*(Delta*interRad+soilBoundaryCond*Pa*Cp*((VPD*1000)))/(lambda*((gamma+Delta)*soilCond+gamma*soilBoundaryCond))),0)
   
-  #e0<-max(h*(soilCond*(145*interRad+soilBoundaryCond*1.204*1004*((VPD*100)*VPDconv))/(2.45*((66.1+145)*soilCond+66.1*soilBoundaryCond))),1)
   #E_S0 is E_S at the start of the time-step
   E_S0 = state[["E_S"]]
 
@@ -222,6 +221,10 @@ interRad<-max(interRad,1)
 ##Soil water growth modifier
 SWGmod<-function(SWconst,SWpower,MoistRatio){
   f_theta<-(1-(1-MoistRatio)^SWpower)/(1+((1-MoistRatio)/SWconst)^SWpower)
+  
+  #(1-(1-MoistRatio)^SWpower)/(1+(1-2*SWconst^SWpower)*((1-MoistRatio)/SWconst)^SWpower)
+  
+  
   return(f_theta)
 }
 

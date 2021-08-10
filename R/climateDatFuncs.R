@@ -17,11 +17,28 @@ if(Sys.info()[1]=="Windows"){
   
   
 }
+  
 
+  
+#  dups<- clm_df_daily[duplicated(clm_df_daily$Date)==T,]
+#  for (i in c(1:nrow(dups))){
+#dupY<-filter(clm_df_daily,SolarRad==dups[i,7]) 
+#medDup<-median(dupY$DOY)  
+#print(paste0("medDup= ",medDup))
+#print(paste0("dups =", dups[i,2]))
+##if(dups[i,2]==medDup) print("yes") else print("no")
+#
+#}
+  
+  
 #Add date
 clm_df_full$date<-as.Date(paste(clm_df_full$Year,"-",clm_df_full$Month,"-01",sep=""))
 clm_df_full$week<-week(clm_df_full$date)
 clm_df_daily$Date<-as.Date(clm_df_daily$DOY, origin = paste0(clm_df_daily$Year,"-01-01"))
+
+clm_df_daily$dup<-duplicated(clm_df_daily$Date)
+clm_df_daily<-clm_df_daily[duplicated(clm_df_daily$Date)==F,]
+
 clm_df_daily$week<-week(clm_df_daily$Date)
 clm_df_daily$month<-month(clm_df_daily$Date)
 clm_df_daily[which(clm_df_daily$DOY==365&clm_df_daily$week==1),"week"]<-52
@@ -293,27 +310,30 @@ getClimDatX<-function(timeStep="monthly"){
   
   if(Sys.info()[1]=="Windows"){
     clm_df_full<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\clm_df_full.csv")
-    clm_df_daily<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\weather_day.csv")
+    clm_df_daily<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\weather_day_basfor.csv")
     data <- read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\harwood_data.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
     
   }else
   {
     clm_df_full<-read.csv("/home/users/aaronm7/3pgData/clm_df_full.csv")
-    clm_df_daily<-read.csv("/home/users/aaronm7/3pgData/weather_day.csv")
+    clm_df_daily<-read.csv("/home/users/aaronm7/3pgData/weather_day_basfor.csv")
     data <- read.csv("/home/users/aaronm7/3pgData/harwood_data.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
     
     
   }
   
   #Add date
+  
+  clm_df_daily<- rbind(clm_df_daily[732:1461,],do.call("rbind", replicate(11, (clm_df_daily[-1,]), simplify = FALSE)))
+  clm_df_daily$Year<-rep(1973:2018,each=365)
+  
   clm_df_full$date<-as.Date(paste(clm_df_full$Year,"-",clm_df_full$Month,"-01",sep=""))
   clm_df_full$week<-week(clm_df_full$date)
   clm_df_daily$Date<-as.Date(clm_df_daily$DOY, origin = paste0(clm_df_daily$Year,"-01-01"))
   clm_df_daily$week<-week(clm_df_daily$Date)
   clm_df_daily$month<-month(clm_df_daily$Date)
   clm_df_daily[which(clm_df_daily$DOY==365&clm_df_daily$week==1),"week"]<-52
-  
-  
+
   modDat<-filter(clm_df_daily,Year>2014)
   predDat<-filter(clm_df_daily,Year<=2014)
 
@@ -338,13 +358,13 @@ getClimDatX<-function(timeStep="monthly"){
   
   
   clm_df_daily <- PredictWeatherVariables(weather = clm_df_daily)
-  clm_df_daily$FrostHours<-ifelse(clm_df_daily$Tmean<=0,1,0)
+  clm_df_daily$FrostHours<-0#ifelse(clm_df_daily$Tmean<=0,1,0)
   
   clm_df_weekly<-clm_df_daily%>%
     group_by(Year,week)%>%
     summarise(Year=median(Year),Month=median(month(Date)),Tmax=max(Tmax),Tmin=min(Tmin),
               Tmean=mean(Tmean),Rain=sum(Rain),SolarRad=mean(SolarRad)
-              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100))
+              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100),Wind=mean(Wind))
   
   
   
@@ -352,14 +372,14 @@ getClimDatX<-function(timeStep="monthly"){
     group_by(Year,month)%>%
     summarise(Year=median(Year),Month=median(month(Date)),Tmax=max(Tmax),Tmin=min(Tmin),
               Tmean=mean(Tmean),Rain=sum(Rain),SolarRad=mean(SolarRad)
-              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100))
+              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100),Wind=mean(Wind))
   
   
   clm_df_daily<-clm_df_daily%>%
     group_by(Year,DOY)%>%
     summarise(Year=median(Year),week=median(week),Month=median(month(Date)),Tmax=max(Tmax),Tmin=min(Tmin),
               Tmean=mean(Tmean),Rain=sum(Rain),SolarRad=mean(SolarRad)
-              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100))
+              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100),Wind=mean(Wind))
   
   
   if(timeStep=="monthly") return (clm_df_full)
