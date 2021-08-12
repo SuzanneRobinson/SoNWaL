@@ -11,6 +11,7 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
   if(timeStep =="monthly"){
     data<-data%>%
       mutate(grp=month(as.Date(data$yday, origin = paste0(data$year,"-01-01"))))
+
   }
   
 
@@ -26,7 +27,7 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
     mutate(swc = coalesce(swc,predict(mod1,newdata = data)))
 
   sdMin<-data%>% group_by(year,grp) %>%
-    dplyr::summarise(sdgpp=mean(gpp),sdnpp=mean(npp),sdnee=mean(nee),sdreco=mean(reco),sdrs=mean(rs),sdet=sum(et),sdswc=mean(swc))
+    dplyr::summarise(sdgpp=mean(gpp),sdnpp=mean(npp),sdnee=mean(nee),sdreco=mean(reco),sdrs=mean(rs),sdet=mean(et),sdswc=mean(swc))
   
   sdAlphaAnn<-data%>% group_by(year) %>%
     dplyr::summarise(sdAlphaAnn=mean(reco/rs))
@@ -55,7 +56,7 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
                 #         select(rs)),                 ## Rs
                   pull(data%>%
                          group_by(year,grp) %>%
-                         dplyr::summarise(et=sum(et))%>%
+                         dplyr::summarise(et=mean(et))%>%
                          select(et)),                 ## Etransp
                   #  data$gs[2:nrow(data)],   ## CanCond
                   5.7,5.56,                ## LAI
@@ -75,8 +76,8 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
     #observed<-data.frame(observed)
    # observed$lab<-c(rep("alphaAn",4),rep("gpp",212),rep("nee",212),rep("et",212),"LAI","LAI","N","dg","totC","totN",rep("swc",212))
       
-    coefVar1=0.1/4
-    coefVar2=0.2
+    coefVar1=0.1/10
+    coefVar2=0.3
     coefVar3=0.2
     
     dev <- c(sapply( 1:length(sdAlphaAnn$sdAlphaAnn), function(i) max( coefVar2* abs(sdAlphaAnn$sdAlphaAnn[i]),0.01) ),
@@ -88,7 +89,7 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
              sapply( 1:length(sdMin$sdet), function(i) max( coefVar2* abs(sdMin$sdet[i]),0.15) ),
              # rep(0.5,(nrow(dplyr::filter(data,year>=startYear&year<=endYear))-1)),
              5.7*coefVar1,5.56*coefVar1,
-             1348*0.005,
+             1348*coefVar1,
              24.1*0.1,
              #  2,
              #  1,

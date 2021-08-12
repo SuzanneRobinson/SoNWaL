@@ -47,7 +47,7 @@ sampleOutputMonth<-function(df,sY,eY){
        aggregate(df$NEE~ df$Month+df$Year,FUN=mean)[,3],
       # aggregate(df$Reco~ df$Month+df$Year,FUN=mean)[,3],
        #aggregate(df$Rs~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$EvapTransp~ df$Month+df$Year,FUN=sum)[,3],
+       aggregate(df$EvapTransp~ df$Month+df$Year,FUN=mean)[,3]/30,
        filter(df,Year==2015&Month==8)$LAI[1],
        filter(df,Year==2018&Month==8)$LAI[1],
        filter(df,Year==2018&Month==8)$N[1],
@@ -86,7 +86,7 @@ sampleOutputWeekly<-function(df,sY,eY){
        aggregate(df$NEE~ df$week+df$Year,FUN=mean)[,3],
        # aggregate(df$Reco~ df$Month+df$Year,FUN=mean)[,3],
        #aggregate(df$Rs~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$EvapTransp~ df$week+df$Year,FUN=sum)[,3],
+       aggregate(df$EvapTransp~ df$week+df$Year,FUN=mean)[,3]/7,
        filter(df,Year==2015&Month==8)$LAI[1],
        filter(df,Year==2018&Month==8)$LAI[1],
        filter(df,Year==2018&Month==8)$N[1],
@@ -435,10 +435,9 @@ NLL_weekly<- function(p){
       #use sampleOutputTS if using smaller time-steps
       modelled <-sampleOutputWeekly(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
       
-     # NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,sum(dnorm(.GlobalEnv$observed,mean=modelled,sd=.GlobalEnv$dev,log=T),na.rm = T))
-      NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,sum(dnorm(observed,modelled,dev,log=T)))
+      NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,(flogL(data=.GlobalEnv$observed,sims=modelled,data_s=.GlobalEnv$dev)))
       
-#NlogLik<-ifelse(max(output$LAI)>10,-Inf,NlogLik)
+NlogLik<-ifelse(max(output$LAI)>10,-Inf,NlogLik)
 #        NlogLik<-ifelse(mean(tail(output$LAI,500))<1,-Inf,NlogLik)
       NlogLik<-ifelse(min(output$totN)<1,-Inf,NlogLik)
       

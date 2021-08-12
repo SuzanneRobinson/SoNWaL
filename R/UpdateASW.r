@@ -77,7 +77,7 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     if (parms[["waterBalanceSubMods"]] == T) {
       
       #root depth assumed to be proportional to root biomass (see almedia and sands) .2 is probability of stones
-      z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]])/0.2,parms[["maxRootDepth"]])
+      z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]])
       
       #derive the VOUMETRIC SWC in mm (theta_x vals in Almedia and Sands) for the rooting-zone soil profile at wp, fc and fsat in mm
       volSWC_wp= (parms[["wiltPoint"]])

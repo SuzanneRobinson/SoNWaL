@@ -309,9 +309,9 @@ getClimDatX<-function(timeStep="monthly"){
   library(lubridate)
   
   if(Sys.info()[1]=="Windows"){
-    clm_df_full<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\clm_df_full.csv")
-    clm_df_daily<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\weather_day_basfor.csv")
-    data <- read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\harwood_data.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
+    clm_df_full<-read.csv("data\\clm_df_full.csv")
+    clm_df_daily<-read.csv("data\\weather_day_basfor.csv")
+    data <- read.csv("data\\harwood_data.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
     
   }else
   {
@@ -324,7 +324,7 @@ getClimDatX<-function(timeStep="monthly"){
   
   #Add date
   
-  clm_df_daily<- rbind(clm_df_daily[732:1461,],do.call("rbind", replicate(11, (clm_df_daily[-1,]), simplify = FALSE)))
+  clm_df_daily<- rbind(do.call("rbind", replicate(22, (clm_df_daily[1:730,]), simplify = FALSE)),clm_df_daily[732:1461,])
   clm_df_daily$Year<-rep(1973:2018,each=365)
   
   clm_df_full$date<-as.Date(paste(clm_df_full$Year,"-",clm_df_full$Month,"-01",sep=""))
@@ -337,19 +337,11 @@ getClimDatX<-function(timeStep="monthly"){
   modDat<-filter(clm_df_daily,Year>2014)
   predDat<-filter(clm_df_daily,Year<=2014)
 
-  ##use last 5 years to fill in climate gaps?
-  #clm_df_dailyYavg<-clm_df_daily%>%filter(Year<2007&Year>2002)%>%
-  #  group_by(DOY)%>%
-  #  summarise(Tmax=median(Tmax),Tmean=median(Tmean),Tmin=median(Tmin),Rain=median(Rain))
-  #
-  #clm_df_u<-filter(clm_df_daily,Year>=2007&Year<2015)%>%left_join(clm_df_dailyYavg,by=c("DOY"="DOY"),keep=F)%>%
-  #  mutate(Year=Year,Tmax=Tmax.y,Tmin=Tmin.y,Tmean=Tmean.y,Rain=Rain.y)%>%
-  #  select(Year,DOY,Tmax,Tmin,Tmean,Rain,SolarRad,VPD,FrostHours,DayIrrig,RH,SWC,Date,week,month)
   
   
   mod1<-lm(SolarRad~Tmax+Tmean+Rain,data=modDat[-c(1275,2103,615),])
   
-  predDat$SolarRad<-predict(mod1,newdata = predDat)
+ # predDat$SolarRad<-predict(mod1,newdata = predDat)
   
   
   clm_df_daily<-rbind(predDat,modDat)

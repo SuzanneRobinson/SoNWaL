@@ -159,7 +159,7 @@ soilEvap<-function(parms,weather,state,interRad,h){
 
   
   soilBoundaryCond<-0.01
-  soilCond<-100
+  soilCond<-10000
   #convert joules m^2 per hour to watts m^2 (1 Wm^2 = 1 J m^2 per second)
 interRad<-max(interRad,1)
     #get potential evaporation rate using penman-monteith with soil specific params - following eq in landsberg and sands (7.2.1), adjusted to output evap volume rate

@@ -18,18 +18,10 @@ endYear = 2018
 #install.packages("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\fr3PGDN_2.0.tar.gz", repos = NULL, type="source")
 timeStep<-"weekly"
 
-
-
-
 ## Met data
 clm_df_full<-data.frame(getClimDatX("weekly"))
 clm_df_full<-clm_df_full%>%filter(Year<2019)
 
-#write.csv(clm_df_full,"dailyClmRH.csv")
-
-#clm_df_full<-slice(clm_df_full,rep(row_number(), 20))
-
-#clm_df_full$Year<-rep(1973:2892,each=53)
 
 ## Read Harwood data for Sitka spruce and mutate timestamp to POSIXct
 if(Sys.info()[1]=="Windows"){
@@ -62,18 +54,20 @@ sitka<-getParms(weather=clm_df_full,
                 )
 #######################################################
 #names of parameters to fit
+
+exampParams<-read.csv("exampParams.csv")
 nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
       "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
       "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn")
+sitka[nm]<-exampParams[nm]
 
-###CHANGE MAX LAI INTERCEPTTTTT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_6_T.RDS")
+out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_4_T.RDS")
 
 #out<-getSample(out,start=12000,thin=5,numSamples=500)
 #codM<-out$chain[[2]][c(1:5000),]
-codM<-as.data.frame(out$chain[[7]])
+codM<-as.data.frame(out$chain[[1]])
 codM<-mergeChains(out$chain)
 
 codM<-colMedians(as.data.frame(codM))
@@ -140,7 +134,7 @@ output<-do.call(fr3PGDN,sitka)%>%
   dplyr::summarise(mean=mean(GPP*7.14,na.rm=TRUE))
 plot(output$mean)
 
-results<-plotResultsNewMonthly(output,ShortTS=T,out=out)
+results<-plotResultsNew(output,ShortTS=T,out=out)
 #results
 ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]],results[[6]])
 

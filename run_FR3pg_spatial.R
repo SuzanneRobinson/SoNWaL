@@ -15,8 +15,33 @@ library(viridis)
 library(fr3PGDN)
 library(tibble)
 library(miscTools)
+library(parallel)
 
-spatSplit(dataDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data",createFullTS=F)
+
+dataDir="/gws/nopw/j04/hydro_jules/data/uk/driving_data/chess/chess-met/daily"#Location of input data
+outputDir="/home/users/aaronm7/"#output file for bricked rasters
+saveFile="/home/users/aaronm7/spatialChunks/"#save file for spatial chunks of data
+
+outputDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\Prafor"
+dataDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\Prafor\\models\\spatial_met_data\\CHESS\\daily"#Location of input data
+saveFile="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\Prafor\\spatialChunks"#save file for spatial chunks of data
+
+
+
+
+spatSplit(dataDir=dataDir,createFullTS=T,outputDir=outputDir,saveFile=saveFile,startDate=1961)
+#list long time series files (this should be for all the weather variables)
+files <- list.files(path = paste0(outputDir,"/fullTS"), full.names = TRUE, 
+                    recursive = T)
+plan(multisession,workers = detectCores()-1)
+#create chunks of approx 10,000 grid cells in parallel, saves to file
+#1:35 is approx scotland
+future_map(c(1:35), ~spatDatUKnc(chunk=.x,files=files,saveFile,outputDir),.progress = T)
+
+
+
+
+
 
 #Get UK spatial data - needs updating to web scraping
 simDat<-spatDatUK(dataDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\")
