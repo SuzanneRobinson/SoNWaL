@@ -18,9 +18,12 @@ library(stringr)
 
 ##spatial splitting function - split spatial data into chunks
 #'@param dataDir directory which stores the CHESS spatial data (under a filename called CHESS) - also should include a folder for the full time series to be written into called fullTS
-#'@param createFullTS weather to merge monthly data into longer time-series or not
-#'@return tibbles of climate data split into chunks of grid cells
-spatSplit<-function(dataDir,createFullTS=F,saveFile,outputDir,startDate=2010,variable="all"){
+#'@param saveFile where to save the output files
+#'@param startDate the year to start the processing from, CHESS goes back to 1961 but you may not need that far back (significantly increases time to run function the further back you go)
+#'@param variable whether to process all CHESS climate variables or select individual ones to process (e.g. precip, temp etc. )
+#'@param numChunks function creates chunks of 10,000 grid cells going down the UK, 1:39 covers scotland, higher values cover the rest of UK
+#'@return climate data with coordinates
+spatSplit<-function(dataDir,saveFile,outputDir,startDate=2010,variable="all",numChunks){
   files <- list.files(path = dataDir, pattern = "\\.nc$", full.names = TRUE, 
                       recursive = T)
   fileNames <- sub("\\/.*", "",list.files(path = dataDir, pattern = "\\.nc$", full.names = F, 
@@ -28,120 +31,119 @@ spatSplit<-function(dataDir,createFullTS=F,saveFile,outputDir,startDate=2010,var
   
   #only run merging once as it's pretty slow, hopefully once done this wont need to be done again
   #Merge monthly files into longer time-series
-  if(createFullTS==T){
 
-    fileNames<-fileNames[str_sub(fileNames,-11,-8)>=startDate]
     
-    variableNames<-if(variable=="all") unique(str_match(fileNames, "met_\\s*(.*?)\\s*_gb")[,2]) else variable
+    fileNames <- fileNames[str_sub(fileNames, -11, -8) == startDate]
+    
+    variableNames <-
+      if (variable == "all")
+        unique(str_match(fileNames, "met_\\s*(.*?)\\s*_gb")[, 2]) else
+      variable
     print(variableNames)
     print("merging layers to create single files with full climate time-series - may take a while :)")
-  for(i in 1:unique(length(unique(variableNames)))){
-    print(unique(variableNames)[i])
-    
-    
-    ifelse(!dir.exists(file.path(outputDir, "/fullTS")), dir.create(file.path(outputDir, "fullTS")), FALSE)
- 
-    filesTmp<-paste0(dataDir,"/",fileNames[grepl(variableNames[i],fileNames)==T])
-    
-    splitter<-function(j){
-      topRow<-ifelse(j==1,1,(j-1)*15)
+    for (i in 1:unique(length(unique(variableNames)))) {
+      print(unique(variableNames)[i])
+      ifelse(!dir.exists(file.path(outputDir, "/fullTS")), dir.create(file.path(outputDir, "fullTS")), FALSE)
+      filesTmp <-
+        paste0(dataDir, "/", fileNames[grepl(variableNames[i], fileNames) == T])
+      splitter <- function(j) {
+        topRow <- ifelse(j == 1, 1, (j - 1) * 14)
+        rastLayer <- lapply(filesTmp, function(x) {
+          brick(x)
+        })
+        rastLayer <-
+          lapply(rastLayer, function(x)
+            raster::crop(x, extent(x, topRow, j * 14, 1, 656)))
+        
+        rastLayer <- raster::brick(rastLayer)
+        rastLayerX <- list(getValues(rastLayer))
+        rastLayerX$coords <- coordinates(rastLayer)
+        
+        saveRDS(rastLayerX,
+                paste0(
+                  outputDir,
+                  "/fullTS/",
+                  unique(variableNames)[i],
+                  "_",
+                  j,
+                  ".RDS"
+                ))
+    }
       
-  rastLayer <- lapply(filesTmp, function(x) { brick(x) })
-  rastLayer <- lapply(rastLayer, function(x) raster::crop(x, extent(x,topRow, j*15, 1, 656)))
+      coreNum <- detectCores()
+      
+      if (coreNum > 1) {
+        plan(multisession, workers = coreNum - 1)
+        future_map(c(1:numChunks), ~ splitter(j = .x), .progress = T)
+      } else {
+        map(c(1:numChunks), ~ splitter(j = .x), .progress = T
+        )
+      
+    }
+    
+    
+  }
   
-  rastLayer<-raster::brick(rastLayer)
-  saveRDS(rastLayer, paste0(outputDir,"/fullTS/",unique(variableNames)[i],"_",j,".RDS"))
-    }
-    
-    coreNum<-detectCores()
-    
-    if(coreNum>1){
-    plan(multisession,workers = coreNum-1)
-    future_map(c(1:35), ~splitter(j=.x),.progress = T)
-    } else {
-      map(c(1:35), ~splitter(j=.x),.progress = T)
-      
-    }
-    
-    
-  }
-  }
 
 }
 #
 
 
-##read in list of spatial climate file names##
-#'@param files directory which stores spatial data
-#'@param fileNames names of climate variables to go through
-#'@param bottomRow bottom of row of grid cells to process
+##read in list of spatial climate data with grid coordinates from spatSplit function output and merge all climate vars into one table associated with each grid cell ##
+#'@param chunk chunk number, 1:39 covers whole of scotland, can only go as high as files available from spatSplit
+#'@param outputDir names of directory where files (outputs from spatSplit) to go merge are located
+#'@param saveFile location to save merged files
 #'@return tibble of site id key with associated dataframe of longitudinal climate data
-spatDatUKnc<-function(chunk=1,files,saveFile,outputDir){
+spatDatUKnc <- function(chunk = 1, outputDir,saveFile) {
   library(stringr)
   library(dplyr)
   library(raster)
   
-  files <- list.files(path = paste0(outputDir,"/fullTS"), pattern = paste0("_",chunk,"\\.RDS$"), full.names = TRUE, 
-                      recursive = T)
+  files <-
+    list.files(
+      path = paste0(outputDir, "/fullTS"),
+      pattern = paste0("_", chunk, "\\.RDS$"),
+      full.names = TRUE,
+      recursive = T
+    )
   
-
   #read in files as rasters into list
-  mapFile <- lapply(files, function(x) { (readRDS(x)) })
-
-  fileNames<- unique(str_match(files, "TS/\\s*(.*?)\\s*_")[,2])
+  mapFile <- lapply(files, function(x) {
+    (readRDS(x))
+  })
   
+  fileNames <- unique(str_match(files, "TS/\\s*(.*?)\\s*_")[, 2])
   
-  #get climate values from raster 
-  for(i in c(1:length(files))){
-    
-    rasValue=as.data.frame(mapFile[[i]]@data@values) 
+  #get climate values from raster
+  for (i in c(1:length(files))) {
+    rasValue = as.data.frame(mapFile[[i]][[1]])
     
     
     #Transpose data before putting into table
-    rasValue<-rasValue %>% purrr::transpose()
+    rasValue <- rasValue %>% purrr::transpose()
     #Convert transposed data for each cell into a dataframe
-    colNm<-fileNames[i]
-    rasValue2<-lapply(rasValue,function(x) setNames(data.frame(unlist(x)),unique(fileNames)[i]))
-    
+    colNm <- fileNames[i]
+    rasValue2 <-
+      lapply(rasValue, function(x)
+        setNames(data.frame(unlist(x)), unique(fileNames)[i]))
     
     #add to tibble
-    if(i==1){
-      simDat <- tibble(id = c(1:nrow(coordinates(mapFile[[i]]))),
+    if (i == 1) {
+      simDat <- tibble(id = c(1:nrow(mapFile[[i]]$coords)),
                        data = rasValue2)
-    } 
+    }
     else {
-      simDat$data<-Map(cbind,simDat$data,rasValue2)
+      simDat$data <- Map(cbind, simDat$data, rasValue2)
     }
     
   }
-  names(simDat)<-c("grid_id","clm")
-  
+  names(simDat) <- c("grid_id", "clm")
   #Get spatial coordinate data from rasters for plotting
-  simDat$x<-coordinates(mapFile[[i]])[,1]
-  simDat$y<-coordinates(mapFile[[i]])[,2]
-  
-  
-  #return(simDat)
-  
-  saveRDS(simDat,paste0(saveFile,"spatialChunk_",chunk,".RDS"))
+  simDat$x <- mapFile[[i]]$coords[, 1]
+  simDat$y <- mapFile[[i]]$coords[, 2]
+  saveRDS(simDat, paste0(saveFile, "spatialChunk_", chunk, ".RDS"))
   
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 ##create some random generic site data for each gridcell -obvs need to get some "real" data

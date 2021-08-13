@@ -304,23 +304,15 @@ getClimDat<-function(timeStep="monthly"){
 
 ##################get climate data for calibration################
 ###needs updating and cleaning when we finalise data, currently just aggregates some daily data
-getClimDatX<-function(timeStep="monthly"){
+getClimDatX<-function(timeStep="monthly",climDir){
   library(dplyr)
   library(lubridate)
   
-  if(Sys.info()[1]=="Windows"){
-    clm_df_full<-read.csv("data\\clm_df_full.csv")
-    clm_df_daily<-read.csv("data\\weather_day_basfor.csv")
-    data <- read.csv("data\\harwood_data.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
-    
-  }else
-  {
-    clm_df_full<-read.csv("/home/users/aaronm7/3pgData/clm_df_full.csv")
-    clm_df_daily<-read.csv("/home/users/aaronm7/3pgData/weather_day_basfor.csv")
-    data <- read.csv("/home/users/aaronm7/3pgData/harwood_data.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
-    
-    
-  }
+    clm_df_full<-read.csv(paste0(climDir,"clm_df_full.csv"))
+    clm_df_daily<-read.csv(paste0(climDir,"weather_day_basfor.csv"))
+
+
+  
   
   #Add date
   

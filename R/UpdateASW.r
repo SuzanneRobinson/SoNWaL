@@ -27,7 +27,7 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     PhysMod <- state[["PhysMod"]]
     #LAI <- state[["LAI"]] #calculate LAI with is.dormant - maybe not, because LAI was already calculated with 'predictVariablesInterest'
     fCg <- fCg0/(1 + (fCg0 - 1) * CO2/350)
-    CanCond <- (MinCond + (MaxCond - MinCond) * (min(1, LAI/LAIgcx))) #* 
+    CanCond <- (MinCond + (MaxCond - MinCond) * (min(1, LAI/LAIgcx))) * 
         PhysMod * fCg
     CanCond <- ifelse(CanCond == 0, 1e-04, CanCond)
     e20 <- parms[["e20"]]

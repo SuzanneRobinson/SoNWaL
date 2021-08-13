@@ -28,7 +28,7 @@ function (state, weather, site, parms, general.info)
     fAge <- 1/(1 + (RelAge/rAge)^nAge)
     CoeffCond <- parms[["CoeffCond"]]
     VPD <- weather[["VPD"]]
-    fVPD <- exp(-CoeffCond * (VPD*0.001))
+    fVPD <- exp(-CoeffCond * (VPD*10))#VPD in kpa, *10 to get mbar to match with coeffCond
     
 
     

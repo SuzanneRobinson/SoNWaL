@@ -12,7 +12,7 @@ createPriors_sitka<-function(sitka){
   f.decrease <- c(
     0.06, #wiltPoint
     0.26, #fieldCap
-    0.4,#satPoint
+    0.3,#satPoint
     5, #K_s
     3, #V_nr
     0.1, #sigma_zR
@@ -67,8 +67,8 @@ createPriors_sitka<-function(sitka){
   f.increase <-
     c(
       0.25,#wiltPoint
-      0.31,#fieldCap
-      0.7,#satPoint
+      0.3,#fieldCap
+      0.35,#satPoint
       20,#K_s
       5,#V_nr
       1.5,#sigma_zR

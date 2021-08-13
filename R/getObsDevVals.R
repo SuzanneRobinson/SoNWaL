@@ -86,7 +86,7 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
              sapply( 1:length(sdMin$sdnee), function(i) max( coefVar3* abs(sdMin$sdnee[i]),0.01) ),
              # sapply( 1:length(sdMin$sdreco), function(i) max( coefVar1* abs(sdMin$sdreco[i]),0.1) ),
              # sapply( 1:length(sdMin$sdrs), function(i) max( coefVar2* abs(sdMin$sdrs[i]),0.01) ),
-             sapply( 1:length(sdMin$sdet), function(i) max( coefVar2* abs(sdMin$sdet[i]),0.15) ),
+           #  sapply( 1:length(sdMin$sdet), function(i) max( coefVar2* abs(sdMin$sdet[i]),0.15) ),
              # rep(0.5,(nrow(dplyr::filter(data,year>=startYear&year<=endYear))-1)),
              5.7*coefVar1,5.56*coefVar1,
              1348*coefVar1,
