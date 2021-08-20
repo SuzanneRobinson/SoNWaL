@@ -29,7 +29,7 @@ saveFile="/home/users/aaronm7/spatialChunks/"#save file for spatial chunks of da
 
 
 
-spatSplit(dataDir=dataDir,createFullTS=T,outputDir=outputDir,saveFile=saveFile,startDate=2017)
+spatSplit(dataDir=dataDir,outputDir=outputDir,saveFile=saveFile,startDate=2000,numChunks=20)
 #create chunks of approx 10,000 grid cells in parallel, saves to file
 #1:35 is approx scotland
 future_map(c(1:35), ~spatDatUKnc(chunk=.x,saveFile,outputDir),.progress = T)

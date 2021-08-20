@@ -76,9 +76,9 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
     #observed<-data.frame(observed)
    # observed$lab<-c(rep("alphaAn",4),rep("gpp",212),rep("nee",212),rep("et",212),"LAI","LAI","N","dg","totC","totN",rep("swc",212))
       
-    coefVar1=0.1/10
+    coefVar1=0.1
     coefVar2=0.3
-    coefVar3=0.2
+    coefVar3=0.3
     
     dev <- c(sapply( 1:length(sdAlphaAnn$sdAlphaAnn), function(i) max( coefVar2* abs(sdAlphaAnn$sdAlphaAnn[i]),0.01) ),
              sapply( 1:length(sdMin$sdgpp), function(i) max( coefVar3* abs(sdMin$sdgpp[i]),0.01) ),
@@ -86,15 +86,15 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
              sapply( 1:length(sdMin$sdnee), function(i) max( coefVar3* abs(sdMin$sdnee[i]),0.01) ),
              # sapply( 1:length(sdMin$sdreco), function(i) max( coefVar1* abs(sdMin$sdreco[i]),0.1) ),
              # sapply( 1:length(sdMin$sdrs), function(i) max( coefVar2* abs(sdMin$sdrs[i]),0.01) ),
-           #  sapply( 1:length(sdMin$sdet), function(i) max( coefVar2* abs(sdMin$sdet[i]),0.15) ),
+             sapply( 1:length(sdMin$sdet), function(i) max( coefVar2* abs(sdMin$sdet[i]),0.01) ),
              # rep(0.5,(nrow(dplyr::filter(data,year>=startYear&year<=endYear))-1)),
              5.7*coefVar1,5.56*coefVar1,
              1348*coefVar1,
-             24.1*0.1,
+             24.1*coefVar1,
              #  2,
              #  1,
-             429.52*0.125,
-             14.30*0.125,
+             429.52*0.5,
+             14.30*0.5,
              sapply( 1:length(sdMin$sdswc), function(i) max( coefVar3* abs(sdMin$sdswc[i]),0.01) )
              
     )

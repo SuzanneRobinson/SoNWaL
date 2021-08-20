@@ -68,7 +68,7 @@ createPriors_sitka<-function(sitka){
     c(
       0.25,#wiltPoint
       0.3,#fieldCap
-      0.35,#satPoint
+      0.34,#satPoint
       20,#K_s
       5,#V_nr
       1.5,#sigma_zR
@@ -160,6 +160,8 @@ createPriors_sitka<-function(sitka){
   pMaxima[[52]]<-0.2
   pMinima[[52]]<-0.05
   
+  pMaxima[[33]]<-0.3
+  pMinima[[33]]<-0.01
   
   priorVals <- createTruncatedNormalPrior(mean = pValues, sd=sdVals,
                                           lower = pMinima, upper = pMaxima)

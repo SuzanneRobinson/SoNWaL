@@ -1,5 +1,6 @@
 ###plotting functions for FR3pgn
 library(rlang)
+
 runModel<- function(p){
   pine[.GlobalEnv$nm]<-p
   pull(do.call(fr3PGDN,pine)%>%
@@ -143,6 +144,13 @@ YC.finder <- function(HT,AGE)
 
 ## Function to plot the model against the Harwood data.
 plotResultsNewMonthly <- function(df,out,ShortTS=F){
+  library(matrixStats)
+  nmc = nrow(out$chain[[1]])
+  outSample   <- getSample(out,start=nmc/1.2,thin=5)
+  numSamples = 25# min(1000, nrow(outSample))
+  codM<-miscTools::colMedians(as.data.frame(outSample))
+  sitka[.GlobalEnv$nm]<-codM[.GlobalEnv$nm]
+  df<-do.call(fr3PGDN,sitka)
   
   ##if plyr is loaded before dplyr can cause problems with groupby
   dt=12
@@ -159,11 +167,11 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F){
   
   dataX<- flxdata%>% 
     group_by(year,month) %>%
-    dplyr::summarise(gppOb=mean(gpp),nppOb=mean(npp),etOb=sum(et),recoOb=mean(reco),rsOb=mean(rs),
+    dplyr::summarise(gppOb=mean(gpp),nppOb=mean(npp),etOb=mean(et),recoOb=mean(reco),rsOb=mean(rs),
                      swcOb=mean(swc),neeOb=mean(nee))%>%mutate(cumGppObs=cumsum(gppOb),cumNppObs=cumsum(nppOb))
   df2<- (df2%>% 
            group_by(Year,Month) %>%
-           dplyr::summarise(GPP=mean(GPP),Etransp=sum(Etransp),Reco=mean(Reco),Rs=mean(Rs),NPP=mean(NPP),
+           dplyr::summarise(GPP=mean(GPP),EvapTransp=mean(EvapTransp),Reco=mean(Reco),Rs=mean(Rs),NPP=mean(NPP),
                             volSWC_rz=mean(volSWC_rz),NEE=mean(NEE),timestamp=median(timestamp),LAI=mean(LAI),t.proj=median(t.proj)))
   
   modif<-ifelse(nrow(df)<600,1.66,7.142857)
@@ -171,64 +179,78 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F){
   dataX<-dataX %>% right_join(df2, by=c("year"="Year","month"="Month"))
   
   dataX$simGpp<-df2$GPP*modif
-  dataX$simCGpp<-pull(df2%>%mutate(gppC=cumsum(GPP*modif))%>%select(gppC))
-  dataX$simCNpp<-pull(df2%>%mutate(nppC=cumsum(NPP*modif))%>%select(nppC))
+  dataX$simCGpp<-dplyr::pull(df2%>%dplyr::mutate(gppC=cumsum(GPP*modif))%>%dplyr::select(gppC))
+  dataX$simCNpp<-dplyr::pull(df2%>%dplyr::mutate(nppC=cumsum(NPP*modif))%>%dplyr::select(nppC))
   
   dataX$simReco<-df2$Reco*modif
   dataX$simNEE<-df2$NEE*modif
-  dataX$simEtransp<-df2$Etransp
+  dataX$simEtransp<-df2$EvapTransp
   dataX$simswc<-df2$volSWC_rz
   dataX$simRs<-df2$Rs*modif
   dataX$timestamp<-df2$timestamp
   dataX$month<-month(dataX$timestamp)  
   
   
+
   
-  
-  nmc = nrow(out$chain[[1]])
-  outSample   <- getSample(out,start=nmc/1.2,thin=5)
-  numSamples = 25# min(1000, nrow(outSample))
-  # outSample[,48]<-round(outSample[,48])
   runModel<- function(p){
     sitka[.GlobalEnv$nm]<-p
-    if(prm!="EvapTransp"){
-      res<- pull(do.call(fr3PGDN,sitka)%>%
+
+      res<- do.call(fr3PGDN,sitka)%>%
                    filter(Year>=2015)%>%
-                   group_by(Year,Month) %>%
-                   dplyr::summarise(mean=mean(!!sym(prm)))%>%
-                   select(mean)
-      )
-    } else {
-      res<- pull(do.call(fr3PGDN,sitka)%>%
-                   filter(Year>=2015)%>%
-                   group_by(Year,Month) %>%
-                   dplyr::summarise(sum=sum(!!sym(prm)))%>%
-                   select(sum))
-    }
+                   group_by(Year,Month)%>%
+        dplyr::summarise(GPP=mean(GPP),NEE=mean(NEE),volSWC_rz=mean(volSWC_rz),EvapTransp=mean(EvapTransp)/7,Reco=mean(Reco),Rs=mean(Rs),N=mean(N),LAI=mean(LAI),dg=mean(dg),totC=mean(totC),totN=mean(totN),NPP=mean(NPP))
+   
     return(res)
   }
   
-  runMltMod <- function(prm=prm){
-    print(prm)
-    prm<<-prm
-    pred     <- getPredictiveIntervals(parMatrix=outSample, model=runModel, numSamples=numSamples, quantiles=c(0.025,0.5,0.975))
-    return(pred)
-  }
+  getIntv<-function(paramName,modLst){
+    
+    simDat =   do.call(cbind,lapply(modLst, "[",  paramName))
+   res<-as.data.frame(rowQuantiles(as.matrix(simDat), probs = c(0.025, 0.5, 0.975)))
+  return(res)
+   }
   
-  intvsS<-map(c("GPP","NEE","volSWC_rz","EvapTransp","Reco","Rs"),runMltMod)
   
+  outSample<-getSample(out,start=nmc/1.2,thin=1,numSamples = 25)
+  outSample<-as.data.frame(outSample)
+  outSample <- split(outSample, seq(nrow(outSample)))
+  outRes<-lapply(outSample, runModel)
+  
+paramName<-list("GPP","NEE","volSWC_rz","EvapTransp","Reco","Rs","N","LAI","dg","totC","totN","NPP")
+intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
+
   data<-flxdata_daily%>%
     mutate(grp=month(as.Date(flxdata_daily$yday, origin = paste0(flxdata_daily$year,"-01-01"))))
   sdMin<-data%>% group_by(year,grp) %>%
     dplyr::summarise(sdgpp=mean(gpp),sdnpp=mean(npp),sdnee=mean(nee),sdreco=mean(reco),
-                     sdrs=mean(rs),sdet=sum(et),sdswc=mean(swc,na.rm=T))
+                     sdrs=mean(rs),sdet=mean(et),sdswc=mean(swc,na.rm=T))
   
   
   coefVar<-0.2
   
-  predPos  <- intvsS[[1]]$posteriorPredictiveCredibleInterval[3,]*modif + 2  * sapply( 1:length(sdMin$sdgpp), function(i) max( coefVar* abs(sdMin$sdgpp[i]),0.05))
-  predNeg  <- intvsS[[1]]$posteriorPredictiveCredibleInterval[1,]*modif - 2 * sapply( 1:length(sdMin$sdgpp), function(i) max( coefVar* abs(sdMin$sdgpp[i]),0.05))
-  predm  <- intvsS[[1]]$posteriorPredictiveCredibleInterval[2,]*modif# - 2 * 0.3
+  predPos  <- intvsS[,1]$`97.5%`*modif + 2  * sapply( 1:length(sdMin$sdgpp), function(i) max( coefVar* abs(sdMin$sdgpp[i]),0.05))
+  predNeg  <- intvsS[,1]$`2.5%`*modif - 2 * sapply( 1:length(sdMin$sdgpp), function(i) max( coefVar* abs(sdMin$sdgpp[i]),0.05))
+  predm  <- intvsS[,1]$`50%`*modif# - 2 * 0.3
+  
+  predNPPPos  <- intvsS[,12]$`97.5%`*modif + 2  * sapply( 1:length(sdMin$sdnpp), function(i) max( coefVar* abs(sdMin$sdnpp[i]),0.05))
+  predNPPNeg  <- intvsS[,12]$`2.5%`*modif - 2 * sapply( 1:length(sdMin$sdnpp), function(i) max( coefVar* abs(sdMin$sdnpp[i]),0.05))
+  predmNPP  <- intvsS[,12]$`50%`*modif# - 2 * 0.3
+  
+  
+  
+  
+  dataX$simCGppPos<-predPos
+  dataX$simCGppNeg<-predNeg
+  dataX$simCGppNeg<-dplyr::pull(dataX%>%dplyr::mutate(GPPCneg=cumsum(simCGppNeg))%>%dplyr::select(GPPCneg))
+  dataX$simCGppPos<-dplyr::pull(dataX%>%dplyr::mutate(GPPCpos=cumsum(simCGppPos))%>%dplyr::select(GPPCpos))
+  
+  dataX$simCNppPos<-predNPPPos
+  dataX$simCNppNeg<-predNPPNeg
+  dataX$simCNppNeg<-dplyr::pull(dataX%>%dplyr::mutate(NPPCneg=cumsum(simCNppNeg))%>%dplyr::select(NPPCneg))
+  dataX$simCNppPos<-dplyr::pull(dataX%>%dplyr::mutate(NPPCpos=cumsum(simCNppPos))%>%dplyr::select(NPPCpos))
+  
+  
   
   
   # dataX2<-dataX%>% 
@@ -249,7 +271,7 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F){
   gppC<-ggplot()+theme_bw()+
     geom_line(data=dataX,aes(x=timestamp,y=simCGpp,group=year),colour="purple",size=1)+
     geom_point(data=dataX,aes(x=timestamp, y=cumGppObs),colour="black",size=2)+
-    ## geom_ribbon(data=data,aes(x=timestamp,ymin=gpp-gpp.sd,ymax=gp+gpp.sd),alpha=0.3)+
+    geom_ribbon(data=dataX,aes(ymin=simCGppNeg,ymax=simCGppPos,x=dataX$timestamp),fill="orange",alpha=0.3)+
     scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
     labs(x="Year",y=expression(paste("Cumulative GPP [gC"," ",cm^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
@@ -259,15 +281,15 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F){
   nppC<-ggplot()+theme_bw()+
     geom_line(data=dataX,aes(x=timestamp,y=simCNpp,group=year),colour="purple",size=1)+
     geom_point(data=dataX,aes(x=timestamp, y=cumNppObs),colour="black",size=2)+
-    ## geom_ribbon(data=data,aes(x=timestamp,ymin=gpp-gpp.sd,ymax=gp+gpp.sd),alpha=0.3)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
+    geom_ribbon(data=dataX,aes(ymin=simCNppNeg,ymax=simCNppPos,x=dataX$timestamp),fill="orange",alpha=0.3)+
+        scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
     labs(x="Year",y=expression(paste("Cumlative NPP [gC"," ",cm^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
-  predPosEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[3,] + 2  * sapply( 1:length(sdMin$sdet), function(i) max( coefVar* abs(sdMin$sdet[i]),0.1))
-  predNegEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[1,] - 2 * sapply( 1:length(sdMin$sdet), function(i) max( coefVar* abs(sdMin$sdet[i]),0.1))
-  predmEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(dataX$gpp)
+  predPosEtransp  <- intvsS[,4]$`97.5%`  + 2  * sapply( 1:length(sdMin$sdet), function(i) max( coefVar* abs(sdMin$sdet[i]),0.01))
+  predNegEtransp  <- intvsS[,4]$`2.5%` - 2  * sapply( 1:length(sdMin$sdet), function(i) max( coefVar* abs(sdMin$sdet[i]),0.01))
+  predmEtransp  <-   intvsS[,4]$`50%` # - 2 * sd(dataX$gpp)
   
   etrans<-ggplot()+theme_bw()+
     geom_line(data=dataX,aes(x=timestamp,y=predmEtransp),colour="purple",size=1)+
@@ -278,9 +300,9 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F){
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
-  predPosSWC  <- intvsS[[3]]$posteriorPredictiveCredibleInterval[3,] + 2  * sapply( 1:length(sdMin$sdswc), function(i) max( 0.05* abs(sdMin$sdswc[i]),0.01))
-  predNegSWC  <- intvsS[[3]]$posteriorPredictiveCredibleInterval[1,] - 2 * sapply( 1:length(sdMin$sdswc), function(i) max( 0.05* abs(sdMin$sdswc[i]),0.01))
-  predmSWC  <- intvsS[[3]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(dataX$gpp)
+  predPosSWC  <- intvsS[,3]$`97.5%`  + 2  * sapply( 1:length(sdMin$sdswc), function(i) max( 0.05* abs(sdMin$sdswc[i]),0.01))
+  predNegSWC  <- intvsS[,3]$`2.5%` - 2   * sapply( 1:length(sdMin$sdswc), function(i) max( 0.05* abs(sdMin$sdswc[i]),0.01))
+  predmSWC  <-   intvsS[,3]$`50%` # - 2 2 * sd(dataX$gpp)
   newSWC<-clm_df_full%>%
     filter(Year>=2015)%>%
     group_by(Year,Month)%>%
@@ -297,9 +319,12 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F){
           axis.text=element_text(size=14))
   
   
-  predPosNEE  <- intvsS[[2]]$posteriorPredictiveCredibleInterval[3,]*modif + 2  * sapply( 1:length(sdMin$sdnee), function(i) max( coefVar* abs(sdMin$sdnee[i]),0.05))
-  predNegNEE  <- intvsS[[2]]$posteriorPredictiveCredibleInterval[1,]*modif - 2 * sapply( 1:length(sdMin$sdnee), function(i) max( coefVar* abs(sdMin$sdnee[i]),0.05))
-  predmNEE  <- intvsS[[2]]$posteriorPredictiveCredibleInterval[2,]*modif# - 2 * sd(dataX$gpp)
+  predPosNEE  <-intvsS[,2]$`97.5%`*modif  + 2 * sapply( 1:length(sdMin$sdnee), function(i) max( coefVar* abs(sdMin$sdnee[i]),0.05))
+  predNegNEE  <-intvsS[,2]$`2.5%`*modif - 2  * sapply( 1:length(sdMin$sdnee), function(i) max( coefVar* abs(sdMin$sdnee[i]),0.05))
+  predmNEE  <- intvsS[,2]$`50%`*modif # - 2  sd(dataX$gpp)
+  
+  
+  
   
   NEEPlot<-ggplot()+theme_bw()+
     geom_line(data=dataX,aes(x=timestamp,y=predmNEE),colour="purple",size=1)+
@@ -311,9 +336,9 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F){
           axis.text=element_text(size=14))
   
   
-  predPosreco  <- intvsS[[5]]$posteriorPredictiveCredibleInterval[3,]*modif + 2  * sapply( 1:length(sdMin$sdreco), function(i) max( coefVar* abs(sdMin$sdreco[i]),0.1))
-  predNegreco  <- intvsS[[5]]$posteriorPredictiveCredibleInterval[1,]*modif - 2 * sapply( 1:length(sdMin$sdreco), function(i) max( coefVar* abs(sdMin$sdreco[i]),0.1))
-  predmreco  <- intvsS[[5]]$posteriorPredictiveCredibleInterval[2,]*modif# - 2 * sd(dataX$gpp)
+  predPosreco  <- intvsS[,5]$`97.5%`*modif  + 2 * sapply( 1:length(sdMin$sdreco), function(i) max( coefVar* abs(sdMin$sdreco[i]),0.1))
+  predNegreco  <- intvsS[,5]$`2.5%`*modif - 2  * sapply( 1:length(sdMin$sdreco), function(i) max( coefVar* abs(sdMin$sdreco[i]),0.1))
+  predmreco  <-   intvsS[,5]$`50%`*modif # - 2  * sd(dataX$gpp)
   
   recoPlot<-ggplot()+theme_bw()+
     geom_line(data=dataX,aes(x=timestamp,y=predmreco),colour="purple",size=1)+
@@ -326,9 +351,9 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F){
   
   
   
-  predPosRs  <- intvsS[[6]]$posteriorPredictiveCredibleInterval[3,]*modif + 2  * sapply( 1:length(sdMin$sdrs), function(i) max( coefVar* abs(sdMin$sdrs[i]),0.3))
-  predNegRs  <- intvsS[[6]]$posteriorPredictiveCredibleInterval[1,]*modif - 2 * sapply( 1:length(sdMin$sdrs), function(i) max( coefVar* abs(sdMin$sdrs[i]),0.3))
-  predmRs  <- intvsS[[6]]$posteriorPredictiveCredibleInterval[2,]*modif# - 2 * sd(dataX$gpp)
+  predPosRs  <- intvsS[,6]$`97.5%`*modif  + 2 * sapply( 1:length(sdMin$sdrs), function(i) max( coefVar* abs(sdMin$sdrs[i]),0.3))
+  predNegRs  <- intvsS[,6]$`2.5%`*modif - 2  * sapply( 1:length(sdMin$sdrs), function(i) max( coefVar* abs(sdMin$sdrs[i]),0.3))
+  predmRs  <-   intvsS[,6]$`50%`*modif # - 2  * sd(dataX$gpp)
   
   rsPlot<-ggplot()+theme_bw()+
     geom_line(data=dataX,aes(x=timestamp,y=predmRs),colour="purple",size=1)+
@@ -386,23 +411,64 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F){
   )
   names(totN)<-c("year","age","totN")
   
+  alphaN<-data.frame(rbind(
+    c(dplyr::filter(dfLeaf,Year==2015&Month==1)$Year+dplyr::filter(dfLeaf,Year==2015&Month==1)$Month/dt,dplyr::filter(dfLeaf,Year==2015&Month==1)$t.proj,2.06),
+    c(dplyr::filter(dfLeaf,Year==2016&Month==1)$Year+dplyr::filter(dfLeaf,Year==2016&Month==1)$Month/dt,dplyr::filter(dfLeaf,Year==2016&Month==1)$t.proj,2.62),
+    c(dplyr::filter(dfLeaf,Year==2017&Month==1)$Year+dplyr::filter(dfLeaf,Year==2017&Month==1)$Month/dt,dplyr::filter(dfLeaf,Year==2017&Month==1)$t.proj,2.69),
+    c(dplyr::filter(dfLeaf,Year==2018&Month==1)$Year+dplyr::filter(dfLeaf,Year==2018&Month==1)$Month/dt,dplyr::filter(dfLeaf,Year==2018&Month==1)$t.proj,3.11)
+    )
+  )
+  names(alphaN)<-c("year","age","alphaN")
+  
+  predPosN  <- intvsS[,7]$`97.5%` # + 2 * 0.01
+  predNegN   <- intvsS[,7]$`2.5%` #- 2  * 0.01
+  predmN   <-   intvsS[,7]$`50%`
+  
+  predPosLAI  <- intvsS[,8]$`97.5%` # + 2 * 0.01
+  predNegLAI   <- intvsS[,8]$`2.5%` #- 2  * 0.01
+  predmLAI   <-   intvsS[,8]$`50%`
+  
+  predPosDG  <- intvsS[,9]$`97.5%` # + 2 * 0.01
+  predNegDG    <- intvsS[,9]$`2.5%` #- 2  * 0.01
+  predmDG    <-   intvsS[,9]$`50%`
+  
+
+  predPosTotC  <- intvsS[,10]$`97.5%` # + 2 * 0.125
+  predNegTotC    <- intvsS[,10]$`2.5%` #- 2  * 0.125
+  predmTotC    <-   intvsS[,10]$`50%`
+  
+  predPosTotN  <- intvsS[,11]$`97.5%`  #+ 2 * 0.125
+  predNegTotN    <- intvsS[,11]$`2.5%` #- 2  * 0.125
+  predmTotN    <-   intvsS[,11]$`50%`
+  
+  dataX$predmAlphaAn<-predmreco/predmRs
+  dataX$predPosAlphaAn<-predPosreco/predPosRs
+  dataX$predNegAlphaAn<-predNegreco/predNegRs
+  alphaAnMean<-dataX%>%group_by(year)%>%summarise(predmAlphaAn=mean(predmAlphaAn),predPosAlphaAn=mean(predPosAlphaAn),predNegAlphaAn=mean(predNegAlphaAn))
+  
   pLAI<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=Year+Month/dt,y=LAI))+
+    geom_line(data=df2,aes(x=Year+Month/dt,y=predmLAI))+
     geom_point(data=leaf,aes(x=year,y=lai),shape=16,size=3,colour="red")+
-    labs(x="Year",y=expression(paste("L"," ","[",cm^-2," ",cm^-2,"]",sep="")))+
+    geom_pointrange(data=leaf,aes(x=year,y=lai,ymin=lai-lai*0.1, ymax=lai+lai*0.1),colour="red")+
+    geom_ribbon(aes(ymin=predNegLAI,ymax=predPosLAI,x=df2$Year+df2$Month/dt),fill="orange",alpha=0.3)+
+    labs(x="Year",y=expression(paste("LAI"," ","[",cm^-2," ",cm^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
   pStemNo<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=Year+Month/dt,y=N))+
+    geom_line(data=df2,aes(x=Year+Month/dt,y=predmN))+
     geom_point(data=stemNo,aes(x=year,y=stem),shape=16,size=3,colour="red")+
+    geom_pointrange(data=stemNo,aes(x=year,y=stem,ymin=stem-stem*0.1, ymax=stem+stem*0.1),colour="red")+
+    geom_ribbon(aes(ymin=predNegN,ymax=predPosN,x=df2$Year+df2$Month/dt),fill="orange",alpha=0.3)+
     labs(x="Year",y=expression(paste("N"," ","[",ha^-1,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
   pDBH<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=Year+Month/dt,y=dg))+
+    geom_line(data=df2,aes(x=Year+Month/dt,y=predmDG))+
     geom_point(data=DBH,aes(x=year,y=dbh),shape=16,size=3,colour="red")+
+    geom_pointrange(data=DBH,aes(x=year,y=dbh,ymin=dbh-dbh*0.1, ymax=dbh+dbh*0.1),colour="red")+
+    geom_ribbon(aes(ymin=predNegDG,ymax=predPosDG,x=df2$Year+df2$Month/dt),fill="orange",alpha=0.3)+
     labs(x="Year",y="DBH [cm]")+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
@@ -422,20 +488,34 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F){
           axis.text=element_text(size=14))    
   
   ptotC<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=Year+Month/dt,y=totC))+
+    geom_line(data=df2,aes(x=Year+Month/dt,y=predmTotC))+
     geom_point(data=totC,aes(x=year,y=totC),shape=16,size=3,colour="red")+
-    labs(x="Year",y="totC [t/ha]")+
+    geom_pointrange(data=totC,aes(x=year,y=totC,ymin=totC-totC*0.5, ymax=totC+totC*0.5),colour="red")+
+    geom_ribbon(aes(ymin=predNegTotC,ymax=predPosTotC,x=df2$Year+df2$Month/dt),fill="orange",alpha=0.3)+
+    labs(x="Year",y="totC [t/ha]")+ 
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
   ptotN<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=Year+Month/dt,y=totN))+
+    geom_line(data=df2,aes(x=Year+Month/dt,y=predmTotN))+
     geom_point(data=totN,aes(x=year,y=totN),shape=16,size=3,colour="red")+
+    geom_pointrange(data=totN,aes(x=year,y=totN,ymin=totN-totN*0.5, ymax=totN+totN*0.5),colour="red")+
+    geom_ribbon(aes(ymin=predNegTotN,ymax=predPosTotN,x=df2$Year+df2$Month/dt),fill="orange",alpha=0.3)+
     labs(x="Year",y="totN [t/ha]")+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
-  return(list(gpp1,swcPlot,NEEPlot,etrans,recoPlot,rsPlot,gppC,nppC, pLAI,pStemNo,pDBH,pWr,ptotC,ptotN))
+  
+  ggAlphaAn<-ggplot()+theme_bw()+
+    geom_line(data=alphaAnMean,aes(x=year,y=predmAlphaAn))+
+    geom_point(data=alphaN,aes(x=year,y=alphaN),shape=16,size=3,colour="red")+
+    geom_pointrange(data=alphaN,aes(x=year,y=alphaN,ymin=alphaN-alphaN*0.3, ymax=alphaN+alphaN*0.3),colour="red")+
+    geom_ribbon(data=alphaAnMean,aes(ymin=predNegAlphaAn,ymax=predPosAlphaAn,x=year),fill="orange",alpha=0.3)+
+    labs(x="Year",y="AlphaAnnual")+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+  return(list(gpp1,swcPlot,NEEPlot,etrans,recoPlot,rsPlot,gppC,nppC, pLAI,pStemNo,pDBH,pWr,ptotC,ptotN,ggAlphaAn))
 }
 
 ## Function to plot the key output pools and nutritional modifier of the model
@@ -491,6 +571,15 @@ plotModel<-function(output.df){
 ## Function to plot the model against the Harwood data.
 plotResultsNew <- function(df,out,ShortTS=F){
   
+  nmc = nrow(out$chain[[1]])
+  outSample   <- getSample(out,start=nmc/1.2,thin=5)
+  numSamples = 25# min(1000, nrow(outSample))
+  codM<-colMedians(as.data.frame(outSample))
+  sitka[.GlobalEnv$nm]<-codM[.GlobalEnv$nm]
+  df<-do.call(fr3PGDN,sitka)
+  
+  
+  
   ##if plyr is loaded before dplyr can cause problems with groupby
   dt=12
 df <- df[c(2:nrow(df)),]
@@ -532,9 +621,7 @@ df <- df[c(2:nrow(df)),]
   
   
  
- nmc = nrow(out$chain[[1]])
- outSample   <- getSample(out,start=nmc/1.2,thin=5)
- numSamples = 25# min(1000, nrow(outSample))
+
 # outSample[,48]<-round(outSample[,48])
  runModel<- function(p){
    sitka[.GlobalEnv$nm]<-p

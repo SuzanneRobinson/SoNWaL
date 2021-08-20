@@ -47,7 +47,7 @@ soilWC<-function(parms,weather,state,K_s,SWC,soilVol){
   
 
   #rooting depth / volume - Almedia describes this as depth, assumed to be proportional in paper to biomass
-  z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]])/0.2,parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone/max root depth
+  z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]])/(1-0.2),parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone/max root depth
   z_r=min(z_r,V_nr)
   
   V_rz = z_r #Almedia and Sands paper suggests volume of root zone is equivalent to z_r
@@ -159,9 +159,9 @@ soilEvap<-function(parms,weather,state,interRad,h){
 
   
   soilBoundaryCond<-0.01
-  soilCond<-10000
+  soilCond<-1e+10
   #convert joules m^2 per hour to watts m^2 (1 Wm^2 = 1 J m^2 per second)
-interRad<-max(interRad,1)
+interRad<-max(interRad,0.00001)
     #get potential evaporation rate using penman-monteith with soil specific params - following eq in landsberg and sands (7.2.1), adjusted to output evap volume rate
   #e0<-h*(((s*interRad+gb_s*P_a*C_pa*D)/(s+gamma*(1+gb_s/g_C)))/lambda)
  # print(paste0("eox= ",e0x))
@@ -206,7 +206,7 @@ gamma = 66.1 # phsychrometric constant Pa/K-1
  #print(paste0("e0 ", e0))
  
  E_S = if ((t + t0) <= t_S1)
-   e0 * (t + t0)
+   e0 * (t + t0)-E_S0
  else
    (E_S1 + E_S2 * (sqrt(1 + 2 * (e0 / E_S2) * ((t + t0) - t_S1) - 1)))-E_S0
   

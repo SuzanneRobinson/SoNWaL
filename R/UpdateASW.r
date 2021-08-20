@@ -105,8 +105,10 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       K_drain_rz=0.5#max((18.6*((state[["SWC_rz"]]/(z_r*1000))/parms[["satPoint"]])^13.2)*24,0.00001)
       K_drain_nrz=0.8#max((114*((state[["SWC_nr"]]/(z_r*1000))/parms[["satPoint"]])^15)*24,0.00001)
       
+      vnr<-max(parms[["V_nr"]]-z_r,0)
+      
       rz_nrz_drain <- max(drainageFunc(parms, weather, SWC=state[["SWC_rz"]],soilVol=z_r,K_drain=K_drain_rz),0)
-      nrz_out_drain <-max(drainageFunc(parms, weather, SWC=state[["SWC_nr"]],soilVol=parms[["V_nr"]]-z_r,K_drain=K_drain_nrz),0)
+      nrz_out_drain <-max(drainageFunc(parms, weather, SWC=state[["SWC_nr"]],soilVol=vnr,K_drain=K_drain_nrz),0)
       
       #Run soil water content function to get root zone SWC
       SWC_rz <- soilWC(parms, weather, state,K_s=0.5,SWC=state[["SWC_rz"]],soilVol=z_r)
@@ -115,13 +117,13 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       rz_nrz_recharge<-state[["SWC_rz"]]-SWC_rz
       
       #to get total evaptranspiration use evapRes not E_S as this is modified by rainfall and so is amount soil has lost but not amount "evaporating" from soil
-      EvapTransp <- min(Transp  +  evapRes[[1]] ,SWC_rz) +RainIntcptn
+      EvapTransp <- min(Transp  + evapRes[[1]],SWC_rz) +RainIntcptn
       EvapTransp<-ifelse(EvapTransp<0,0,EvapTransp)
       
       #update SWC by adding drainage from root zone and removing drainage out from non-root zone
-      state[["SWC_nr"]] <- max(state[["SWC_nr"]]+rz_nrz_drain-nrz_out_drain+rz_nrz_recharge,0)
+      state[["SWC_nr"]] <- min(max(state[["SWC_nr"]]+rz_nrz_drain-nrz_out_drain+rz_nrz_recharge,0),volSWC_sat*(vnr*1000))
       #Update root zone SWC with the addition of rainfall, irrigation, minus evap and drainage into non-root zone
-      state[["SWC_rz"]] <- min(max(SWC_rz + throughFall + MonthIrrig - EvapTransp - rz_nrz_drain,0),volSWC_sat*z_r*1000)
+      state[["SWC_rz"]] <- min(max(SWC_rz + Rain + MonthIrrig - RainIntcptn - evapRes[[1]]-Transp - rz_nrz_drain,0),volSWC_sat*z_r*1000)
       
 
       #Volumetric SWC of rooting zone (z_r converted to mm as SWC in mm), equiv to SWC fraction in observed data - water to soil ratio

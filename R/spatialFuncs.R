@@ -23,7 +23,7 @@ library(stringr)
 #'@param variable whether to process all CHESS climate variables or select individual ones to process (e.g. precip, temp etc. )
 #'@param numChunks function creates chunks of 10,000 grid cells going down the UK, 1:39 covers scotland, higher values cover the rest of UK
 #'@return climate data with coordinates
-spatSplit<-function(dataDir,saveFile,outputDir,startDate=2010,variable="all",numChunks){
+spatSplit<-function(dataDir,saveFile,outputDir,dates=c(1970:1980),variable="all",numChunks=c(1:10)){
   files <- list.files(path = dataDir, pattern = "\\.nc$", full.names = TRUE, 
                       recursive = T)
   fileNames <- sub("\\/.*", "",list.files(path = dataDir, pattern = "\\.nc$", full.names = F, 
@@ -32,8 +32,7 @@ spatSplit<-function(dataDir,saveFile,outputDir,startDate=2010,variable="all",num
   #only run merging once as it's pretty slow, hopefully once done this wont need to be done again
   #Merge monthly files into longer time-series
 
-    
-    fileNames <- fileNames[str_sub(fileNames, -11, -8) == startDate]
+    fileNames <- fileNames[which(str_sub(fileNames, -11, -8)%in% dates) ]
     
     variableNames <-
       if (variable == "all")
@@ -47,13 +46,13 @@ spatSplit<-function(dataDir,saveFile,outputDir,startDate=2010,variable="all",num
       filesTmp <-
         paste0(dataDir, "/", fileNames[grepl(variableNames[i], fileNames) == T])
       splitter <- function(j) {
-        topRow <- ifelse(j == 1, 1, (j - 1) * 14)
+        topRow <- ifelse(j == 1, 1, (j - 1) * 6)
         rastLayer <- lapply(filesTmp, function(x) {
           brick(x)
         })
         rastLayer <-
           lapply(rastLayer, function(x)
-            raster::crop(x, extent(x, topRow, j * 14, 1, 656)))
+            raster::crop(x, extent(x, topRow, j * 6, 1, 656)))
         
         rastLayer <- raster::brick(rastLayer)
         rastLayerX <- list(getValues(rastLayer))
@@ -74,9 +73,13 @@ spatSplit<-function(dataDir,saveFile,outputDir,startDate=2010,variable="all",num
       
       if (coreNum > 1) {
         plan(multisession, workers = coreNum - 1)
-        future_map(c(1:numChunks), ~ splitter(j = .x), .progress = T)
+        future_map(numChunks, ~ splitter(j = .x), .progress = T)
+        
+        mcmapply(splitter,numChunks )
+        
+        
       } else {
-        map(c(1:numChunks), ~ splitter(j = .x), .progress = T
+        map(numChunks, ~ splitter(j = .x), .progress = T
         )
       
     }

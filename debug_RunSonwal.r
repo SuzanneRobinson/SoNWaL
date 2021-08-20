@@ -67,14 +67,14 @@ nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","s
 sitka[nm]<-exampParams[nm]
 
 
-out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_5_T.RDS")
+out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_1_T.RDS")
 
 #out<-getSample(out,start=12000,thin=5,numSamples=500)
 #codM<-out$chain[[2]][c(1:5000),]
-codM<-as.data.frame(out$chain[[4]])
+codM<-as.data.frame(out$chain[[2]])
 codM<-mergeChains(out$chain)
 
-codM<-colMedians(as.data.frame(codM))
+codM<-miscTools::colMedians(as.data.frame(codM))
 codM<-tail(as.data.frame(codM),1)
 names(codM)<-nm
 
@@ -92,7 +92,7 @@ sitka[nm]<-codM[nm]
 
 
 #presc<-data.frame(cycle=c(1,1),t=c(20,30),pNr=c(0.1,0.15),thinWl=c(.1,.1),
-                # thinWsbr=c(1,1),thinWr=c(.5,.5),t.nsprouts=c(1,.1))
+ #                thinWsbr=c(1,1),thinWr=c(.5,.5),t.nsprouts=c(1,.1))
 #sitka$presc<-presc
 
 
