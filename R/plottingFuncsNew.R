@@ -10,118 +10,159 @@ runModel<- function(p){
 }
 
 ## Function to plot the model against the Harwood data.
-plotResultsPine <- function(df,ShortTS=F){
+plotResultsPine <- function(outP,ShortTS=F){
+  
+  library(matrixStats)
+  nmc = nrow(outP$chain[[1]])
+  outSample   <- getSample(outP,start=nmc/5,thin=5)
+  numSamples = 25# min(1000, nrow(outSample))
+  codM<-miscTools::colMedians(as.data.frame(outSample))
+  pine[.GlobalEnv$nm]<-codM[.GlobalEnv$nm]
+  df<-do.call(fr3PGDN,pine)
   
   ##if plyr is loaded before dplyr can cause problems with groupby
   dt=12
+  df <- df[c(2:nrow(df)),]
+  if(nrow(df)>600) df$week<-c(1:52) else df$week<-1
+  df <- df %>% dplyr::group_by(Year)%>%mutate(cumGPP = cumsum(GPP),
+                                              cumNPP = cumsum(NPP),
+                                              timestamp = as.POSIXct(paste(sprintf("%02d",Year),sprintf("%02d",Month),sprintf("%02d",1),sep="-"),tz="GMT")) 
+  df2<-df%>%filter(Year>=1996)
   
-
-  df$week<-c(1:53)
+  flxdata<-flxdata_daily%>%
+    mutate(week=week(as.Date(yday, origin = paste0(year,"-01-01"))))%>%
+    mutate(month=month(as.Date(yday, origin = paste0(year,"-01-01"))))
   
-  df<-df[-1,]
-  convrtUnit=(12.011 * 24 * 60 * 60)/1000000 # convert to grams per day of C
+  dataX<- flxdata%>% 
+    group_by(year,month) %>%
+    dplyr::summarise(gppOb=mean(gpp),nppOb=mean(npp),etOb=mean(et),recoOb=mean(reco),rsOb=mean(rs),
+                     swcOb=mean(swc),neeOb=mean(nee))%>%mutate(cumGppObs=cumsum(gppOb),cumNppObs=cumsum(nppOb))
+  df2<- (df2%>% 
+           group_by(Year,Month) %>%
+           dplyr::summarise(GPP=mean(GPP),EvapTransp=mean(EvapTransp),Reco=mean(Reco),Rs=mean(Rs),NPP=mean(NPP),
+                            volSWC_rz=mean(volSWC_rz),NEE=mean(NEE),timestamp=median(timestamp),LAI=mean(LAI),t.proj=median(t.proj)))
+  
+  modif<-ifelse(nrow(df)<600,1.66,7.142857)
+  
+  dataX<-dataX %>% right_join(df2, by=c("year"="Year","month"="Month"))
+  
+  dataX$simGpp<-df2$GPP*modif
+  dataX$simCGpp<-dplyr::pull(df2%>%dplyr::mutate(gppC=cumsum(GPP*modif))%>%dplyr::select(gppC))
+  dataX$simCNpp<-dplyr::pull(df2%>%dplyr::mutate(nppC=cumsum(NPP*modif))%>%dplyr::select(nppC))
+  
+  dataX$simReco<-df2$Reco*modif
+  dataX$simNEE<-df2$NEE*modif
+  dataX$simEtransp<-df2$EvapTransp
+  dataX$simswc<-df2$volSWC_rz
+  dataX$simRs<-df2$Rs*modif
+  dataX$timestamp<-df2$timestamp
+  dataX$month<-month(dataX$timestamp)  
+  
+  
+  
+  
+  runModel<- function(p){
+    pine[.GlobalEnv$nm]<-p
+    
+    res<- do.call(fr3PGDN,pine)%>%
+      filter(Year>=1996)%>%
+      group_by(Year,Month)%>%
+      dplyr::summarise(GPP=mean(GPP),NEE=mean(NEE),volSWC_rz=mean(volSWC_rz),EvapTransp=mean(EvapTransp)/7,Reco=mean(Reco),Rs=mean(Rs),N=mean(N),LAI=mean(LAI),dg=mean(dg),totC=mean(totC),totN=mean(totN),NPP=mean(NPP),alphaAn=mean(Reco/Rs))
+    
+    return(res)
+  }
+  
+  getIntv<-function(paramName,modLst){
+    
+    simDat =   do.call(cbind,lapply(modLst, "[",  paramName))
+    res<-as.data.frame(rowQuantiles(as.matrix(simDat), probs = c(0.025, 0.5, 0.975)))
+    return(res)
+  }
+  
+  
+  outSample<-getSample(outP,start=nmc/1.2,thin=1,numSamples = 25)
+  outSample<-as.data.frame(outSample)
+  outSample <- split(outSample, seq(nrow(outSample)))
+  outRes<-lapply(outSample, runModel)
+  
+  
+  paramName<-list("GPP","NEE","volSWC_rz","EvapTransp","Reco","Rs","N","LAI","dg","totC","totN","NPP","alphaAn")
+  intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
+  
   fluxDat <- getData(site=sites[site],dataset="FLUX")
   SWCData<-getSWC()
   fluxDat$week<-week(fluxDat$date)
   fluxDat$week[fluxDat$week==53]<-52
   SWCData$week[SWCData$week==53]<-52
   
+  convrtUnit=(12.011 * 24 * 60 * 60)/1000000 # convert to grams per day of C
+  
   obsDat<-fluxDat%>%
     group_by(year,mo)%>%
     summarise(GPP=mean(gppDtCutRef_umolCO2m2s1*convrtUnit),NEE=mean(neeCutRef_umolCO2m2s1*convrtUnit),reco=mean(recoDtCutRef_umolCO2m2s1*convrtUnit),
-             month=median(mo))%>%
+              month=median(mo))%>%
     mutate(timestamp=as.POSIXct(paste0(year,"-",month,"-01")))
   
-    obsDat$simGPP<-pull(df%>%
-    filter(Year>=1996)%>%
-    group_by(Year,Month)%>%
-    summarise(gpp=mean(GPP*7.14))%>%
-    select(gpp))
+  obsDatSWC<-obsDat%>%filter(year>=1997)
+  
+  obsDatSWC$swc<-pull(SWCData%>%
+                        filter(year>=1996)%>%
+                        group_by(year,month)%>%
+                        summarise(swc=mean(swc))%>%
+                        select(swc))
+  
+  
+  coefVar<-0.2
+  
+  predPos  <- intvsS[,1]$`97.5%`*modif + 2  * sapply( 1:length(obsDat$GPP), function(i) max( coefVar* abs(obsDat$GPP[i]),0.05))
+  predNeg  <- intvsS[,1]$`2.5%`*modif - 2 * sapply( 1:length(obsDat$GPP), function(i) max( coefVar* abs(obsDat$GPP[i]),0.05))
+  predm  <- intvsS[,1]$`50%`*modif# - 2 * 0.3
+  
 
-    obsDat$simGPP<-pull(df%>%
-                          filter(Year>=1996)%>%
-                          group_by(Year,Month)%>%
-                          summarise(gpp=mean(GPP*7.14))%>%
-                          select(gpp))
-    
-    obsDat$simNEE<-pull(df%>%
-                          filter(Year>=1996)%>%
-                          group_by(Year,Month)%>%
-                          summarise(nee=mean(NEE*7.14))%>%
-                          select(nee))
-    
-    obsDat$simSWC<-pull(df%>%
-                          filter(Year>=1996)%>%
-                          group_by(Year,Month)%>%
-                          summarise(swc=mean(volSWC_rz))%>%
-                          select(swc))
-    
-    
-    nmc = nrow(out$chain[[1]])
-    outSample   <- getSample(out,start=nmc/2)
-    numSamples = min(100, nrow(outSample))
-    
-    runMltMod<-function(prm){
-      print(prm)
-      prm<<-prm
-    pred     <- getPredictiveIntervals(parMatrix=outSample, model=runModel, numSamples=numSamples, quantiles=c(0.025,0.5,0.975))
-    return(pred)
-    }
-    
-
-    plan(multisession, workers = 4,.cleanup = TRUE)
-    intvs<-map(c("GPP","NEE","volSWC_rz"),runMltMod)
-    
-    
-    
-    
-    
-    predPosGPP  <- intvs[[1]]$posteriorPredictiveCredibleInterval[3,]*7.14 #+ .5  * sd(obsDat$GPP)
-    predNegGPP  <- intvs[[1]]$posteriorPredictiveCredibleInterval[1,]*7.14 #- .5 * sd(obsDat$GPP)
-
+  
   gpp<-ggplot()+theme_bw()+
-    geom_line(data=obsDat,aes(x=timestamp,y=simGPP),colour="black",size=1)+
+    geom_line(data=obsDat,aes(x=timestamp,y=predm),colour="black",size=1)+
     geom_point(data=obsDat,aes(x=timestamp,y=GPP),colour="red",size=2)+
-   #  geom_ribbon(aes(x=obsDat$timestamp,ymin=predNegGPP,ymax=predPosGPP),alpha=0.5,fill="blue")+
+      geom_ribbon(aes(x=obsDat$timestamp,ymin=predNeg,ymax=predPos),alpha=0.5,fill="orange")+
     scale_x_datetime(limits=c(as.POSIXct("1996-01-01",tz="GMT"),as.POSIXct("2015-01-01",tz="GMT")))+    
     labs(x="Year",y=expression(paste("GPP [gC"," ",cm^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
   
-  predPosNEE  <- intvs[[2]]$posteriorPredictiveCredibleInterval[3,]*7.14# + 2  * sd(obsDat$NEE)
-  predNegNEE  <- intvs[[2]]$posteriorPredictiveCredibleInterval[1,]*7.14# - 2 * sd(obsDat$NEE)
+  
+  predPosNEE  <- intvsS[,2]$`97.5%`*modif + 2  * sapply( 1:length(obsDat$NEE), function(i) max( coefVar* abs(obsDat$NEE[i]),0.05))
+  predNegNEE  <- intvsS[,2]$`2.5%`*modif - 2 * sapply( 1:length(obsDat$NEE), function(i) max( coefVar* abs(obsDat$NEE[i]),0.05))
+  predmNEE  <- intvsS[,2]$`50%`*modif# - 2 * 0.3
+  
+  
   
   nee<-ggplot()+theme_bw()+
-    geom_line(data=obsDat,aes(x=timestamp,y=simNEE),colour="black",size=1)+
+    geom_line(data=obsDat,aes(x=timestamp,y=predmNEE),colour="black",size=1)+
     geom_point(data=obsDat,aes(x=timestamp,y=NEE),colour="red",size=2)+
-   # geom_ribbon(aes(x=obsDat$timestamp,ymin=predNegNEE,ymax=predPosNEE),alpha=0.5,fill="blue")+
-    scale_x_datetime(limits=c(as.POSIXct("1996-01-01",tz="GMT"),as.POSIXct("2015-01-01",tz="GMT")))+       
+      geom_ribbon(aes(x=obsDat$timestamp,ymin=predNegNEE,ymax=predPosNEE),alpha=0.5,fill="orange")+
+    scale_x_datetime(limits=c(as.POSIXct("1996-01-01",tz="GMT"),as.POSIXct("2015-01-01",tz="GMT")))+    
     labs(x="Year",y=expression(paste("NEE [gC"," ",cm^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
   
-  obsDatSWC<-obsDat%>%filter(year>=1997)
+  predPosSWC  <- intvsS[,3]$`97.5%`[13:228] + 2  * sapply( 1:length(obsDatSWC$swc), function(i) max( coefVar* abs(obsDatSWC$swc[i]),0.05))
+  predNegSWC  <- intvsS[,3]$`2.5%`[13:228] - 2 * sapply( 1:length(obsDatSWC$swc), function(i) max( coefVar* abs(obsDatSWC$swc[i]),0.05))
+  predmSWC  <- intvsS[,3]$`50%`[13:228]# - 2 * 0.3
   
-  obsDatSWC$swc<-pull(SWCData%>%
-                     filter(year>=1996)%>%
-                     group_by(year,month)%>%
-                     summarise(swc=mean(swc))%>%
-                     select(swc))
   
-  predPosSWC  <- intvs[[3]]$posteriorPredictiveCredibleInterval[3,c(13:228)] #+ 2  * sd(obsDat$NEE)
-  predNegSWC  <- intvs[[3]]$posteriorPredictiveCredibleInterval[1,c(13:228)] #- 2 * sd(obsDat$NEE)
-  predSWC  <- intvs[[3]]$posteriorPredictiveCredibleInterval[2,c(13:228)] #- 2 * sd(obsDat$NEE)
   
   swc<-ggplot()+theme_bw()+
-    geom_line(data=obsDatSWC,aes(x=timestamp,y=simSWC),colour="black",size=1)+
+    geom_line(data=obsDatSWC,aes(x=timestamp,y=predmSWC),colour="black",size=1)+
     geom_point(data=obsDatSWC,aes(x=timestamp,y=swc),colour="red",size=2)+
-   # geom_ribbon(aes(x=obsDatSWC$timestamp,ymin=predNegSWC,ymax=predPosSWC),alpha=0.5,fill="blue")+
+    geom_ribbon(aes(x=obsDatSWC$timestamp,ymin=predNegSWC,ymax=predPosSWC),alpha=0.5,fill="orange")+
     scale_x_datetime(limits=c(as.POSIXct("1996-01-01",tz="GMT"),as.POSIXct("2015-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("swc",sep="")))+
+    labs(x="Year",y=expression(paste("NEE [gC"," ",cm^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
+  
+  
   
   gpp1<-ggarrange(gpp,nee,swc)
   
@@ -199,7 +240,7 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F){
       res<- do.call(fr3PGDN,sitka)%>%
                    filter(Year>=2015)%>%
                    group_by(Year,Month)%>%
-        dplyr::summarise(GPP=mean(GPP),NEE=mean(NEE),volSWC_rz=mean(volSWC_rz),EvapTransp=mean(EvapTransp)/7,Reco=mean(Reco),Rs=mean(Rs),N=mean(N),LAI=mean(LAI),dg=mean(dg),totC=mean(totC),totN=mean(totN),NPP=mean(NPP))
+        dplyr::summarise(GPP=mean(GPP),NEE=mean(NEE),volSWC_rz=mean(volSWC_rz),EvapTransp=mean(EvapTransp)/7,Reco=mean(Reco),Rs=mean(Rs),N=mean(N),LAI=mean(LAI),dg=mean(dg),totC=mean(totC),totN=mean(totN),NPP=mean(NPP),alphaAn=mean(Reco/Rs))
    
     return(res)
   }
@@ -217,7 +258,7 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F){
   outSample <- split(outSample, seq(nrow(outSample)))
   outRes<-lapply(outSample, runModel)
   
-paramName<-list("GPP","NEE","volSWC_rz","EvapTransp","Reco","Rs","N","LAI","dg","totC","totN","NPP")
+paramName<-list("GPP","NEE","volSWC_rz","EvapTransp","Reco","Rs","N","LAI","dg","totC","totN","NPP","alphaAn")
 intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
 
   data<-flxdata_daily%>%
@@ -440,10 +481,10 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
   predPosTotN  <- intvsS[,11]$`97.5%`  #+ 2 * 0.125
   predNegTotN    <- intvsS[,11]$`2.5%` #- 2  * 0.125
   predmTotN    <-   intvsS[,11]$`50%`
-  
-  dataX$predmAlphaAn<-predmreco/predmRs
-  dataX$predPosAlphaAn<-predPosreco/predPosRs
-  dataX$predNegAlphaAn<-predNegreco/predNegRs
+
+  dataX$predmAlphaAn<-intvsS[,13]$`50%`
+  dataX$predPosAlphaAn<-intvsS[,13]$`97.5%`
+  dataX$predNegAlphaAn<-intvsS[,13]$`2.5%`
   alphaAnMean<-dataX%>%group_by(year)%>%summarise(predmAlphaAn=mean(predmAlphaAn),predPosAlphaAn=mean(predPosAlphaAn),predNegAlphaAn=mean(predNegAlphaAn))
   
   pLAI<-ggplot()+theme_bw()+
@@ -508,60 +549,14 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
   
   ggAlphaAn<-ggplot()+theme_bw()+
     geom_line(data=alphaAnMean,aes(x=year,y=predmAlphaAn))+
-    geom_point(data=alphaN,aes(x=year,y=alphaN),shape=16,size=3,colour="red")+
-    geom_pointrange(data=alphaN,aes(x=year,y=alphaN,ymin=alphaN-alphaN*0.3, ymax=alphaN+alphaN*0.3),colour="red")+
+    geom_point(data=alphaN,aes(x=year-0.083,y=alphaN),shape=16,size=3,colour="red")+
+    geom_pointrange(data=alphaN,aes(x=year-0.083,y=alphaN,ymin=alphaN-alphaN*0.3, ymax=alphaN+alphaN*0.3),colour="red")+
     geom_ribbon(data=alphaAnMean,aes(ymin=predNegAlphaAn,ymax=predPosAlphaAn,x=year),fill="orange",alpha=0.3)+
     labs(x="Year",y="AlphaAnnual")+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
   return(list(gpp1,swcPlot,NEEPlot,etrans,recoPlot,rsPlot,gppC,nppC, pLAI,pStemNo,pDBH,pWr,ptotC,ptotN,ggAlphaAn))
-}
-
-## Function to plot the key output pools and nutritional modifier of the model
-plotModel<-function(output.df){
-  
-  cls<-iprior::gg_colour_hue(2)
-  
-  flux<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=GPP,colour=cls[1]))+
-    geom_line(aes(x=t.proj,y=NPP,colour=cls[2]))+scale_colour_manual(values=cls,name="Fluxes",labels=c("NPP","GPP"))+theme(panel.grid=element_blank())+labs(x="Year",y="Flux")
-  
-  
-  lai<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=LAI,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("LAI"))+theme(panel.grid=element_blank())+labs(x="Year",y="Flux")
-  
-  
-  g<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=G,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("G"))+theme(panel.grid=element_blank())+labs(x="Year",y="G")
-  
-  
-  dg<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=dg,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("DG"))+theme(panel.grid=element_blank())+labs(x="Year",y="Dg")
-  
-  
-  hdom<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=hdom,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("HDOM"))+theme(panel.grid=element_blank())+labs(x="Year",y="H")
-  
-  
-  rad<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=RAD,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("RAD"))+theme(panel.grid=element_blank())+labs(x="Year",y="Rg")
-  
-  fN<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=fN,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("fNn"))+theme(panel.grid=element_blank())+labs(x="Year",y="fNn")
-  
-  nav<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=Nav,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("Nav"))+theme(panel.grid=element_blank())+labs(x="Year",y="Nav")
-  
-  
-  totc<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=totC,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("totC"))+theme(panel.grid=element_blank())+labs(x="Year",y="TotC")
-  
-  
-  totn<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=totN,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("totN"))+theme(panel.grid=element_blank())+labs(x="Year",y="TotN")
-  
-  
-  return(list(flux,lai,rad,g,dg,hdom,fN,nav,totc,totn))
 }
 
 
@@ -875,488 +870,4 @@ predmEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(d
           axis.text=element_text(size=14))
   
   return(list(gpp1,swcPlot,NEEPlot,etrans,recoPlot,rsPlot,gppC,nppC, pLAI,pStemNo,pDBH,pWr,ptotC,ptotN))
-}
-
-## Function to plot the key output pools and nutritional modifier of the model
-plotModel<-function(output.df){
-  
-  cls<-iprior::gg_colour_hue(2)
-  
-  flux<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=GPP,colour=cls[1]))+
-    geom_line(aes(x=t.proj,y=NPP,colour=cls[2]))+scale_colour_manual(values=cls,name="Fluxes",labels=c("NPP","GPP"))+theme(panel.grid=element_blank())+labs(x="Year",y="Flux")
-  
-  
-  lai<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=LAI,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("LAI"))+theme(panel.grid=element_blank())+labs(x="Year",y="Flux")
-  
-  
-  g<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=G,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("G"))+theme(panel.grid=element_blank())+labs(x="Year",y="G")
-  
-  
-  dg<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=dg,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("DG"))+theme(panel.grid=element_blank())+labs(x="Year",y="Dg")
-  
-  
-  hdom<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=hdom,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("HDOM"))+theme(panel.grid=element_blank())+labs(x="Year",y="H")
-  
-  
-  rad<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=RAD,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("RAD"))+theme(panel.grid=element_blank())+labs(x="Year",y="Rg")
-  
-  fN<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=fN,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("fNn"))+theme(panel.grid=element_blank())+labs(x="Year",y="fNn")
-  
-  nav<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=Nav,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("Nav"))+theme(panel.grid=element_blank())+labs(x="Year",y="Nav")
-  
-  
-  totc<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=totC,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("totC"))+theme(panel.grid=element_blank())+labs(x="Year",y="TotC")
-  
-  
-  totn<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=totN,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("totN"))+theme(panel.grid=element_blank())+labs(x="Year",y="TotN")
-  
-  
-  return(list(flux,lai,rad,g,dg,hdom,fN,nav,totc,totn))
-}
-
-
-
-
-
-## Function to plot the model against the Harwood data.
-plotResultsST <- function(df,out,ShortTS=F){
-  
-  ##if plyr is loaded before dplyr can cause problems with groupby
-  dt=12
-  df <- df[c(2:nrow(df)),]
-  df$week<-c(1:53) 
-  df <- df %>% dplyr::group_by(Year)%>%mutate(cumGPP = cumsum(GPP),
-                                              cumNPP = cumsum(NPP),
-                                              timestamp = as.POSIXct(paste(sprintf("%02d",Year),sprintf("%02d",Month),sprintf("%02d",1),sep="-"),tz="GMT")) 
-  df2<-df%>%filter(Year>=2015)
-  df2$week<-week(df2$timestamp)
-  
-  flxdata<-flxdata_daily%>%
-    mutate(week=week(as.Date(yday, origin = paste0(year,"-01-01"))))%>%
-    mutate(month=month(as.Date(yday, origin = paste0(year,"-01-01"))))
-  
-
-  
-
-    dataX<- flxdata%>% 
-      group_by(year,week) %>%
-      dplyr::summarise(gppOb=mean(gpp),nppOb=mean(npp),etOb=sum(et),recoOb=mean(reco),rsOb=mean(rs),
-                       swcOb=mean(swc),neeOb=mean(nee))%>%mutate(cumGppObs=cumsum(gppOb),cumNppObs=cumsum(nppOb))
-    df2<- (df2%>% 
-             group_by(Year,week) %>%
-             dplyr::summarise(GPP=mean(GPP),Etransp=sum(Etransp),Reco=mean(Reco),Rs=mean(Rs),NPP=mean(NPP),
-                              volSWC_rz=mean(volSWC_rz),NEE=mean(NEE),timestamp=median(timestamp),LAI=mean(LAI),t.proj=median(t.proj)))
-  
-  
-  modif<-7.142857
- 
- dataX<-dataX %>% right_join(df2, by=c("year"="Year","week"="week"))
- 
- 
- dataX$simGpp<-df2$GPP*modif
- dataX$simCGpp<-pull(df2%>%mutate(gppC=cumsum(GPP*modif))%>%select(gppC))
- dataX$simCNpp<-pull(df2%>%mutate(nppC=cumsum(NPP*modif))%>%select(nppC))
- 
- dataX$simReco<-df2$Reco*modif
- dataX$simNEE<-df2$NEE*modif
- dataX$simEtransp<-df2$Etransp
- dataX$simswc<-df2$volSWC_rz
- dataX$simRs<-df2$Rs*modif
- dataX$timestamp<-df2$timestamp
- dataX$month<-month(dataX$timestamp)  
-  
-  
-  
-  
-  nmc = nrow(out$chain[[1]])
-  outSample   <- getSample(out,start=nmc/2)
-  numSamples = 10# min(1000, nrow(outSample))
-  # outSample[,48]<-round(outSample[,48])
-  runModel<- function(p){
-    sitka[.GlobalEnv$nm]<-p
-    if(prm!="EvapTransp"){
-      res<- pull(do.call(fr3PGDN,sitka)%>%
-                   filter(Year>=2015)%>%
-                   mutate(week=c(1:53,1:53,1:53,1:53))%>%
-                   group_by(Year,week) %>%
-                   dplyr::summarise(mean=mean(!!sym(prm)))%>%
-                   select(mean)
-      )
-    } else {
-      res<- pull(do.call(fr3PGDN,sitka)%>%
-                   filter(Year>=2015)%>%
-                   mutate(week=c(1:53,1:53,1:53,1:53))%>%
-                   group_by(Year,week) %>%
-                   dplyr::summarise(sum=sum(!!sym(prm)))%>%
-                   select(sum))
-    }
-    return(res)
-  }
-  
-  runMltMod <- function(prm=prm){
-    print(prm)
-    prm<<-prm
-    pred     <- getPredictiveIntervals(parMatrix=outSample, model=runModel, numSamples=numSamples, quantiles=c(0.025,0.5,0.975))
-    return(pred)
-  }
-  
-  intvsS<-map(c("GPP","NEE","volSWC_rz","EvapTransp","Reco","Rs"),runMltMod)
-  
-
-    data<-flxdata_daily%>%
-      mutate(grp=week(as.Date(flxdata_daily$yday, origin = paste0(flxdata_daily$year,"-01-01"))))
-  
-  
-  sdMin<-data%>% group_by(year,grp) %>%
-    dplyr::summarise(sdgpp=mean(gpp),sdnpp=mean(npp),sdnee=mean(nee),sdreco=mean(reco),
-                     sdrs=mean(rs),sdet=sum(et),sdswc=mean(swc,na.rm=T))
-  
-  
-  coefVar<-0.1
-  
-  predPos  <- intvsS[[1]]$posteriorPredictiveCredibleInterval[3,]*modif + 2  * sapply( 1:length(sdMin$sdgpp), function(i) max( 0.03* abs(sdMin$sdgpp[i]),0.05))
-  predNeg  <- intvsS[[1]]$posteriorPredictiveCredibleInterval[1,]*modif - 2 * sapply( 1:length(sdMin$sdgpp), function(i) max( 0.03* abs(sdMin$sdgpp[i]),0.05))
-  predm  <- intvsS[[1]]$posteriorPredictiveCredibleInterval[2,]*modif# - 2 * 0.3
-  
-  
-  # dataX2<-dataX%>% 
-  #   group_by(year,month) %>%
-  #   dplyr::summarise(simGpp=mean(simGpp),timestamp=median(timestamp),gpp=mean(gpp))
-  #
-  gpp1<-ggplot()+theme_bw()+
-    geom_line(data=dataX,aes(x=timestamp,y=predm),colour="purple",size=1)+
-    geom_point(data=dataX,aes(x=timestamp, y=gppOb),colour="black",size=2)+
-    geom_ribbon(aes(ymin=predNeg,ymax=predPos,x=dataX$timestamp),fill="orange",alpha=0.3)+
-    ## geom_ribbon(data=data,aes(x=timestamp,ymin=gpp-gpp.sd,ymax=gp+gpp.sd),alpha=0.3)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("GPP [gC"," ",cm^-2,"]",sep="")))+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  
-  gppC<-ggplot()+theme_bw()+
-    geom_line(data=dataX,aes(x=timestamp,y=simCGpp,group=year),colour="purple",size=1)+
-    geom_point(data=dataX,aes(x=timestamp, y=cumGppObs),colour="black",size=2)+
-    ## geom_ribbon(data=data,aes(x=timestamp,ymin=gpp-gpp.sd,ymax=gp+gpp.sd),alpha=0.3)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("Cumulative GPP [gC"," ",cm^-2,"]",sep="")))+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  
-  nppC<-ggplot()+theme_bw()+
-    geom_line(data=dataX,aes(x=timestamp,y=simCNpp,group=year),colour="purple",size=1)+
-    geom_point(data=dataX,aes(x=timestamp, y=cumNppObs),colour="black",size=2)+
-    ## geom_ribbon(data=data,aes(x=timestamp,ymin=gpp-gpp.sd,ymax=gp+gpp.sd),alpha=0.3)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("Cumlative NPP [gC"," ",cm^-2,"]",sep="")))+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  predPosEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[3,] + 2  * sapply( 1:length(sdMin$sdet), function(i) max( 0.2* abs(sdMin$sdet[i]),0.1))
-  predNegEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[1,] - 2 * sapply( 1:length(sdMin$sdet), function(i) max( 0.2* abs(sdMin$sdet[i]),0.1))
-  predmEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(dataX$gpp)
-  
-  etrans<-ggplot()+theme_bw()+
-    geom_line(data=dataX,aes(x=timestamp,y=predmEtransp),colour="purple",size=1)+
-    geom_point(data=dataX,aes(x=df2$timestamp, y=etOb),colour="black",size=2)+
-    geom_ribbon(aes(ymin=predNegEtransp,ymax=predPosEtransp,x=dataX$timestamp),fill="orange",alpha=0.3)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste(E[t]," [mm]",sep="")))+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  predPosSWC  <- intvsS[[3]]$posteriorPredictiveCredibleInterval[3,] + 2  * sapply( 1:length(sdMin$sdswc), function(i) max( 0.05* abs(sdMin$sdswc[i]),0.01))
-  predNegSWC  <- intvsS[[3]]$posteriorPredictiveCredibleInterval[1,] - 2 * sapply( 1:length(sdMin$sdswc), function(i) max( 0.05* abs(sdMin$sdswc[i]),0.01))
-  predmSWC  <- intvsS[[3]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(dataX$gpp)
-  newSWC<-clm_df_full%>%
-    filter(Year>=2015)%>%
-    group_by(Year,Month)%>%
-    summarise(swc=mean(SWC))
-  
-  
-  swcPlot<-ggplot()+theme_bw()+
-    geom_line(data=dataX,aes(x=timestamp,y=predmSWC),colour="purple",size=1)+
-    geom_point(data=dataX,aes(x=df2$timestamp, y=newSWC$swc),colour="black",size=2)+
-    geom_ribbon(aes(ymin=predNegSWC,ymax=predPosSWC,x=dataX$timestamp),fill="orange",alpha=0.3)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y="SWC")+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  
-  predPosNEE  <- intvsS[[2]]$posteriorPredictiveCredibleInterval[3,]*modif + 2  * sapply( 1:length(sdMin$sdnee), function(i) max( 0.03* abs(sdMin$sdnee[i]),0.05))
-  predNegNEE  <- intvsS[[2]]$posteriorPredictiveCredibleInterval[1,]*modif - 2 * sapply( 1:length(sdMin$sdnee), function(i) max( 0.03* abs(sdMin$sdnee[i]),0.05))
-  predmNEE  <- intvsS[[2]]$posteriorPredictiveCredibleInterval[2,]*modif# - 2 * sd(dataX$gpp)
-  
-  NEEPlot<-ggplot()+theme_bw()+
-    geom_line(data=dataX,aes(x=timestamp,y=predmNEE),colour="purple",size=1)+
-    geom_point(data=dataX,aes(x=df2$timestamp, y=neeOb),colour="black",size=2)+
-    geom_ribbon(aes(ymin=predNegNEE,ymax=predPosNEE,x=dataX$timestamp),fill="orange",alpha=0.3)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("NEE [gC"," ",cm^-2,"]",sep="")))+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  
-  predPosreco  <- intvsS[[5]]$posteriorPredictiveCredibleInterval[3,]*modif + 2  * sapply( 1:length(sdMin$sdreco), function(i) max( coefVar* abs(sdMin$sdreco[i]),0.1))
-  predNegreco  <- intvsS[[5]]$posteriorPredictiveCredibleInterval[1,]*modif - 2 * sapply( 1:length(sdMin$sdreco), function(i) max( coefVar* abs(sdMin$sdreco[i]),0.1))
-  predmreco  <- intvsS[[5]]$posteriorPredictiveCredibleInterval[2,]*modif# - 2 * sd(dataX$gpp)
-  
-  recoPlot<-ggplot()+theme_bw()+
-    geom_line(data=dataX,aes(x=timestamp,y=predmreco),colour="purple",size=1)+
-    geom_point(data=dataX,aes(x=df2$timestamp, y=recoOb),colour="black",size=2)+
-    geom_ribbon(aes(ymin=predNegreco,ymax=predPosreco,x=dataX$timestamp),fill="orange",alpha=0.3)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("Reco [gC"," ",cm^-2,"]",sep="")))+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  
-  
-  predPosRs  <- intvsS[[6]]$posteriorPredictiveCredibleInterval[3,]*modif + 2  * sapply( 1:length(sdMin$sdrs), function(i) max( coefVar* abs(sdMin$sdrs[i]),0.3))
-  predNegRs  <- intvsS[[6]]$posteriorPredictiveCredibleInterval[1,]*modif - 2 * sapply( 1:length(sdMin$sdrs), function(i) max( coefVar* abs(sdMin$sdrs[i]),0.3))
-  predmRs  <- intvsS[[6]]$posteriorPredictiveCredibleInterval[2,]*modif# - 2 * sd(dataX$gpp)
-  
-  rsPlot<-ggplot()+theme_bw()+
-    geom_line(data=dataX,aes(x=timestamp,y=predmRs),colour="purple",size=1)+
-    geom_point(data=dataX,aes(x=df2$timestamp, y=rsOb),colour="black",size=2)+
-    geom_ribbon(aes(ymin=predNegRs,ymax=predPosRs,x=dataX$timestamp),fill="orange",alpha=0.3)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("Rs [gC"," ",cm^-2,"]",sep="")))+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  
-  df2$Month<-month(df2$timestamp)
-  dfLeaf<-df2%>%group_by(Year,Month) %>%
-    dplyr::summarise(LAI=mean(LAI),t.proj=median(t.proj))
-  leaf<-data.frame(rbind(
-    c(dplyr::filter(dfLeaf,Year==2015&Month==8)$Year+dplyr::filter(dfLeaf,Year==2015&Month==8)$Month/dt,dplyr::filter(dfLeaf,Year==2015&Month==8)$t.proj,5.7),
-    c(dplyr::filter(dfLeaf,Year==2018&Month==8)$Year+dplyr::filter(dfLeaf,Year==2018&Month==8)$Month/dt,dplyr::filter(dfLeaf,Year==2018&Month==8)$t.proj,5.56)
-  )
-  )
-  names(leaf)<-c("year","age","lai")
-  
-  stemNo<-data.frame(rbind(
-    c(dplyr::filter(dfLeaf,Year==2018&Month==8)$Year+dplyr::filter(dfLeaf,Year==2018&Month==8)$Month/dt,dplyr::filter(dfLeaf,Year==2018&Month==8)$t.proj,1348)
-  )
-  )
-  names(stemNo)<-c("year","age","stem")
-  
-  DBH<-data.frame(rbind(
-    c(dplyr::filter(dfLeaf,Year==2018&Month==8)$Year+dplyr::filter(dfLeaf,Year==2018&Month==8)$Month/dt,dplyr::filter(dfLeaf,Year==2018&Month==8)$t.proj,24.1)
-  )
-  )
-  names(DBH)<-c("year","age","dbh")
-  
-  Wr<-data.frame(rbind(
-    c(dplyr::filter(dfLeaf,Year==2015&Month==8)$Year+dplyr::filter(dfLeaf,Year==2015&Month==8)$Month/dt,dplyr::filter(dfLeaf,Year==2015&Month==8)$t.proj,4.88)
-  )
-  )
-  names(Wr)<-c("year","age","wr")
-  
-  difRoots<-data.frame(rbind(
-    c(dplyr::filter(dfLeaf,Year==2015&Month==8)$Year+dplyr::filter(dfLeaf,Year==2015&Month==8)$Month/dt,dplyr::filter(dfLeaf,Year==2015&Month==8)$t.proj,0.53)
-  )
-  )
-  names(difRoots)<-c("year","age","difroots")
-  
-  totC<-data.frame(rbind(
-    c(dplyr::filter(dfLeaf,Year==2018&Month==7)$Year+dplyr::filter(dfLeaf,Year==2018&Month==7)$Month/dt,dplyr::filter(dfLeaf,Year==2018&Month==7)$t.proj,429.52)
-  )
-  )
-  names(totC)<-c("year","age","totC")
-  
-  totN<-data.frame(rbind(
-    c(dplyr::filter(dfLeaf,Year==2018&Month==7)$Year+dplyr::filter(dfLeaf,Year==2018&Month==7)$Month/dt,dplyr::filter(dfLeaf,Year==2018&Month==7)$t.proj,14.30)
-  )
-  )
-  names(totN)<-c("year","age","totN")
-  
-  pLAI<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=Year+Month/dt,y=LAI))+
-    geom_point(data=leaf,aes(x=year,y=lai),shape=16,size=3,colour="red")+
-    labs(x="Year",y=expression(paste("L"," ","[",cm^-2," ",cm^-2,"]",sep="")))+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  pStemNo<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=Year+Month/dt,y=N))+
-    geom_point(data=stemNo,aes(x=year,y=stem),shape=16,size=3,colour="red")+
-    labs(x="Year",y=expression(paste("N"," ","[",ha^-1,"]",sep="")))+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  pDBH<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=Year+Month/dt,y=dg))+
-    geom_point(data=DBH,aes(x=year,y=dbh),shape=16,size=3,colour="red")+
-    labs(x="Year",y="DBH [cm]")+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  pWr<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=Year+Month/dt,y=Wr))+
-    geom_point(data=Wr,aes(x=year,y=wr),shape=16,size=3,colour="red")+
-    labs(x="Year",y="Wr [tDM/ha]")+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  pdifRoots<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=Year+Month/dt,y=difRoots))+
-    geom_point(data=difRoots,aes(x=year,y=difroots),shape=16,size=3,colour="red")+
-    labs(x="Year",y="difRoots [tDM/ha]")+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))    
-  
-  ptotC<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=Year+Month/dt,y=totC))+
-    geom_point(data=totC,aes(x=year,y=totC),shape=16,size=3,colour="red")+
-    labs(x="Year",y="totC [t/ha]")+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  ptotN<-ggplot()+theme_bw()+
-    geom_line(data=df,aes(x=Year+Month/dt,y=totN))+
-    geom_point(data=totN,aes(x=year,y=totN),shape=16,size=3,colour="red")+
-    labs(x="Year",y="totN [t/ha]")+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  return(list(gpp1,swcPlot,NEEPlot,etrans,recoPlot,rsPlot,gppC,nppC, pLAI,pStemNo,pDBH,pWr,ptotC,ptotN))
-}
-
-## Function to plot the key output pools and nutritional modifier of the model
-plotModel<-function(output.df){
-  
-  cls<-iprior::gg_colour_hue(2)
-  
-  flux<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=GPP,colour=cls[1]))+
-    geom_line(aes(x=t.proj,y=NPP,colour=cls[2]))+scale_colour_manual(values=cls,name="Fluxes",labels=c("NPP","GPP"))+theme(panel.grid=element_blank())+labs(x="Year",y="Flux")
-  
-  
-  lai<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=LAI,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("LAI"))+theme(panel.grid=element_blank())+labs(x="Year",y="Flux")
-  
-  
-  g<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=G,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("G"))+theme(panel.grid=element_blank())+labs(x="Year",y="G")
-  
-  
-  dg<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=dg,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("DG"))+theme(panel.grid=element_blank())+labs(x="Year",y="Dg")
-  
-  
-  hdom<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=hdom,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("HDOM"))+theme(panel.grid=element_blank())+labs(x="Year",y="H")
-  
-  
-  rad<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=RAD,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("RAD"))+theme(panel.grid=element_blank())+labs(x="Year",y="Rg")
-  
-  fN<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=fN,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("fNn"))+theme(panel.grid=element_blank())+labs(x="Year",y="fNn")
-  
-  nav<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=Nav,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("Nav"))+theme(panel.grid=element_blank())+labs(x="Year",y="Nav")
-  
-  
-  totc<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=totC,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("totC"))+theme(panel.grid=element_blank())+labs(x="Year",y="TotC")
-  
-  
-  totn<-ggplot(data=output.df)+theme_bw()+geom_line(aes(x=t.proj,y=totN,colour=cls[1]))+
-    scale_colour_manual(values=cls,name="Fluxes",labels=c("totN"))+theme(panel.grid=element_blank())+labs(x="Year",y="TotN")
-  
-  
-  return(list(flux,lai,rad,g,dg,hdom,fN,nav,totc,totn))
-}
-
-
-###plot flux values
-
-plotFlx<-function(output){
-  
- # output<-output%>%
- #   filter(Year>2014)%>%
- #   group_by(Year,Month)%>%
- #   summarise(YlCflx=mean(YlCflx,na.rm=T),YlNflx=mean(YlNflx,na.rm=T),
- #             YrCflx=mean(YrCflx,na.rm=T),YrNflx=mean(YrNflx,na.rm=T),OCflx=mean(OCflx,na.rm=T),
- #             ONflx=mean(ONflx,na.rm=T),Navflx=mean(Navflx,na.rm=T),difLitter=mean(difLitter,na.rm=T),
- #             fSW=mean(fSW,na.rm=T),TotalLitter=mean(TotalLitter,na.rm=T),t=median(t))
-  
-  pYlCflx<-ggplot()+theme_bw()+
-    geom_line(data=output,aes(x=t,y=YlCflx))+
-    labs(x="Year",y="YlCflx")+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  pYlNflx<-ggplot()+theme_bw()+
-    geom_line(data=output,aes(x=t,y=YlNflx))+
-    labs(x="Year",y="YlNflx")+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  
-  pYrCflx<-ggplot()+theme_bw()+
-    geom_line(data=output,aes(x=t,y=YrCflx))+
-    labs(x="Year",y="YrCflx")+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  pYrNflx<-ggplot()+theme_bw()+
-    geom_line(data=output,aes(x=t,y=YrNflx))+
-    labs(x="Year",y="YrNflx")+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  
-  pOCflx<-ggplot()+theme_bw()+
-    geom_line(data=output,aes(x=t,y=OCflx))+
-    labs(x="Year",y="OCflx")+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  pONflx<-ggplot()+theme_bw()+
-    geom_line(data=output,aes(x=t,y=ONflx))+
-    labs(x="Year",y="ONflx")+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  
-  
-  pNavflx<-ggplot()+theme_bw()+
-    geom_line(data=output,aes(x=t,y=Navflx))+
-    labs(x="Year",y="Navflx")+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  pdifLitter<-ggplot()+theme_bw()+
-    geom_line(data=output,aes(x=t,y=difLitter))+
-    labs(x="Year",y="difLitter")+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-
-  pfSW<-ggplot()+theme_bw()+
-    geom_line(data=output,aes(x=t,y=fSW))+
-    labs(x="Year",y="fSW")+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  TotalLitter<-ggplot()+theme_bw()+
-    geom_line(data=output,aes(x=t,y=TotalLitter),col="red")+
-    labs(x="Year",y="TotalLitter")+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  ggarrange(pYlCflx,pYlNflx,pYrCflx,pYrNflx,pOCflx,pONflx,pNavflx,pdifLitter,TotalLitter,pfSW)
 }

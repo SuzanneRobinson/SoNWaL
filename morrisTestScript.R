@@ -61,14 +61,14 @@ ggarrange(linPLot,nonLinPlot)
 sitka<-getParms(timeStp = 12)
 
 #read in and update sitka params with current MCMC results
-out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\monthly_outx_2021-02-265949.RDS")
+#out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\monthly_outx_2021-02-265949.RDS")
 codM<-as.data.frame(mergeChains(out$chain))
 nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
       "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
+      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","rainMod","tempMod")
 names(codM)<-nm
-codM<-colMedians(as.data.frame(codM))
+codM<-miscTools::colMedians(as.data.frame(codM))
 sitka[nm]<-codM[nm]
 
 ## Likelihood function
@@ -79,7 +79,7 @@ sitka$weather[sitka$weather$Year>=2015,6]<-sitka$weather[sitka$weather$Year>=201
     {
       output<-do.call(fr3PGDN,sitka)%>%
       filter(Year>=2015)%>%
-        mutate(meanNPP = mean(NPP))
+        mutate(meanNPP = mean(GPP)*7.14)
                
       mean(output$meanNPP,na.rm=T)
     },
@@ -95,11 +95,11 @@ sitka$weather[sitka$weather$Year>=2015,6]<-sitka$weather[sitka$weather$Year>=201
 priors<-createPriors_sitka(sitka=sitka)
 
 #param names to test for sensitivity
-nm<-c("rainMod")
+nm<-c("tempMod")
 
 #create priors/ranges for hydrological params, plus add some for rain and temp mods
-pMaxima<-priors[[1]][1:length(nm)]
-pMinima<-priors[[2]][1:length(nm)]
+pMaxima<-priors$upper[1:length(nm)]
+pMinima<-priors$lower[1:length(nm)]
 pMinima[c(1)]<-.2#up and down by 50% for rainfall
 pMaxima[c(1)]<-1.8
 pMinima[c(1)]<-0.8#up and down by 10% for temperature
@@ -131,27 +131,28 @@ morrisOut <- morris(
 
 
 #tabulate and plot results
-senseOutTemp<-data.frame(func_output=morrisOut$y,inputVal=morrisOut$X[,1])
+senseOutTempX<-data.frame(func_output=morrisOut$y,inputVal=morrisOut$X[,1])
 senseOutRain<-data.frame(func_output=morrisOut$y,inputVal=morrisOut$X[,1])
 
 senseOutRain2$Model<-"3PG"
-senseOutRain$Model<-"SonWal"
+senseOutTemp$Model<-"SonWal"
 senseOutRainX<-rbind(senseOutRain,senseOutRain2)
 
-g2<-ggplot(senseOutRainX,aes(x=(inputVal*100)-100,y=func_output,col=Model))+
-  geom_point(alpha=1)+
+g1<-ggplot(senseOutRain,aes(x=(inputVal*100)-100,y=func_output,col=Model))+
+  geom_point(alpha=0.8)+
   geom_smooth()+
-  ylab(expression(paste("NPP [tDM"," ",ha^-1,"]",sep="")))+
+  ylab(expression(paste("NPP [gC"," ",cm^-2,"]",sep="")))+
   xlab("Rainfall change (%)")+
   theme_bw()+
-  ggtitle("Four year avg")+
   scale_color_viridis_d()
 
-g2<-ggplot(senseOutRain,aes(x=(inputVal*100)-100,y=func_output))+
-  geom_point(col="red",alpha=0.8)+ 
+g2<-ggplot(senseOutTemp,aes(x=(inputVal*100)-100,y=func_output,col=Model))+
+  geom_point(alpha=0.8)+ 
   geom_smooth()+
-  ylab(expression(paste("NPP [tDM"," ",ha^-1,"]",sep="")))+
+  ylab(expression(paste("NPP [gC"," ",cm^-2,"]",sep="")))+
   xlab("Temperature change (%)")+
-  theme_bw()
+  theme_bw()+
+  scale_color_viridis_d()
+
 
 ggarrange(g1,g2,common.legend = T, legend ="bottom")

@@ -64,8 +64,8 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
                   24.1,                    ## dg
                   #  4.88,                    ## Wr
                   # 0.53,                    ## difRoots
-                  429.52,                    ## totC, see jarvis_total_soil.ods
-                  14.30,                     ## totN, 40 C:N ratio
+                  (429.52/2),                    ## totC, see jarvis_total_soil.ods
+                  (14.30/2),                     ## totN, 40 C:N ratio
                   pull(data%>%
                          group_by(year,grp) %>%
                          dplyr::summarise(swc=mean(swc))%>%
@@ -93,8 +93,8 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
              24.1*coefVar1,
              #  2,
              #  1,
-             429.52*0.5,
-             14.30*0.5,
+             (429.52/2)*0.5,
+             (14.30/2)*0.5,
              sapply( 1:length(sdMin$sdswc), function(i) max( coefVar3* abs(sdMin$sdswc[i]),0.01) )
              
     )
@@ -180,16 +180,16 @@ observedPine <- c(GPP$GPP,                ## GPP - monthly avg
 
 startYear<-1996
 endYear<-2014
-coefVar=0.1
-devPine <- c(             sapply( 1:length(GPP$GPP), function(i) max( coefVar* abs(GPP$GPP),0.001) ),
-                        sapply( 1:length(NEE$NEE), function(i) max( coefVar* abs(NEE$NEE),0.001) ),
-                        sapply( 1:length(reco$reco), function(i) max( coefVar* abs(reco$reco),0.001) ),
-             rep(.1,nrow(LAI)),
-             rep(.3,nrow(dbh)),
-             20,
+coefVar=0.2
+devPine <- c(             sapply( 1:length(GPP$GPP), function(i) max( coefVar* abs(GPP$GPP[i]),0.001) ),
+                        sapply( 1:length(NEE$NEE), function(i) max( coefVar* abs(NEE$NEE[i]),0.001) ),
+                        sapply( 1:length(reco$reco), function(i) max( coefVar* abs(reco$reco[i]),0.001) ),
+                        sapply( 1:length(LAI$LAI), function(i) max( 0.1* abs(LAI$LAI[i]),0.001) ),
+                        sapply( 1:length(dbh$dbh), function(i) max( 0.1* abs(dbh$dbh[i]),0.001) ),
+                        20,
              5,
-             rep(5,nrow(treeDen)),
-             sapply( 1:length(swc$swc), function(i) max( coefVar* abs(swc$swc),0.001) ))
+             sapply( 1:length(treeDen$treeDen), function(i) max( 0.1* abs(treeDen$treeDen[i]),0.001) ),
+             sapply( 1:length(swc$swc), function(i) max( coefVar* abs(swc$swc[i]),0.001) ))
 
 
 return(list(observedPine,devPine))

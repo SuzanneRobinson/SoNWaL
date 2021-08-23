@@ -20,19 +20,21 @@ library(parallel)
 
 dataDir="/gws/nopw/j04/hydro_jules/data/uk/driving_data/chess/chess-met/daily"#Location of input data
 outputDir="/home/users/aaronm7/"#output file for bricked rasters
-saveFile="/home/users/aaronm7/spatialChunks/"#save file for spatial chunks of data
+saveFile="/home/users/aaronm7/spatialChunks2/"#save file for spatial chunks of data
 
-#outputDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\Prafor"
-#dataDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\Prafor\\models\\spatial_met_data\\CHESS\\daily"#Location of input data
-#saveFile="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\Prafor\\spatialChunks\\"#save file for spatial chunks of data
-
-
+outputDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\Prafor"
+dataDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\Prafor\\models\\spatial_met_data\\CHESS\\daily"#Location of input data
+saveFile="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\Prafor\\spatialChunks\\"#save file for spatial chunks of data
 
 
-spatSplit(dataDir=dataDir,outputDir=outputDir,saveFile=saveFile,startDate=2000,numChunks=20)
+
+
+spatSplitX(dataDir=dataDir,outputDir=outputDir,saveFile=saveFile,dates=1971:2018,numChunks=91)
 #create chunks of approx 10,000 grid cells in parallel, saves to file
 #1:35 is approx scotland
-future_map(c(1:35), ~spatDatUKnc(chunk=.x,saveFile,outputDir),.progress = T)
+plan(multisession, workers = coreNum - 1)
+
+future_map(c(1:2), ~spatDatUKnc(chunk=.x,outputDir,saveFile),.progress = T)
 
 ff<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\spatialChunks\\spatialChunk_3.RDS")
 

@@ -140,44 +140,33 @@ plot(output$mean)
 
 results<-plotResultsNewMonthly(output,ShortTS=T,out=out)
 #results
-ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]],results[[6]])
+ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]])
 
-ggarrange(results[[9]],results[[10]],results[[11]],results[[12]],results[[13]],results[[14]])
+ggarrange(results[[15]],results[[9]],results[[10]],results[[11]],results[[13]],results[[14]])
 
-ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]],results[[6]],results[[9]],results[[10]],results[[11]],results[[12]],results[[13]],results[[14]])
+ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]],results[[6]],results[[15]],results[[9]],results[[10]],results[[11]],results[[13]],results[[14]])
 fileNm<-"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\"
 saveRDS(out,file=paste0(fileNm,timeStep,"_",iters,"_.RDS"))
 ggsave(paste0(fileNm,timeStep,"_",iters,".png"),width = 400,
        height = 300,
        units = "mm")
 
+
+
+resultsPine<-plotResultsPine(outP)
+
 #cv is ratio of sd to mean, cv * value of meanNEE
 #sdmin_NEE               <- cv_EC * abs(data_NEEmean_value) #gives you the standard deviation for the averaged data points (assuming cv 20%)
 #data_NEEmean_sd <- sapply( 1:length(sdmin_NEE), function(i) max(sdmin_NEE[i],0.5) )
 
 
-##aggregate data by year for total annual ranfall
-#annualPrecip <- weather%>%group_by(Year)%>%summarise(annual_precip=sum(Rain))
-#
-#
-#hazprecip <- quantile(annualPrecip$annual_precip,0.1)
-#
-##Risk function
-#calc_risk <- function(strtyr,endyr,df,hazval){
-#  fldf    <- df %>% filter(Year >= strtyr & Year <= endyr)
-#  lowyrs  <- fldf$Year[(fldf$annual_precip <= hazval)]
-#  highyrs <- fldf$Year[!(fldf$Year %in% lowyrs)]
-#  vuln    <- mean(output[weather$Year %in% highyrs,"GPP"]) - mean(output[weather$Year %in% lowyrs,"GPP"])
-#  haz     <- length(lowyrs)/((endyr - strtyr)+1)
-#  return(tibble("startYr"= strtyr,
-#                "endYr"=endyr,
-#                "vulnerability"= vuln,
-#                "hazard"  = haz,
-#                "risk" = vuln*haz))
-#}
-#
-##' # Expected loss of GPP 
-#inpt   <- tibble(strtyr=c(1985,1995,2005,2015),endyr=c(1988,1998,2008,2018))
-#riskdf <- purrr::map2_df(inpt$strtyr,inpt$endyr,calc_risk,df=annualPrecip,hazval=hazprecip)
-#knitr::kable(riskdf, digits=4, align = c(rep("c", 5)))
-#
+codM<-as.data.frame(outP$chain[[2]])
+codM<-mergeChains(outP$chain)
+codM<-miscTools::colMedians(as.data.frame(codM))
+codM<-tail(as.data.frame(codM),1)
+names(codM)<-nm
+pine<-getParmsPine(waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
+pine[nm]<-codM[nm]
+output<-do.call(fr3PGDN,pine)
+ff<-filter(output,Year>1996)
+plot(ff$GPP)
