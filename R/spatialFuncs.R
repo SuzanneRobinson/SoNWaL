@@ -71,8 +71,6 @@ spatSplitX<-function(dataDir,saveFile,outputDir,dates=c(1970:1980),variable="all
       
       coreNum <- detectCores()
       
-      coreNum <- detectCores()
-      
       if (coreNum > 1) {
         plan(multisession, workers = coreNum - 1)
         future_map(numChunks, ~ splitter(j = .x), .progress = T)
@@ -117,6 +115,7 @@ spatDatUKnc <- function(chunk = 1, outputDir,saveFile) {
   
   #get climate values from raster
   for (i in c(1:length(files))) {
+    print(i)
     rasValue = as.data.frame(mapFile[[i]][[1]])
     
     
@@ -142,7 +141,12 @@ spatDatUKnc <- function(chunk = 1, outputDir,saveFile) {
   #Get spatial coordinate data from rasters for plotting
   simDat$x <- mapFile[[i]]$coords[, 1]
   simDat$y <- mapFile[[i]]$coords[, 2]
-  saveRDS(simDat, paste0(saveFile, "spatialChunk_", chunk, ".RDS"))
+  
+  simDatSp<-split(simDat, (seq(nrow(simDat))-1) %/% 45) 
+  
+  for(i in c(1:length(simDatSp))){
+    saveRDS( simDatSp[[i]], paste0(saveFile, "spatialChunk_",chunk,"_", i+1, ".RDS")) 
+  }
   
 }
 

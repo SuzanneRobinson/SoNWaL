@@ -20,7 +20,7 @@ library(parallel)
 
 dataDir="/gws/nopw/j04/hydro_jules/data/uk/driving_data/chess/chess-met/daily"#Location of input data
 outputDir="/home/users/aaronm7/"#output file for bricked rasters
-saveFile="/home/users/aaronm7/spatialChunks2/"#save file for spatial chunks of data
+saveFile="/home/users/aaronm7/spatialChunks/"#save file for spatial chunks of data
 
 outputDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\Prafor"
 dataDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\Prafor\\models\\spatial_met_data\\CHESS\\daily"#Location of input data

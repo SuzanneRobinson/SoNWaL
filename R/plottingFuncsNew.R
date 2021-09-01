@@ -441,13 +441,13 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
   names(difRoots)<-c("year","age","difroots")
   
   totC<-data.frame(rbind(
-    c(dplyr::filter(dfLeaf,Year==2018&Month==7)$Year+dplyr::filter(dfLeaf,Year==2018&Month==7)$Month/dt,dplyr::filter(dfLeaf,Year==2018&Month==7)$t.proj,429.52)
+    c(dplyr::filter(dfLeaf,Year==2018&Month==7)$Year+dplyr::filter(dfLeaf,Year==2018&Month==7)$Month/dt,dplyr::filter(dfLeaf,Year==2018&Month==7)$t.proj,68.87)
   )
   )
   names(totC)<-c("year","age","totC")
   
   totN<-data.frame(rbind(
-    c(dplyr::filter(dfLeaf,Year==2018&Month==7)$Year+dplyr::filter(dfLeaf,Year==2018&Month==7)$Month/dt,dplyr::filter(dfLeaf,Year==2018&Month==7)$t.proj,14.30)
+    c(dplyr::filter(dfLeaf,Year==2018&Month==7)$Year+dplyr::filter(dfLeaf,Year==2018&Month==7)$Month/dt,dplyr::filter(dfLeaf,Year==2018&Month==7)$t.proj,2.313)
   )
   )
   names(totN)<-c("year","age","totN")

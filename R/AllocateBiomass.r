@@ -147,7 +147,7 @@ function (state, site, parms, weather) #requires weather too for current month, 
       Littfall <- gammaFx * gammaF0/(gammaF0 + (gammaFx - gammaF0) * 
                                        exp(-12 * log(1 + gammaFx/gammaF0) * t/tgammaF))
       difLitter <- Littfall * Wl
-      state[["Wlitt"]] <- state[["Wlitt"]] + difLitter
+      state[["Wlitt"]] <- state[["Wlitt"]] + difLitter - (state[["Wlitt"]]*state[["kl"]])
       #For root turnover:
       Wr <- state[["Wr"]]
       Rttover <- parms[["Rttover"]]*12/parms[["timeStp"]]

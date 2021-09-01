@@ -47,14 +47,14 @@ soilWC<-function(parms,weather,state,K_s,SWC,soilVol){
   
 
   #rooting depth / volume - Almedia describes this as depth, assumed to be proportional in paper to biomass
-  z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]])/(1-0.2),parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone/max root depth
-  z_r=min(z_r,V_nr)
+  z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone/max root depth
+  #z_r=min(z_r,V_nr)
   
   V_rz = z_r #Almedia and Sands paper suggests volume of root zone is equivalent to z_r
   
-  Ksat<-4.56
-  nk<-18.4
-  volSWC_rz<-min((SWC_rz0 /(z_r*1000)),parms[["satPoint"]])
+ Ksat<-4.56
+ nk<-18.4
+ volSWC_rz<-min((SWC_rz0 /(z_r*1000)),parms[["satPoint"]])
   
  #*24 as currently hourly rate, need daily vals
  # K_s=max((Ksat*(volSWC_rz/parms[["satPoint"]])^nk)*24,0.000001)
@@ -146,7 +146,8 @@ soilEvap<-function(parms,weather,state,interRad,h){
   rhoAir <- parms[["rhoAir"]]
   lambda <- parms[["lambda"]]#Volumetric latent heat of vaporization. Energy required per water volume vaporized (J/kg-1) (see penman monteith)
   VPDconv <- parms[["VPDconv"]]
-  VPD <- weather[["VPD"]]
+ VPD <- weather[["VPD"]] * exp(state[["LAI"]] * (-log(2)) / 5)
+ 
   E_S1 = (parms[["E_S1"]])
   E_S2 = (parms[["E_S2"]])
 
@@ -180,20 +181,20 @@ gamma = 66.1 # phsychrometric constant Pa/K-1
 
   #e0<-max(e0/lambda * h,0) reduced by 30% as it is cooler and shadier under the canopy
   e0<-max(h*(soilCond*(Delta*interRad+soilBoundaryCond*Pa*Cp*((VPD*1000)))/(lambda*((gamma+Delta)*soilCond+gamma*soilBoundaryCond))),0)
-  
+  e0*365/parms[["timeStp"]]
   #E_S0 is E_S at the start of the time-step
   E_S0 = state[["E_S"]]
 
   #Duration of phase 1 evaporation
- t_S1 = E_S1 / e0
+ #t_S1 = E_S1 / e0
 
  
  #Solved for t equation A.10 in Almedia, to get equivalent t for E_S0 value
- t0 = as.numeric(round(((-2 * E_S0 * E_S1) + (E_S0 ^ 2) + (2 * E_S0) +
-                          (E_S1 ^ 2) - (2 * E_S1) + 1 + (2 * e0 * E_S2 * t_S1) - (E_S2 ^ 2)
- ) / (2 * e0 * E_S2)))
- 
- t0<-ifelse(t0<0,0,t0)
+# t0 = as.numeric(round(((-2 * E_S0 * E_S1) + (E_S0 ^ 2) + (2 * E_S0) +
+#                          (E_S1 ^ 2) - (2 * E_S1) + 1 + (2 * e0 * E_S2 * t_S1) - (E_S2 ^ 2)
+# ) / (2 * e0 * E_S2)))
+# 
+# t0<-ifelse(t0<0,0,t0)
  
  #Integrate equation A.9 to get value at time t (assuming t is number of days in month)
  #and Calc E_S using t+t0 to get amount of evaporation between t0 and t
@@ -205,12 +206,12 @@ gamma = 66.1 # phsychrometric constant Pa/K-1
  #print(paste0("ts1 ", t_S1))
  #print(paste0("e0 ", e0))
  
- E_S = if ((t + t0) <= t_S1)
-   e0 * (t + t0)-E_S0
- else
-   (E_S1 + E_S2 * (sqrt(1 + 2 * (e0 / E_S2) * ((t + t0) - t_S1) - 1)))-E_S0
+# E_S = if ((t + t0) <= t_S1)
+#   e0 * (t + t0)-E_S0
+# else
+#   (E_S1 + E_S2 * (sqrt(1 + 2 * (e0 / E_S2) * ((t + t0) - t_S1) - 1)))-E_S0
   
- # E_S<-E_S0+ifelse(E_S0<=E_S1,e0,e0/(1+(E_S0-E_S1)/E_S2))
+  E_S<-E_S0+ifelse(E_S0<=E_S1,e0,e0/(1+(E_S0-E_S1)/E_S2))
 
   return(list(E_S,e0))
   

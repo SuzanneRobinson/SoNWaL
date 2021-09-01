@@ -63,15 +63,15 @@ exampParams<-read.csv("exampParams.csv")
 nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
       "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn")
+      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k")
 sitka[nm]<-exampParams[nm]
 
 
-out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_1_T.RDS")
+#out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_3_T.RDS")
 
 #out<-getSample(out,start=12000,thin=5,numSamples=500)
 #codM<-out$chain[[2]][c(1:5000),]
-codM<-as.data.frame(out$chain[[2]])
+codM<-as.data.frame(out$chain[[3]])
 codM<-mergeChains(out$chain)
 
 codM<-miscTools::colMedians(as.data.frame(codM))
@@ -98,8 +98,18 @@ sitka[nm]<-codM[nm]
 
 #sitka$klmax<-0.0001
 #for(i in c(1:length(codM))){
-#sitka[nm]<-codM[nm]
-#sitka[nm[i]]<-codM2[nm[i]]
+#  sitka<-getParms(     wiltPoint = 0.06037,fieldCap =0.28403,satPoint  =0.50171 ,   K_s=13.36049,  V_nr=3.596,
+#                       sigma_zR =0.98164 ,  E_S1 =1.51894  , E_S2 =3.09456,shared_area =4.30381,maxRootDepth =2.00764,
+#                       K_drain =447.7182 ,  pFS2=1.03867 ,  pFS20 =0.21525  ,   aS    =0.01731  ,nS =3.00313     ,pRx=0.59633,
+#                       pRn =0.3305, gammaFx =0.02076, gammaF0 =0.00848 , tgammaF =95.99751, Rttover =0.18559 ,    mF =0.00104   ,  mR =0.52931   ,
+#                       mS =0.50793 , SLA0 =5.2504 , SLA1 =8.1942 ,  tSLA =2.0036,  alpha  =0.04856  ,    Y  =0.52186, 
+#                       m0=0.05019, MaxCond =0.01001 , LAIgcx =0.67487, CoeffCond =0.09998, BLcond =0.10841,
+#                       Nf=0.12252,    Navm =0.00966 ,  Navx =28.0322 , klmax =0.01234,  krmax =0.00548 , komax  =0.00819 ,  
+#                       hc  =0.13474  ,  qir  =249.3636,    qil =19.54624,      qh =22.92336,  
+#                       qbc  =4.38353,    el =0.82495 ,   er=0.0298, SWconst0=0.30329 ,SWpower0 =2.00351   ,    Qa  =-94.98497 ,   Qb=0.85812,
+#                       waterBalanceSubMods=ifelse(args[4]=="T",TRUE,FALSE), timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
+#  sitka$weather<-clm_df_full
+#sitka[nm[i]]<-codM[nm[i]]
 #output<-do.call(fr3PGDN,sitka)
 #plot(output$LAI,main=nm[i])
 #}
@@ -107,6 +117,9 @@ sitka[nm]<-codM[nm]
 output<-do.call(fr3PGDN,sitka)
 ff<-filter(output,Year>2014)
 plot(output$LAI)
+
+
+
 
 plot(output$N)
 plot(ff$EvapTransp)
@@ -143,6 +156,7 @@ results<-plotResultsNewMonthly(output,ShortTS=T,out=out)
 ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]])
 
 ggarrange(results[[15]],results[[9]],results[[10]],results[[11]],results[[13]],results[[14]])
+
 
 ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]],results[[6]],results[[15]],results[[9]],results[[10]],results[[11]],results[[13]],results[[14]])
 fileNm<-"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\"

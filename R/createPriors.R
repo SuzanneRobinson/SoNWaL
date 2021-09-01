@@ -4,18 +4,18 @@ createPriors_sitka<-function(sitka){
   nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
         "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
         "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn")
+        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k")
   
   
   
   
   f.decrease <- c(
     0.06, #wiltPoint
-    0.26, #fieldCap
+    0.15, #fieldCap
     0.3,#satPoint
     1, #K_s
-    3, #V_nr
-    2, #sigma_zR
+    2.5, #V_nr
+    1.5, #sigma_zR
     0.01, #E_S1
     0.01, #E_S2
     2, #shared_area
@@ -61,21 +61,22 @@ createPriors_sitka<-function(sitka){
     2,
     -95,
     0.7,
-    0.05
+    0.05,
+    0.6
   )
   
   f.increase <-
     c(
-      0.25,#wiltPoint
-      0.3,#fieldCap
-      0.34,#satPoint
+      0.26,#wiltPoint
+      0.33,#fieldCap
+      0.6,#satPoint
       20,#K_s
       5,#V_nr
       3,#sigma_zR
       50,#E_S1
       50,#E_S2
       6, #shared_area
-      3, #maxRootDepth
+      4, #maxRootDepth
       600, #K_drain
       0.573973679288588,#pFS2
       0.235352308855631,#pFS20
@@ -117,7 +118,8 @@ createPriors_sitka<-function(sitka){
       6,
       -5,
       0.9,
-      0.2
+      0.2,
+      0.4
     )
   
   ##Need to check what priors we are using!
@@ -140,11 +142,12 @@ createPriors_sitka<-function(sitka){
   pMaxima[[34]]<-0.3
   pMinima[[34]]<-0.01
   
-  sdVals<-(pMaxima-pMinima)
+  sdVals<-(pMaxima-pMinima)*0.8
   #ES1 and 2 on very different scales so set manually
   sdVals[7]<-15
   sdVals[8]<-15
-  
+  pValues[7]<-10
+  pValues[8]<-10
   
   sdVals[[48]]<-0.3
   sdVals[[49]]<-2
@@ -163,6 +166,9 @@ createPriors_sitka<-function(sitka){
   pMaxima[[33]]<-0.3
   pMinima[[33]]<-0.01
   
+  sdVals[[21]]<-0.02
+  
+  sdVals[[53]]<-0.03
   priorVals <- createTruncatedNormalPrior(mean = pValues, sd=sdVals,
                                           lower = pMinima, upper = pMaxima)
   
