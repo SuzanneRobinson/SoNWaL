@@ -5,7 +5,7 @@
 ######################
 
 ## Load necessary packages
-library(fr3PGDN,quietly=TRUE)
+library(fr3PGDN)
 library("tidyverse")
 library("lubridate")
 library("coda")
@@ -67,19 +67,19 @@ nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","s
 sitka[nm]<-exampParams[nm]
 
 
-#out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_3_T.RDS")
+out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_3_T.RDS")
 
 #out<-getSample(out,start=12000,thin=5,numSamples=500)
 #codM<-out$chain[[2]][c(1:5000),]
-codM<-as.data.frame(out$chain[[3]])
+codM<-as.data.frame(out$chain[[2]])
 codM<-mergeChains(out$chain)
 
 codM<-miscTools::colMedians(as.data.frame(codM))
 codM<-tail(as.data.frame(codM),1)
 names(codM)<-nm
 
-#priorSamp<-priorVals$sampler(35000)
-#MCMCtrace(getSample(out,coda = T,thin=10,start=500),wd="C:\\Users\\aaron.morris", post_zm=F,iter=5000,priors = priorSamp)
+priorSamp<-priorVals$sampler(35000)
+MCMCtrace(getSample(out,coda = T,thin=2,start=5000),wd="C:\\Users\\aaron.morris", post_zm=F,iter=10000,priors = priorSamp)
 
 sitka<-getParms(waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
 #sitka$E_S1<-2
@@ -184,3 +184,24 @@ pine[nm]<-codM[nm]
 output<-do.call(fr3PGDN,pine)
 ff<-filter(output,Year>1996)
 plot(ff$GPP)
+
+
+calc_risk <- function(strtyr,endyr,df,hazval){
+  fldf    <- df %>% filter(Year >= strtyr & Year <= endyr)
+  lowyrs  <- fldf$Year[(fldf$annual_precip <= hazval)]
+  highyrs <- fldf$Year[!(fldf$Year %in% lowyrs)]
+  vuln    <- mean(output[weather$Year %in% highyrs,"GPP"]) - mean(output[weather$Year %in% lowyrs,"GPP"])
+  haz     <- length(lowyrs)/((endyr - strtyr)+1)
+  return(tibble("startYr"= strtyr,
+                "endYr"=endyr,
+                "vulnerability"= vuln,
+                "hazard"  = haz,
+                "risk" = vuln*haz))
+}
+
+
+annualPrecip <- weather%>%group_by(Year)%>%summarise(annual_precip=sum(Rain))
+hazprecip <- quantile(annualPrecip$annual_precip,0.1)
+#' # Expected loss of GPP 
+inpt   <- tibble(strtyr=c(1985,1995,2005,2015),endyr=c(1988,1998,2008,2018))
+riskdf <- purrr::map2_df(inpt$strtyr,inpt$endyr,calc_risk,df=annualPrecip,hazval=hazprecip)

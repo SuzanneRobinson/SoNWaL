@@ -8,6 +8,10 @@ library(coda)
 library(BayesianTools)
 library(miscTools)
 library(ggpubr)
+library(matrixStats)
+library(future)
+library(furrr)
+library(parallel)
 ## Years of data to use for calibration
 startYear = 2015
 endYear = 2018
@@ -17,7 +21,6 @@ timeStep<-"weekly"
 
 #Directory where climate data is stored (default is "data" in SonWal folder)
 climDir<-("data\\")
-
 
 ## read in and format climate data
 clm_df_full<-data.frame(getClimDatX("weekly",climDir))%>%
@@ -42,84 +45,23 @@ nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","s
         "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn")
   
 ##update with some example calibrated parameters
-exampParams<-read.csv("data//exampParams.csv")
-sitka[nm]<-exampParams[nm]
+exampParams<-readRDS("data//exampParams.RDS")
+exParms<-mergeChains(out$chain)
+exParms<-miscTools::colMedians(as.data.frame(exParms))
+names(exParms)<-nm
 
+sitka[nm]<-exParms[nm]
+
+#run SoNWal
 output<-do.call(fr3PGDN,sitka)%>%
   filter(Year>2014)
 
-quickPlotWeekly(flxdata_daily,output)
+
+##plotting QUICK PLOT (copy in function below) - DOES NOT INCLUDE UNCERTAINTY BUT QUICK :) -grouping aggregates the data, is either "week" or "month"
+quickPlot(flxdata_daily,output,grouping="week")
 
 
-##quick function for plotting weekly simulated data against observed, does not include uncertainty as this requires mcmc posteriors
-quickPlotWeekly<-function(flxdata_daily,output){
-  
-  output<-filter(output,Year>2014)
-  
-  #conversion factor to gCcm-2 for weekly data
-  cf=7.142857
-  
-  flxdata_daily$week<-week(flxdata_daily$timestamp)
-  flxdata_weekly<-flxdata_daily%>%
-    filter(year>2014)%>%
-    group_by(year,week)%>%
-    summarise(gpp=mean(gpp),npp=mean(npp),nee=mean(nee),reco=mean(reco),rs=mean(rs),et=sum(et),swc=mean(swc),timestamp=median(timestamp))%>%
-    add_column(simGPP=output$GPP*cf,simNPP=output$NPP*cf,simNEE=output$NEE*cf,simRS=output$Rs*cf,simET=output$EvapTransp,simSWC=output$volSWC_rz)
-
-  gpp1<-ggplot()+theme_bw()+
-    geom_line(data=flxdata_weekly,aes(x=timestamp,y=simGPP),colour="purple",size=1)+
-    geom_point(data=flxdata_weekly,aes(x=timestamp, y=gpp),colour="black",size=2)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("GPP [gC"," ",cm^-2,"]",sep="")))+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  
-  gpp2<-ggplot()+theme_bw()+
-    geom_line(data=flxdata_weekly,aes(x=timestamp,y=simNPP),colour="purple",size=1)+
-    geom_point(data=flxdata_weekly,aes(x=timestamp, y=npp),colour="black",size=2)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("NPP [gC"," ",cm^-2,"]",sep="")))+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  
-  gpp3<-ggplot()+theme_bw()+
-    geom_line(data=flxdata_weekly,aes(x=timestamp,y=simNEE),colour="purple",size=1)+
-    geom_point(data=flxdata_weekly,aes(x=timestamp, y=nee),colour="black",size=2)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("NEE [gC"," ",cm^-2,"]",sep="")))+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  
-  gpp4<-ggplot()+theme_bw()+
-    geom_line(data=flxdata_weekly,aes(x=timestamp,y=simET),colour="purple",size=1)+
-    geom_point(data=flxdata_weekly,aes(x=timestamp, y=et),colour="black",size=2)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("GPP [gC"," ",cm^-2,"]",sep="")))+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  
-  gpp5<-ggplot()+theme_bw()+
-    geom_line(data=flxdata_weekly,aes(x=timestamp,y=simSWC),colour="purple",size=1)+
-    geom_point(data=flxdata_weekly,aes(x=timestamp, y=swc),colour="black",size=2)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("swc %",sep="")))+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  
-  
-  gpp6<-ggplot()+theme_bw()+
-    geom_line(data=flxdata_weekly,aes(x=timestamp,y=simRS),colour="purple",size=1)+
-    geom_point(data=flxdata_weekly,aes(x=timestamp, y=rs),colour="black",size=2)+
-    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("swc %",sep="")))+
-    theme(axis.title=element_text(size=14),
-          axis.text=element_text(size=14))
-  ggarrange(gpp1,gpp2,gpp3,gpp4,gpp5,gpp6)
-  
-}
-
-
+#full plots - much slower but gives credible intervals and uncertainty of observed data - num samps is how many samples from posterior to use
+results<-plotResultsNewMonthly(output,ShortTS=T,out=exampParams,numSamps=100)
+ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]])
+ggarrange(results[[15]],results[[9]],results[[10]],results[[11]],results[[13]],results[[14]])

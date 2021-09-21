@@ -57,7 +57,7 @@ soilWC<-function(parms,weather,state,K_s,SWC,soilVol){
  volSWC_rz<-min((SWC_rz0 /(z_r*1000)),parms[["satPoint"]])
   
  #*24 as currently hourly rate, need daily vals
- # K_s=max((Ksat*(volSWC_rz/parms[["satPoint"]])^nk)*24,0.000001)
+  #K_s=max((Ksat*(volSWC_rz/parms[["satPoint"]])^nk)*24,0.000001)
   #print(paste0("SWC= ",SWC))
   #print(paste0("soilVol= ",soilVol))
   
@@ -181,7 +181,7 @@ gamma = 66.1 # phsychrometric constant Pa/K-1
 
   #e0<-max(e0/lambda * h,0) reduced by 30% as it is cooler and shadier under the canopy
   e0<-max(h*(soilCond*(Delta*interRad+soilBoundaryCond*Pa*Cp*((VPD*1000)))/(lambda*((gamma+Delta)*soilCond+gamma*soilBoundaryCond))),0)
-  e0*365/parms[["timeStp"]]
+  e0<-e0*365/parms[["timeStp"]]
   #E_S0 is E_S at the start of the time-step
   E_S0 = state[["E_S"]]
 

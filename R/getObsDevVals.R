@@ -64,8 +64,8 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
                   24.1,                    ## dg
                   #  4.88,                    ## Wr
                   # 0.53,                    ## difRoots
-                  (68.87),                    ## totC, see jarvis_total_soil.ods
-                  (2.313),                     ## totN, 40 C:N ratio
+                  (214.76),                    ## totC, see jarvis_total_soil.ods
+                  (7.15),                     ## totN, 40 C:N ratio
                   pull(data%>%
                          group_by(year,grp) %>%
                          dplyr::summarise(swc=mean(swc))%>%
@@ -77,7 +77,7 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
    # observed$lab<-c(rep("alphaAn",4),rep("gpp",212),rep("nee",212),rep("et",212),"LAI","LAI","N","dg","totC","totN",rep("swc",212))
       
     coefVar1=0.03
-    coefVar2=0.3
+    coefVar2=0.25
     coefVar3=0.2
     
     dev <- c(sapply( 1:length(sdAlphaAnn$sdAlphaAnn), function(i) max( coefVar2* abs(sdAlphaAnn$sdAlphaAnn[i]),0.01) ),
@@ -93,8 +93,8 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
              24.1*coefVar1,
              #  2,
              #  1,
-             16.48,
-             0.64,
+             214.76*0.5,
+             7.15*0.5,
              sapply( 1:length(sdMin$sdswc), function(i) max( coefVar3* abs(sdMin$sdswc[i]),0.01) )
              
     )

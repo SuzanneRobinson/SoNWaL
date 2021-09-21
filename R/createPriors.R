@@ -14,12 +14,12 @@ createPriors_sitka<-function(sitka){
     0.15, #fieldCap
     0.3,#satPoint
     1, #K_s
-    2.5, #V_nr
-    1.5, #sigma_zR
+    0.3, #V_nr
+    0.2, #sigma_zR
     0.01, #E_S1
     0.01, #E_S2
     2, #shared_area
-    1.5, #maxRootDepth
+    0.3, #maxRootDepth
     50, #K_drain
     0.588503613257886, #pFS2
     0.752929538228874, #pFS20
@@ -71,7 +71,7 @@ createPriors_sitka<-function(sitka){
       0.33,#fieldCap
       0.6,#satPoint
       20,#K_s
-      5,#V_nr
+      3,#V_nr
       3,#sigma_zR
       50,#E_S1
       50,#E_S2
@@ -161,7 +161,8 @@ createPriors_sitka<-function(sitka){
   pMinima[[51]]<-0.7
   
   pMaxima[[52]]<-0.2
-  pMinima[[52]]<-0.05
+  pMinima[[52]]<-0.12
+  sdVals[[52]]<-0.01
   
   pMaxima[[33]]<-0.3
   pMinima[[33]]<-0.01
@@ -195,11 +196,11 @@ createPriors_pine<-function(pine){
     0.3,#satPoint
     5, #K_s
     3, #V_nr
-    2, #sigma_zR
+    0.3, #sigma_zR
     0.01, #E_S1
     0.01, #E_S2
     2, #shared_area
-    1.5, #maxRootDepth
+    .4, #maxRootDepth
     200, #K_drain
     0.588503613257886, #pFS2
     0.752929538228874, #pFS20
@@ -352,3 +353,36 @@ createPriors_pine<-function(pine){
   return(priorVals)
   
 }
+
+
+
+
+
+createPriors_Cont<-function(out){
+  
+  nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
+        "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover")
+  
+  library(matrixStats)
+  nmc = nrow(out$chain[[1]])
+  outSample   <- getSample(out,start=nmc/1.2,thin=5)
+  
+  sdVals<-t(as.data.frame(colSds(outSample)))
+  names(sdVals)<-names(as.data.frame(outSample))
+  sdVals<-sdVals[nm]
+  
+  codM<-miscTools::colMedians(as.data.frame(outSample))
+  codM<-codM[nm]
+  
+
+  ##Need to check what priors we are using!
+  pMaxima <- as.vector(codM+5*sdVals)
+  pMinima <- as.vector(codM-5*sdVals)
+
+  priorVals <- createTruncatedNormalPrior(mean = codM, sd=sdVals,
+                                          lower = pMinima, upper = pMaxima)
+  
+  return(priorVals)
+  
+}
+
