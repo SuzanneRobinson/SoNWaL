@@ -3,7 +3,6 @@ library(tidyr)
 library(purrr)
 library(BayesianTools)
 library(sensitivity)
-library(dplyr)
 library(future)
 library(ncdf4) 
 library(raster) 
@@ -100,7 +99,7 @@ spatDatUKnc <- function(chunk = 1, outputDir,saveFile) {
   
   files <-
     list.files(
-      path = paste0(outputDir, "/fullTS"),
+      path = paste0(outputDir, "fullTS"),
       pattern = paste0("_", chunk, "\\.RDS$"),
       full.names = TRUE,
       recursive = T
@@ -181,9 +180,9 @@ YCfunc<-function(out){
   MAI[1,2]<-0
   MAI$y<-(predict(loess(MAI$y~MAI$x)))
   
-  plot(CAI,col="white")
-  lines(MAI,col="blue")
-  lines(CAI,col="red")
+ # plot(CAI,col="white")
+ # lines(MAI,col="blue")
+  #lines(CAI,col="red")
   
   
   interSec<- tryCatch(
@@ -203,21 +202,32 @@ YCfunc<-function(out){
 }
 
 
+
+calcRH<-function(Tmean,Tref=273.16,p,q){
+  TmeanK<-Tmean+273.15
+  
+  RH<- 0.263*p*q*(exp((17.67*(TmeanK-Tref))/(TmeanK-29.65)))^-1
+  RH[RH>100]<-100
+  RH[RH<0]<-0
+  
+  return(RH)
+}
+
+
 #Spatial run function which takes a single grid cell and associated climate variables, runs simulations for a range of MCMC posterior values
 #Calculates the mean and a 95% credible interval
 #Currently there is some data manipulation going on to spread a single years data over multiple years until all data is downloaded
 #' @param site site data
 #' @param clm climate data
 #' @param param_draw parameter draws
-FR3PG_spat_run <- function(site, clm,param_draw){
+FR3PG_spat_run <- function(site, clm,param_draw,grid_id){
   library(lubridate)
   
-    if(is.na(clm[1,3])==T) return (tibble::as_tibble(data.frame(
+    if(is.na(clm[1,3])==T) return (tibble::as_tibble(data.frame(Year=NA,grid_id=grid_id,Wsbr_q05=NA,Wsbr_q95=NA,Wsbr_value=NA,
+                                                                Rs_q05=NA,Rs_q95=NA,Rs_value=NA,
+                                                                EvapTransp_q05=NA,EvapTransp_q95=NA,EvapTransp_value=NA,
+                                                                volSWC_rz_q05=NA,volSWC_rz_q95=NA,volSWC_rz_value=NA,
                                                                 yc_q05=NA,yc_q95=NA,yc_value=NA,
-                                                                Wsbr_q05=NA,Wsbr_q95=NA,Wsbr_value=NA,
-                                                                height_q05=NA,height_q95=NA, height_value=NA,
-                                                                MAI_q05=NA,MAI_q95=NA, MAI_value=NA,
-                                                                CAI_q05=NA,CAI_q95=NA, CAI_value=NA,
                                                                 GPP_q05=NA,GPP_q95=NA,GPP_value=NA,
                                                                 NPP_q05=NA,NPP_q95=NA,NPP_value=NA,
                                                                 NEE_q05=NA,NEE_q95=NA,NEE_value=NA,
@@ -226,41 +236,51 @@ FR3PG_spat_run <- function(site, clm,param_draw){
     
     FR3pgRun<-function(params){
       #get default parameters
-      sitka<- getParms(timeStp = 12)
+      baseParms<- getParms(timeStp = 52, waterBalanceSubMods = T)
 
       #Update parameters with proposals 
       nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
             "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
             "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-            "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er")
+            "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k")
   
-      sitka[nm]<-as.data.frame(params[nm])
-      clmDat<-as.data.frame(clm[,c(6,5,4,2,3,1)])
-      names(clmDat)<-c("Tmin","Tmax","Tmean","Rain","SolarRad","FrostDays")
-      clmDat$MonthIrrig<-0
-      clmDat$Month<-c(1:12)
+      baseParms[nm]<-as.data.frame(params[nm])
 
       
-      sqLength<-lubridate::year(as.Date(site$to,"%Y-%d-%m"))-lubridate::year(as.Date(site$from,"%Y-%d-%m"))+1
-      weatherDat<-as.data.frame(purrr::map_dfr(seq_len(sqLength), ~clmDat))
-      weatherDat$Year<-rep(lubridate::year(as.Date(site$from,"%Y-%d-%m")):lubridate::year(as.Date(site$to,"%Y-%d-%m")),each=12) 
-      weatherDat<-weatherDat[,c(names(clm.df.full[,c(1:9)]))]
-      weatherDat$date<-as.Date(paste0(weatherDat$Year,"-01-",weatherDat$Month),"%Y-%d-%m")
-      weatherDat$FrostDays<-0
-      weatherDat$week<-week(weatherDat$date)
+      
+      names(clm)<-c("dailyTmpRange","specHumid","Rain","surfPressure","SolarRadLW","SolarRad","wind","Tmean")
+      clm$Tmean<-clm$Tmean-273.15 #convert to celsius from kelvin
+      clm<-clm[1:(nrow(clm)-396),]
+      #get min and max temp
+      clm<-clm%>%
+        mutate(Tmin=Tmean-(dailyTmpRange/2),Tmax=Tmean+(dailyTmpRange/2))
+      #climate
+      clm$RH<-calcRH(Tmean=clm$Tmean,Tref=273.16,p=clm$surfPressure,q=clm$specHumid)
+      clm<-rownames_to_column(clm, var="Date")
+      clm$Date<-str_sub(clm$Date, -10)
+      clm$Date<-as.Date(clm$Date,"%Y.%m.%d")
+      clm$Month<-month(clm$Date)
+      clm$week<-week(clm$Date)
+      clm$Year<-year(clm$Date)
+      
+      clm$VPD <-((( (0.61078 * exp(17.269 * (clm$Tmean)/(237.3 + clm$Tmean)))*(1-(clm$RH)/100))))
+      
 
-      weatherDat$Rain<-weatherDat$Rain
-
-      sitka$weather<-weatherDat
+      clm<-clm%>%
+        dplyr::group_by(Year,week)%>%
+        dplyr::summarise(Month=median(Month),Tmax=max(Tmax),Tmin=min(Tmin),Tmean=mean(Tmean),Rain=sum(Rain*86400),SolarRad=mean(SolarRad),FrostDays=0,MonthIrrig=0,VPD=mean(VPD))
+      
+      baseParms$weather<-as.data.frame(clm)
       
       #run model and output data
-      out<-do.call(fr3PGDN,sitka)
+      out<-do.call(fr3PGDN,baseParms)
       out$age<-rev(as.numeric(2018-out$Year))
       out$MAI<-(out$Vu)/out$age
-      out$CAI<-c(rep(0,12),diff(out$Vu,lag=12))
+      out$CAI<-c(rep(0,52),diff(out$Vu,lag=52))
 
       out$yc<-YCfunc(out)
       
+
       
       return(out)
     }
@@ -268,33 +288,64 @@ FR3PG_spat_run <- function(site, clm,param_draw){
   #select stem and branch biomass or other outputs, take mean and 95% credible intervals
     #value to use? Wsbr or GPP etc?
  site_out <- tryCatch(
-   {param.draw %>%
-   
+   {param_draw %>%
     dplyr::mutate( sim = map(pars, FR3pgRun)) %>%
     dplyr::select(mcmc_id, sim) %>%
     tidyr::unnest_legacy() %>%
-    dplyr::summarise(
-      yc_q05 = quantile(yc, 0.05, na.rm = T),
-      yc_q95 = quantile(yc, 0.95, na.rm = T),
-      yc_value = quantile(yc, 0.5, na.rm = T),
-      
+       group_by(Year,mcmc_id)%>%
+       dplyr::summarise(
+         grid_id=grid_id,
+
+         dg = mean(dg,  na.rm = T),
+
+         Rs = mean(Rs, na.rm = T),
+
+         EvapTransp = mean(EvapTransp, na.rm = T),
+        
+         volSWC_rz = mean(volSWC_rz, na.rm = T),
+        
+         yc = mean(yc, na.rm = T),
+         
+         GPPsum = sum(GPP,  na.rm = T),
+         
+         NPPsum = sum(NPP, na.rm = T),
+         
+         NEEsum = sum(NEE, na.rm = T),    
+         
+         GPP = mean(GPP,  na.rm = T),
+ 
+         NPP = mean(NPP, na.rm = T),
+ 
+         NEE = mean(NEE, na.rm = T),
+         
+         Reco = mean(Reco, na.rm = T),
+
+         LAI = mean (LAI, na.rm = T)
+         
+       )%>%    
+       group_by(Year)%>%
+         dplyr::summarise(
+           grid_id=grid_id,
       Wsbr_q05 = quantile(dg, 0.05, na.rm = T),
       Wsbr_q95 = quantile(dg, 0.95, na.rm = T),
       Wsbr_value = quantile(dg, 0.5, na.rm = T),
       
-      height_q05 = quantile(hdom, 0.05, na.rm = T),
-      height_q95 = quantile(hdom, 0.95, na.rm = T),
-      height_value = quantile(hdom, 0.5, na.rm = T),
+      Rs_q05 = quantile(Rs, 0.05, na.rm = T),
+      Rs_q95 = quantile(Rs, 0.95, na.rm = T),
+      Rs_value = quantile(Rs, 0.5, na.rm = T),
+
+      EvapTransp_q05 = quantile(EvapTransp, 0.05, na.rm = T),
+      EvapTransp_q95 = quantile(EvapTransp, 0.95, na.rm = T),
+      EvapTransp_value = quantile(EvapTransp, 0.5, na.rm = T),
       
+      volSWC_rz_q05 = quantile(volSWC_rz, 0.05, na.rm = T),
+      volSWC_rz_q95 = quantile(volSWC_rz, 0.95, na.rm = T),
+      volSWC_rz_value = quantile(volSWC_rz, 0.5, na.rm = T),
       
-      MAI_q05 = quantile(MAI, 0.05, na.rm = T),
-      MAI_q95 = quantile(MAI, 0.95, na.rm = T),
-      MAI_value = quantile(MAI, 0.5, na.rm = T),
+      yc_q05 = quantile(yc, 0.05, na.rm = T),
+      yc_q95 = quantile(yc, 0.95, na.rm = T),
+      yc_value = quantile(yc, 0.5, na.rm = T),
       
-      
-      CAI_q05 = quantile(CAI, 0.05, na.rm = T),
-      CAI_q95 = quantile(CAI, 0.95, na.rm = T),
-      CAI_value = quantile(CAI, 0.5, na.rm = T),
       
       GPP_q05 = quantile(GPP, 0.05, na.rm = T),
       GPP_q95 = quantile(GPP, 0.95, na.rm = T),
@@ -307,6 +358,19 @@ FR3PG_spat_run <- function(site, clm,param_draw){
       NEE_q05 = quantile(NEE, 0.05, na.rm = T),
       NEE_q95 = quantile(NEE, 0.95, na.rm = T),
       NEE_value = quantile(NEE, 0.5, na.rm = T),
+      
+      
+      GPPsum_q05 = quantile(GPPsum, 0.05, na.rm = T),
+      GPPsum_q95 = quantile(GPPsum, 0.95, na.rm = T),
+      GPPsum_value = quantile(GPPsum, 0.5, na.rm = T),
+      
+      NPPsum_q05 = quantile(NPPsum, 0.05, na.rm = T),
+      NPPsum_q95 = quantile(NPPsum, 0.95, na.rm = T),
+      NPPsum_value = quantile(NPPsum, 0.5, na.rm = T),
+      
+      NEEsum_q05 = quantile(NEEsum, 0.05, na.rm = T),
+      NEEsum_q95 = quantile(NEEsum, 0.95, na.rm = T),
+      NEEsum_value = quantile(NEEsum, 0.5, na.rm = T),
 
       Reco_q05 = quantile(Reco, 0.05, na.rm = T),
       Reco_q95 = quantile(Reco, 0.95, na.rm = T),
@@ -316,7 +380,11 @@ FR3PG_spat_run <- function(site, clm,param_draw){
 },
 #add na values where there is no data, in the sea etc. 
 error = function(cond){
-  site_out <- tibble::as_tibble(data.frame(Wsbr_q05=NA,Wsbr_q95=NA,Wsbr_value=NA,
+  site_out <- tibble::as_tibble(data.frame(Year=NA,grid_id=grid_id,Wsbr_q05=NA,Wsbr_q95=NA,Wsbr_value=NA,
+                                           Rs_q05=NA,Rs_q95=NA,Rs_value=NA,
+                                           EvapTransp_q05=NA,EvapTransp_q95=NA,EvapTransp_value=NA,
+                                           volSWC_rz_q05=NA,volSWC_rz_q95=NA,volSWC_rz_value=NA,
+                                           yc_q05=NA,yc_q95=NA,yc_value=NA,
                                            GPP_q05=NA,GPP_q95=NA,GPP_value=NA,
                                            NPP_q05=NA,NPP_q95=NA,NPP_value=NA,
                                            NEE_q05=NA,NEE_q95=NA,NEE_value=NA,
@@ -324,8 +392,8 @@ error = function(cond){
 })
 
     
-    
-  return(site_out)
+    site_out<-site_out[!duplicated(site_out),]
+  return(as.data.frame(site_out))
   
 }
 

@@ -398,9 +398,9 @@ NLL<- function(p){
       
       
       # NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,sum(dnorm(.GlobalEnv$observed,mean=modelled,sd=.GlobalEnv$dev,log=T),na.rm = T))
-      NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,(flogL(data=.GlobalEnv$observed,sims=modelled,data_s=.GlobalEnv$dev)))
+      NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,flogL(data=.GlobalEnv$observed,sims=modelled,data_s=.GlobalEnv$dev))
       
-      NlogLik<-ifelse(max(output$LAI)>10,-Inf,NlogLik)
+      NlogLik<-ifelse(max(output$LAI)>13,-Inf,NlogLik)
       NlogLik<-ifelse(min(output$totN)<1,-Inf,NlogLik)
       NlogLik<-ifelse(sitka$fieldCap<sitka$wiltPoint,-Inf,NlogLik)
       NlogLik<-ifelse(sitka$satPoint<sitka$fieldCap,-Inf,NlogLik)
@@ -436,7 +436,7 @@ NLL_weekly<- function(p){
       #use sampleOutputTS if using smaller time-steps
       modelled <-sampleOutputWeekly(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
       
-      NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,(flogL(data=.GlobalEnv$observed,sims=modelled,data_s=.GlobalEnv$dev)))
+      NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,sum(dnorm(modelled,.GlobalEnv$observed,GlobalEnv$dev,log=T)))
       
 NlogLik<-ifelse(max(output$LAI)>8,-Inf,NlogLik)
 #        NlogLik<-ifelse(mean(tail(output$LAI,500))<1,-Inf,NlogLik)

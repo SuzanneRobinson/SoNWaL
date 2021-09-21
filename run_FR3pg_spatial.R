@@ -1,4 +1,3 @@
-library(plyr)
 library(tidyr)
 library(tidyverse)
 library(purrr)
@@ -36,15 +35,28 @@ plan(multisession, workers = coreNum - 1)
 
 future_map(c(1:2), ~spatDatUKnc(chunk=.x,outputDir,saveFile),.progress = T)
 
-ff<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\spatialChunks\\spatialChunk_3.RDS")
 
-#Get UK spatial data - needs updating to web scraping
-simDat<-spatDatUK(dataDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\")
-#Get climate data for Harwood currently
-clm_df_full<<-getClimDat("monthly")
+
+
+
+args=(commandArgs(TRUE))
+print(args)
+chunk=args[1]
+
+fileLocs<-"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\spatialChunks\\"
+paramsFile<-("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_3_T.RDS")
+files <- list.files(path = fileLocs, pattern = "\\.RDS$", full.names = TRUE, 
+                    recursive = T)
+
+fileName<-sub("\\/.*", "",list.files(path = fileLocs, pattern = "\\.RDS$", full.names = F, 
+                           recursive = T))[chunk]
+fileName<-str_sub(fileName,14)
+
+simDat<-readRDS(files[chunk])
+clm_df_full<<-getClimDat("weekly")
 
 #Read in MCMC output to get parameter draws - this code needs tidying a bit
-param_drawX<-readRDS('C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\monthly_1_T.RDS')
+param_drawX<-readRDS(paramsFile)
 param_drawX<-as_tibble(getSample(param_drawX, start = 100, coda = TRUE, thin = 1,numSamples = 25 )[[1]])#,colMedians(getSample(param_drawX, start = 1000, coda = TRUE, thin = 1 )[[2]])))
 param_draw<-as_tibble(1:nrow(param_drawX))
 param_draw$pars<- tibble(list(split(param_drawX, 1:NROW(param_drawX))))%>%
@@ -53,21 +65,33 @@ names(param_draw)<-c("mcmc_id","pars")
 param_draw<<-param_draw
 param_draw$pars<-unname(param_draw$pars$`list(split(param_drawX, 1:NROW(param_drawX)))`)
 
-#Create some random forests to match with the spatial climate data (will use actual forest data in future)
-genSiteTb<-genRandSiteDat(from=1950,to=2009)
+#Create some random forests to match with the spatial climate data 
 
-#take a sample of the spatial data (else it'll take a really long time to run not on a cluster)
-spatSimDat <<- inner_join(genSiteTb, simDat, by = 'grid_id')#%>%
+simDat$site<-list(data.frame(from=(paste0( round(1971),"-01-01")),to=paste0( round(2016),"-30-12")))
 
-plan(multisession,workers = 7)
+
 #run grid squares in parallel - as running over grid squares should be very scaleable
-outTemp <-future_map2(spatSimDat$site, spatSimDat$clm, ~FR3PG_spat_run(site=.x, clm=.y,param_draw=param_draw),.progress = T)
+#outTemp <-pmap(simDat$site, simDat$clm,as.list(simDat$grid_id), .f=~FR3PG_spat_run(site=..1, clm=..2,grid_id=..3,param_draw=param_draw),.progress = T)
+
+outTemp<-mapply(FR3PG_spat_run, site = simDat$site, clm = simDat$clm,grid_id=as.list(simDat$grid_id),MoreArgs = list(param_draw=param_draw),SIMPLIFY = F)
+#outTemp<-do.call(rbind,outTemp)
+
 #bind into a single tibble
 out<-as_tibble(data.table::rbindlist(outTemp,fill=T))
 #re-add grid_id values
-out$grid_id<-spatSimDat$grid_id
-#Remove areas where there is no data (such as the ocean), for speed FR3PG_spat_run skips these and just adds NA's
-#out<-drop_na(out)
+#out$grid_id<-simDat$grid_id
+grF<-simDat[,c(1,3,4)]
+out<-merge(out,grF,by.x="grid_id",by.y = "grid_id")
+
+saveRDS(out,paste0("/work/scratch-nopw/alm/spatOutput/","SoNWal_",fileName))
+
+
+
+
+
+
+
+
 
 
 #function to find yield class - this has been changed - see updated function in shiny code etc!

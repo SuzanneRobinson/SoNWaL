@@ -114,8 +114,8 @@ plotResultsPine <- function(outP,ShortTS=F){
   
   coefVar<-0.2
   
-  predPos  <- intvsS[,1]$`97.5%`*modif + 2  * sapply( 1:length(obsDat$GPP), function(i) max( coefVar* abs(obsDat$GPP[i]),0.05))
-  predNeg  <- intvsS[,1]$`2.5%`*modif - 2 * sapply( 1:length(obsDat$GPP), function(i) max( coefVar* abs(obsDat$GPP[i]),0.05))
+  predPos  <- intvsS[,1]$`89%`*modif + 2  * sapply( 1:length(obsDat$GPP), function(i) max( coefVar* abs(obsDat$GPP[i]),0.05))
+  predNeg  <- intvsS[,1]$`11%`*modif - 2 * sapply( 1:length(obsDat$GPP), function(i) max( coefVar* abs(obsDat$GPP[i]),0.05))
   predm  <- intvsS[,1]$`50%`*modif# - 2 * 0.3
   
 
@@ -131,8 +131,8 @@ plotResultsPine <- function(outP,ShortTS=F){
   
   
   
-  predPosNEE  <- intvsS[,2]$`97.5%`*modif + 2  * sapply( 1:length(obsDat$NEE), function(i) max( coefVar* abs(obsDat$NEE[i]),0.05))
-  predNegNEE  <- intvsS[,2]$`2.5%`*modif - 2 * sapply( 1:length(obsDat$NEE), function(i) max( coefVar* abs(obsDat$NEE[i]),0.05))
+  predPosNEE  <- intvsS[,2]$`89%`*modif + 2  * sapply( 1:length(obsDat$NEE), function(i) max( coefVar* abs(obsDat$NEE[i]),0.05))
+  predNegNEE  <- intvsS[,2]$`11%`*modif - 2 * sapply( 1:length(obsDat$NEE), function(i) max( coefVar* abs(obsDat$NEE[i]),0.05))
   predmNEE  <- intvsS[,2]$`50%`*modif# - 2 * 0.3
   
   
@@ -147,8 +147,8 @@ plotResultsPine <- function(outP,ShortTS=F){
           axis.text=element_text(size=14))
   
   
-  predPosSWC  <- intvsS[,3]$`97.5%`[13:228] + 2  * sapply( 1:length(obsDatSWC$swc), function(i) max( coefVar* abs(obsDatSWC$swc[i]),0.05))
-  predNegSWC  <- intvsS[,3]$`2.5%`[13:228] - 2 * sapply( 1:length(obsDatSWC$swc), function(i) max( coefVar* abs(obsDatSWC$swc[i]),0.05))
+  predPosSWC  <- intvsS[,3]$`89%`[13:228] + 2  * sapply( 1:length(obsDatSWC$swc), function(i) max( coefVar* abs(obsDatSWC$swc[i]),0.05))
+  predNegSWC  <- intvsS[,3]$`11%`[13:228] - 2 * sapply( 1:length(obsDatSWC$swc), function(i) max( coefVar* abs(obsDatSWC$swc[i]),0.05))
   predmSWC  <- intvsS[,3]$`50%`[13:228]# - 2 * 0.3
   
   
@@ -184,11 +184,11 @@ YC.finder <- function(HT,AGE)
 
 
 ## Function to plot the model against the Harwood data.
-plotResultsNewMonthly <- function(df,out,ShortTS=F){
+plotResultsNewMonthly <- function(df,out,ShortTS=F,numSamps=500){
   library(matrixStats)
+  library(future)
   nmc = nrow(out$chain[[1]])
-  outSample   <- getSample(out,start=nmc/1.2,thin=5)
-  numSamples = 25# min(1000, nrow(outSample))
+  outSample   <- getSample(out,start=10,thin=5)
   codM<-miscTools::colMedians(as.data.frame(outSample))
   sitka[.GlobalEnv$nm]<-codM[.GlobalEnv$nm]
   df<-do.call(fr3PGDN,sitka)
@@ -235,6 +235,8 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F){
 
   
   runModel<- function(p){
+    require("dplyr")
+    require("batMods")
     sitka[.GlobalEnv$nm]<-p
 
       res<- do.call(fr3PGDN,sitka)%>%
@@ -248,15 +250,15 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F){
   getIntv<-function(paramName,modLst){
     
     simDat =   do.call(cbind,lapply(modLst, "[",  paramName))
-   res<-as.data.frame(rowQuantiles(as.matrix(simDat), probs = c(0.025, 0.5, 0.975)))
+   res<-as.data.frame(rowQuantiles(as.matrix(simDat), probs = c(0.11, 0.5, 0.89)))
   return(res)
    }
   
-  
-  outSample<-getSample(out,start=nmc/1.2,thin=1,numSamples = 25)
+
+  outSample<-getSample(out,start=nmc/2,thin=1,numSamples = numSamps)
   outSample<-as.data.frame(outSample)
   outSample <- split(outSample, seq(nrow(outSample)))
-  outRes<-lapply(outSample, runModel)
+  outRes<- lapply(outSample, runModel) 
   
 paramName<-list("GPP","NEE","volSWC_rz","EvapTransp","Reco","Rs","N","LAI","dg","totC","totN","NPP","alphaAn")
 intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
@@ -270,12 +272,12 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
   
   coefVar<-0.2
   
-  predPos  <- intvsS[,1]$`97.5%`*modif + 2  * sapply( 1:length(sdMin$sdgpp), function(i) max( coefVar* abs(sdMin$sdgpp[i]),0.05))
-  predNeg  <- intvsS[,1]$`2.5%`*modif - 2 * sapply( 1:length(sdMin$sdgpp), function(i) max( coefVar* abs(sdMin$sdgpp[i]),0.05))
+  predPos  <- intvsS[,1]$`89%`*modif + 2  * sapply( 1:length(sdMin$sdgpp), function(i) max( coefVar* abs(sdMin$sdgpp[i]),0.05))
+  predNeg  <- intvsS[,1]$`11%`*modif - 2 * sapply( 1:length(sdMin$sdgpp), function(i) max( coefVar* abs(sdMin$sdgpp[i]),0.05))
   predm  <- intvsS[,1]$`50%`*modif# - 2 * 0.3
   
-  predNPPPos  <- intvsS[,12]$`97.5%`*modif + 2  * sapply( 1:length(sdMin$sdnpp), function(i) max( coefVar* abs(sdMin$sdnpp[i]),0.05))
-  predNPPNeg  <- intvsS[,12]$`2.5%`*modif - 2 * sapply( 1:length(sdMin$sdnpp), function(i) max( coefVar* abs(sdMin$sdnpp[i]),0.05))
+  predNPPPos  <- intvsS[,12]$`89%`*modif + 2  * sapply( 1:length(sdMin$sdnpp), function(i) max( coefVar* abs(sdMin$sdnpp[i]),0.05))
+  predNPPNeg  <- intvsS[,12]$`11%`*modif - 2 * sapply( 1:length(sdMin$sdnpp), function(i) max( coefVar* abs(sdMin$sdnpp[i]),0.05))
   predmNPP  <- intvsS[,12]$`50%`*modif# - 2 * 0.3
   
   
@@ -328,8 +330,8 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
-  predPosEtransp  <- intvsS[,4]$`97.5%`  + 2  * sapply( 1:length(sdMin$sdet), function(i) max( coefVar* abs(sdMin$sdet[i]),0.01))
-  predNegEtransp  <- intvsS[,4]$`2.5%` - 2  * sapply( 1:length(sdMin$sdet), function(i) max( coefVar* abs(sdMin$sdet[i]),0.01))
+  predPosEtransp  <- intvsS[,4]$`89%`  + 2  * sapply( 1:length(sdMin$sdet), function(i) max( coefVar* abs(sdMin$sdet[i]),0.01))
+  predNegEtransp  <- intvsS[,4]$`11%` - 2  * sapply( 1:length(sdMin$sdet), function(i) max( coefVar* abs(sdMin$sdet[i]),0.01))
   predmEtransp  <-   intvsS[,4]$`50%` # - 2 * sd(dataX$gpp)
   
   etrans<-ggplot()+theme_bw()+
@@ -341,8 +343,8 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
-  predPosSWC  <- intvsS[,3]$`97.5%`  + 2  * sapply( 1:length(sdMin$sdswc), function(i) max( 0.05* abs(sdMin$sdswc[i]),0.01))
-  predNegSWC  <- intvsS[,3]$`2.5%` - 2   * sapply( 1:length(sdMin$sdswc), function(i) max( 0.05* abs(sdMin$sdswc[i]),0.01))
+  predPosSWC  <- intvsS[,3]$`89%`  + 2  * sapply( 1:length(sdMin$sdswc), function(i) max( 0.05* abs(sdMin$sdswc[i]),0.01))
+  predNegSWC  <- intvsS[,3]$`11%` - 2   * sapply( 1:length(sdMin$sdswc), function(i) max( 0.05* abs(sdMin$sdswc[i]),0.01))
   predmSWC  <-   intvsS[,3]$`50%` # - 2 2 * sd(dataX$gpp)
   newSWC<-clm_df_full%>%
     filter(Year>=2015)%>%
@@ -360,8 +362,8 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
           axis.text=element_text(size=14))
   
   
-  predPosNEE  <-intvsS[,2]$`97.5%`*modif  + 2 * sapply( 1:length(sdMin$sdnee), function(i) max( coefVar* abs(sdMin$sdnee[i]),0.05))
-  predNegNEE  <-intvsS[,2]$`2.5%`*modif - 2  * sapply( 1:length(sdMin$sdnee), function(i) max( coefVar* abs(sdMin$sdnee[i]),0.05))
+  predPosNEE  <-intvsS[,2]$`89%`*modif  + 2 * sapply( 1:length(sdMin$sdnee), function(i) max( coefVar* abs(sdMin$sdnee[i]),0.05))
+  predNegNEE  <-intvsS[,2]$`11%`*modif - 2  * sapply( 1:length(sdMin$sdnee), function(i) max( coefVar* abs(sdMin$sdnee[i]),0.05))
   predmNEE  <- intvsS[,2]$`50%`*modif # - 2  sd(dataX$gpp)
   
   
@@ -377,8 +379,8 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
           axis.text=element_text(size=14))
   
   
-  predPosreco  <- intvsS[,5]$`97.5%`*modif  + 2 * sapply( 1:length(sdMin$sdreco), function(i) max( coefVar* abs(sdMin$sdreco[i]),0.1))
-  predNegreco  <- intvsS[,5]$`2.5%`*modif - 2  * sapply( 1:length(sdMin$sdreco), function(i) max( coefVar* abs(sdMin$sdreco[i]),0.1))
+  predPosreco  <- intvsS[,5]$`89%`*modif  + 2 * sapply( 1:length(sdMin$sdreco), function(i) max( coefVar* abs(sdMin$sdreco[i]),0.1))
+  predNegreco  <- intvsS[,5]$`11%`*modif - 2  * sapply( 1:length(sdMin$sdreco), function(i) max( coefVar* abs(sdMin$sdreco[i]),0.1))
   predmreco  <-   intvsS[,5]$`50%`*modif # - 2  * sd(dataX$gpp)
   
   recoPlot<-ggplot()+theme_bw()+
@@ -392,8 +394,8 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
   
   
   
-  predPosRs  <- intvsS[,6]$`97.5%`*modif  + 2 * sapply( 1:length(sdMin$sdrs), function(i) max( coefVar* abs(sdMin$sdrs[i]),0.3))
-  predNegRs  <- intvsS[,6]$`2.5%`*modif - 2  * sapply( 1:length(sdMin$sdrs), function(i) max( coefVar* abs(sdMin$sdrs[i]),0.3))
+  predPosRs  <- intvsS[,6]$`89%`*modif  + 2 * sapply( 1:length(sdMin$sdrs), function(i) max( coefVar* abs(sdMin$sdrs[i]),0.3))
+  predNegRs  <- intvsS[,6]$`11%`*modif - 2  * sapply( 1:length(sdMin$sdrs), function(i) max( coefVar* abs(sdMin$sdrs[i]),0.3))
   predmRs  <-   intvsS[,6]$`50%`*modif # - 2  * sd(dataX$gpp)
   
   rsPlot<-ggplot()+theme_bw()+
@@ -441,13 +443,13 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
   names(difRoots)<-c("year","age","difroots")
   
   totC<-data.frame(rbind(
-    c(dplyr::filter(dfLeaf,Year==2018&Month==7)$Year+dplyr::filter(dfLeaf,Year==2018&Month==7)$Month/dt,dplyr::filter(dfLeaf,Year==2018&Month==7)$t.proj,68.87)
+    c(dplyr::filter(dfLeaf,Year==2018&Month==7)$Year+dplyr::filter(dfLeaf,Year==2018&Month==7)$Month/dt,dplyr::filter(dfLeaf,Year==2018&Month==7)$t.proj,214.76)
   )
   )
   names(totC)<-c("year","age","totC")
   
   totN<-data.frame(rbind(
-    c(dplyr::filter(dfLeaf,Year==2018&Month==7)$Year+dplyr::filter(dfLeaf,Year==2018&Month==7)$Month/dt,dplyr::filter(dfLeaf,Year==2018&Month==7)$t.proj,2.313)
+    c(dplyr::filter(dfLeaf,Year==2018&Month==7)$Year+dplyr::filter(dfLeaf,Year==2018&Month==7)$Month/dt,dplyr::filter(dfLeaf,Year==2018&Month==7)$t.proj,7.15)
   )
   )
   names(totN)<-c("year","age","totN")
@@ -461,30 +463,30 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
   )
   names(alphaN)<-c("year","age","alphaN")
   
-  predPosN  <- intvsS[,7]$`97.5%` # + 2 * 0.01
-  predNegN   <- intvsS[,7]$`2.5%` #- 2  * 0.01
+  predPosN  <- intvsS[,7]$`89%` # + 2 * 0.01
+  predNegN   <- intvsS[,7]$`11%` #- 2  * 0.01
   predmN   <-   intvsS[,7]$`50%`
   
-  predPosLAI  <- intvsS[,8]$`97.5%` # + 2 * 0.01
-  predNegLAI   <- intvsS[,8]$`2.5%` #- 2  * 0.01
+  predPosLAI  <- intvsS[,8]$`89%` # + 2 * 0.01
+  predNegLAI   <- intvsS[,8]$`11%` #- 2  * 0.01
   predmLAI   <-   intvsS[,8]$`50%`
   
-  predPosDG  <- intvsS[,9]$`97.5%` # + 2 * 0.01
-  predNegDG    <- intvsS[,9]$`2.5%` #- 2  * 0.01
+  predPosDG  <- intvsS[,9]$`89%` # + 2 * 0.01
+  predNegDG    <- intvsS[,9]$`11%` #- 2  * 0.01
   predmDG    <-   intvsS[,9]$`50%`
   
 
-  predPosTotC  <- intvsS[,10]$`97.5%` # + 2 * 0.125
-  predNegTotC    <- intvsS[,10]$`2.5%` #- 2  * 0.125
+  predPosTotC  <- intvsS[,10]$`89%` # + 2 * 0.125
+  predNegTotC    <- intvsS[,10]$`11%` #- 2  * 0.125
   predmTotC    <-   intvsS[,10]$`50%`
   
-  predPosTotN  <- intvsS[,11]$`97.5%`  #+ 2 * 0.125
-  predNegTotN    <- intvsS[,11]$`2.5%` #- 2  * 0.125
+  predPosTotN  <- intvsS[,11]$`89%`  #+ 2 * 0.125
+  predNegTotN    <- intvsS[,11]$`11%` #- 2  * 0.125
   predmTotN    <-   intvsS[,11]$`50%`
 
   dataX$predmAlphaAn<-intvsS[,13]$`50%`
-  dataX$predPosAlphaAn<-intvsS[,13]$`97.5%`
-  dataX$predNegAlphaAn<-intvsS[,13]$`2.5%`
+  dataX$predPosAlphaAn<-intvsS[,13]$`89%`
+  dataX$predNegAlphaAn<-intvsS[,13]$`11%`
   alphaAnMean<-dataX%>%group_by(year)%>%summarise(predmAlphaAn=mean(predmAlphaAn),predPosAlphaAn=mean(predPosAlphaAn),predNegAlphaAn=mean(predNegAlphaAn))
   
   pLAI<-ggplot()+theme_bw()+
@@ -565,11 +567,11 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
 
 ## Function to plot the model against the Harwood data.
 plotResultsNew <- function(df,out,ShortTS=F){
-  
+  library(matrixStats)
   nmc = nrow(out$chain[[1]])
   outSample   <- getSample(out,start=nmc/1.2,thin=5)
   numSamples = 25# min(1000, nrow(outSample))
-  codM<-colMedians(as.data.frame(outSample))
+  codM<-miscTools::colMedians(as.data.frame(outSample))
   sitka[.GlobalEnv$nm]<-codM[.GlobalEnv$nm]
   df<-do.call(fr3PGDN,sitka)
   
@@ -871,3 +873,78 @@ predmEtransp  <- intvsS[[4]]$posteriorPredictiveCredibleInterval[2,]# - 2 * sd(d
   
   return(list(gpp1,swcPlot,NEEPlot,etrans,recoPlot,rsPlot,gppC,nppC, pLAI,pStemNo,pDBH,pWr,ptotC,ptotN))
 }
+
+
+
+
+##quick function for plotting weekly simulated data against observed, does not include uncertainty as this requires mcmc posteriors!
+quickPlot<-function(flxdata_daily,output,grouping="month"){
+  
+  if(grouping=="week") output$grouping<-c(1:53) else output$grouping<-output$Month
+  output<-filter(output,Year>2014)%>%
+    group_by(Year,grouping)%>%
+    summarise(GPP=mean(GPP),NPP=mean(NPP),NEE=mean(NEE),Reco=mean(Reco),Rs=mean(Rs),EvapTransp=sum(EvapTransp),volSWC_rz=mean(volSWC_rz))
+  
+  #conversion factor to gCcm-2 for weekly data
+  cf=7.142857
+  
+  if(grouping=="week") flxdata_daily$grouping<-week(flxdata_daily$timestamp) else flxdata_daily$grouping<-month(flxdata_daily$timestamp)
+  
+  flxdata_weekly<-flxdata_daily%>%
+    filter(year>2014)%>%
+    group_by(year,grouping)%>%
+    summarise(gpp=mean(gpp),npp=mean(npp),nee=mean(nee),reco=mean(reco),rs=mean(rs),et=sum(et),swc=mean(swc),timestamp=median(timestamp))%>%
+    add_column(simGPP=output$GPP*cf,simNPP=output$NPP*cf,simNEE=output$NEE*cf,simRS=output$Rs*cf,simET=output$EvapTransp,simSWC=output$volSWC_rz)
+  
+  gpp1<-ggplot()+theme_bw()+
+    geom_line(data=flxdata_weekly,aes(x=timestamp,y=simGPP),colour="purple",size=1)+
+    geom_point(data=flxdata_weekly,aes(x=timestamp, y=gpp),colour="black",size=2)+
+    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
+    labs(x="Year",y=expression(paste("GPP [gC"," ",cm^-2,"]",sep="")))+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+  
+  gpp2<-ggplot()+theme_bw()+
+    geom_line(data=flxdata_weekly,aes(x=timestamp,y=simNPP),colour="purple",size=1)+
+    geom_point(data=flxdata_weekly,aes(x=timestamp, y=npp),colour="black",size=2)+
+    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
+    labs(x="Year",y=expression(paste("NPP [gC"," ",cm^-2,"]",sep="")))+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+  
+  gpp3<-ggplot()+theme_bw()+
+    geom_line(data=flxdata_weekly,aes(x=timestamp,y=simNEE),colour="purple",size=1)+
+    geom_point(data=flxdata_weekly,aes(x=timestamp, y=nee),colour="black",size=2)+
+    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
+    labs(x="Year",y=expression(paste("NEE [gC"," ",cm^-2,"]",sep="")))+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+  
+  gpp4<-ggplot()+theme_bw()+
+    geom_line(data=flxdata_weekly,aes(x=timestamp,y=simET),colour="purple",size=1)+
+    geom_point(data=flxdata_weekly,aes(x=timestamp, y=et),colour="black",size=2)+
+    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
+    labs(x="Year",y=expression(paste("GPP [gC"," ",cm^-2,"]",sep="")))+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+  
+  gpp5<-ggplot()+theme_bw()+
+    geom_line(data=flxdata_weekly,aes(x=timestamp,y=simSWC),colour="purple",size=1)+
+    geom_point(data=flxdata_weekly,aes(x=timestamp, y=swc),colour="black",size=2)+
+    scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
+    labs(x="Year",y=expression(paste("swc %",sep="")))+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+  
+  
+  ggarrange(gpp1,gpp2,gpp3,gpp4,gpp5)
+  
+}
+
+
+
