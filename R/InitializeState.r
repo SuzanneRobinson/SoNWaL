@@ -34,8 +34,8 @@ function (stand, site, parms, general.info, weather)
     state.init["potentialEvap"] <- 0.01
     
     ###use parameter for initial nitrogen and carbon pools
-    state.init["totN"]<-parms[["K_s"]]
-    state.init["totC"]<-parms[["K_drain"]]
+    state.init["totN"]<-parms[["startN"]]
+    state.init["totC"]<-parms[["startC"]]
     state.init["YrC"]<-0.2*state.init["totC"]
     state.init["YlC"]<-0.1*state.init["totC"]
     state.init["OC"]<-0.7*state.init["totC"]

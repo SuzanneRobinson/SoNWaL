@@ -10,7 +10,10 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     LAImaxIntcptn <- parms[["LAImaxIntcptn"]]
     MaxIntcptn <- parms[["MaxIntcptn"]]
     RainIntcptn <- MaxIntcptn * ifelse(LAImaxIntcptn <= 0, 1, 
-        min(1, LAI/LAImaxIntcptn)) * Rain
+        min(1, LAI/LAImaxIntcptn)) * Rain# max(Rain-15,0)
+    
+   # RainIntcptn<-ifelse(Rain<15,Rain,RainIntcptn+15)
+    
     Qa <- parms[["Qa"]]
     Qb <- parms[["Qb"]]
     month <- weather[["Month"]]
@@ -34,36 +37,15 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
     VPDconv <- parms[["VPDconv"]]
     BLcond <- parms[["BLcond"]]
     VPD<-weather[["VPD"]] * exp(LAI * (-log(2)) / 5)
-    #Penman-monteith 
-   #((e20 * netRad + rhoAir * lambda  * VPD *
-   #    BLcond)/(1 + e20 + BLcond/CanCond))
-   # CanTransp <- Etransp/lambda * h
-    
+
     Delta = 145 #Rate of change of saturation specific humidity with air temperature. (Pa/K−1)
     Cp = 1004 #specific heat cap of air J/kg-1
     Pa = 1.204 #Dry air density kg/m-3
     gamma = 66.1 # phsychrometric constant Pa/K-1
     lambda <- parms[["lambda"]]#energy for vapourisation of water J/kg-1
-  #  k=0.41#karman constant
-  # # u_s=2#frition velocity
-  #  z_h=state[["hdom"]] #height
-  #  z_h0=0.08*z_h#height zero
-  #  d=0.8*z_h#reference height
-  #  u<-weather[["Wind"]]
-  #  U_s=(u*k)/log(z_h-(d/z_h0))
-  #  BLcond = k*U_s/log((z_h-d)/z_h0)
-  #  BLcond<-ifelse(is.na(BLcond)==T,0,BLcond)
-    
-    
+
     CanTransp <- h*((CanCond*(Delta*netRad+BLcond*Pa*Cp*(VPD*1000)))/(lambda*((gamma+Delta)*CanCond+gamma*BLcond))) #Etransp/lambda * h
-    
-   # CanTransp<-(((Delta*(netRad)+Pa*Cp*(VPD*1000)*BLcond)/
-      #                   (  (Delta+gamma*(1+BLcond/CanCond))*L_nu)))*h
-    
-    
-    
-    #CanTransp<-h*(CanCond*(145*netRad+BLcond*1.204*1004*(VPD*1000))/(2.45*((66.1+145)*CanCond+66.1*BLcond)))
-    #less accurate but easier to have flexible time-steps?
+
     Transp <- CanTransp*365/parms[["timeStp"]] #general.info$daysinmonth[month] * CanTransp
 
     #non-Intercepted radiation
@@ -82,66 +64,71 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       volSWC_wp= (parms[["wiltPoint"]])
       volSWC_fc= (parms[["fieldCap"]])
       volSWC_sat= (parms[["satPoint"]])
-      
-      vnr<-max(parms[["V_nr"]]-z_r,0)
-      
-      
-      #assumes drainage from saturation to field capacity between time points
-      state[["SWC_nr"]]<- min(state[["SWC_nr"]],(parms[["fieldCap"]])*vnr*1000)
-      state[["SWC_rz"]]  <-    min(state[["SWC_rz"]],(parms[["fieldCap"]])*z_r*1000)
-      
-      
+
       #Calculate accumulated soil evaporation for the month using soilEvap function
-      evapRes <- soilEvap(parms, weather, state, interRad,h)
+      throughFall<-Rain -RainIntcptn
+      evapRes <- soilEvap(parms, weather, state, interRad,h,throughFall)
       state[["potentialEvap"]]<-evapRes[[2]]
       
-      throughFall<-Rain -RainIntcptn
-      evapSoil<-min(evapRes[[1]], state[["SWC_rz"]])
-      #soil evaporation Minus monthly rainfall and irrigation gives cumulative E_S value - does not include drainage as that is loss from bottom of profile, this is top layer evaporation until drying at surface
-      E_S <- max(evapSoil -throughFall - MonthIrrig,0) 
-      state[["E_S"]] <- E_S
       
-
-      #fsmod for sonwal app (not used in fitting or anything)
-      #EvapTransp <- if(state[["t"]]>46) EvapTransp*parms[["fsMod"]] else EvapTransp
+     evapSoil<-min(evapRes[[1]], (state[["SWC_rz"]]+state[["SWC_nr"]]))
+     #soil evaporation Minus monthly rainfall and irrigation gives cumulative E_S value - does not include drainage as that is loss from bottom of profile, this is top layer evaporation until drying at surface
+     E_S <- max(evapSoil -throughFall - MonthIrrig,0) 
+     state[["E_S"]] <- E_S
+      
+      
+      
+     # evapSoil<-min(evapRes[[1]], (state[["SWC_rz"]]+state[["SWC_nr"]]))
+     # #soil evaporation Minus monthly rainfall and irrigation gives cumulative E_S value - does not include drainage as that is loss from bottom of profile, this is top layer evaporation until drying at surface
+     # E_S <- max(evapSoil - MonthIrrig,0) 
+     # state[["E_S"]] <- max(min(evapRes[[2]], (state[["SWC_rz"]]+state[["SWC_nr"]]))- MonthIrrig-throughFall,0)
+      
+      
       
   
       #Calculate drainage from root zone to non-root zone and out of non-root zone, where SWC of root zone exceeds field capacity of the soil zone (eq A.11)
       #Drainage parameter based on soil texture *24 to get from hourly to daily rates - use daily rates in these functions as they calc drainage of t days. 
-      K_drain_rz=0.5#max((4.56*((state[["SWC_rz"]]/(z_r*1000))/parms[["satPoint"]])^18.4)*24,0.00001)
+      K_drain_rz=parms[["K_drain"]]#max((4.56*((state[["SWC_rz"]]/(z_r*1000))/parms[["satPoint"]])^18.4)*24,0.00001)
       K_drain_nrz=0.8#max((114*((state[["SWC_nr"]]/(z_r*1000))/parms[["satPoint"]])^15)*24,0.00001)
       
+      #calc volume of non-root zone
+      vnr<-max(parms[["V_nr"]]-z_r,0)
       
       rz_nrz_drain <- max(drainageFunc(parms, weather, SWC=state[["SWC_rz"]],soilVol=z_r,K_drain=K_drain_rz),0)
       nrz_out_drain <-max(drainageFunc(parms, weather, SWC=state[["SWC_nr"]],soilVol=vnr,K_drain=K_drain_nrz),0)
       
-      #Run soil water content function to get root zone SWC
-      SWC_rz <- soilWC(parms, weather, state,K_s=0.5,SWC=state[["SWC_rz"]],soilVol=z_r)
+      #Run soil water content function to get root zone SWC 
+      SWC_rz <- soilWC(parms, weather, state,K_s=parms[["K_s"]],SWC=state[["SWC_rz"]],soilVol=z_r)
       
       #volume of water moving from root zone to non-root zone is diff between current state of root zone SWC and updated root zone SWC
       rz_nrz_recharge<-state[["SWC_rz"]]-SWC_rz
-      
-  
-      
+
+      #calc fraction of soil is root zone
+     # rootFrac<-1#max(z_r/parms[["V_nr"]],0.2)
+
       #update SWC by adding drainage from root zone and removing drainage out from non-root zone
-      state[["SWC_nr"]] <- min(max(state[["SWC_nr"]]+rz_nrz_drain-nrz_out_drain+rz_nrz_recharge,0),volSWC_sat*vnr*1000)
-      #Update root zone SWC with the addition of rainfall, irrigation, minus evap and drainage into non-root zone
-      state[["SWC_rz"]] <- min(max(SWC_rz + Rain + MonthIrrig - RainIntcptn - evapSoil-Transp - rz_nrz_drain,0),volSWC_sat*z_r*1000)
+     # state[["SWC_nr"]] <- min(max(state[["SWC_nr"]]+ ((Rain- RainIntcptn)*(1-rootFrac))- (evapSoil*(1-rootFrac)) -nrz_out_drain-SWC_rzRecharge,0),volSWC_sat*vnr*1000)
+       state[["SWC_nr"]] <- min(max(state[["SWC_nr"]]+rz_nrz_drain -nrz_out_drain+rz_nrz_recharge,0),volSWC_sat*vnr*1000)
       
+      #Update root zone SWC with the addition of rainfall, irrigation, minus evap and drainage into non-root zone
+      state[["SWC_rz"]] <- min(max(SWC_rz +Rain- RainIntcptn + MonthIrrig  - evapSoil-Transp - rz_nrz_drain,0),volSWC_sat*z_r*1000)
+
       #to get total evaptranspiration use evapRes not E_S as this is modified by rainfall and so is amount soil has lost but not amount "evaporating" from soil
       EvapTransp <- min(Transp  + evapSoil,SWC_rz) +RainIntcptn
       EvapTransp<-ifelse(EvapTransp<0,0,EvapTransp)
+
       
       #Volumetric SWC of rooting zone (z_r converted to mm as SWC in mm), equiv to SWC fraction in observed data - water to soil ratio
-      volSWC_rz<-( state[["SWC_rz"]] /(z_r*1000))
-      # 
-     # print(paste0("volSWC_rz= ",volSWC_rz))
+      volSWC_rz<-( SWC_rz/(z_r*1000))
+
       #ASW calculated as SWC in the root zone divided by depth (mm) minus volumetric SWC of soil profile at wilting point
       # See Almedia and Sands eq A.2 and landsdown and sands 7.1.1
-      state[["ASW"]] <-max(min(volSWC_rz,volSWC_fc)-volSWC_wp,0)
+      state[["ASW"]] <-max(volSWC_rz-volSWC_wp,0)
       state[["volSWC_rz"]]<-volSWC_rz
-      scaleSW <-1#EvapTransp/(Transp + RainIntcptn)
-      Etransp <- z_r
+      
+      
+      scaleSW <-1#ifelse( (Transp+evapSoil)  + RainIntcptn== 0 ,1,EvapTransp/((Transp+evapSoil) + RainIntcptn))
+      Etransp <- scaleSW
     } 
     if (parms[["waterBalanceSubMods"]] == F) {
       EvapTransp <- min(Transp + RainIntcptn, ASWrain)

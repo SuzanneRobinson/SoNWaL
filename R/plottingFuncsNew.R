@@ -197,9 +197,7 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F,numSamps=500){
   dt=12
   df <- df[c(2:nrow(df)),]
   if(nrow(df)>600) df$week<-c(1:53) else df$week<-1
-  df <- df %>% dplyr::group_by(Year)%>%mutate(cumGPP = cumsum(GPP),
-                                              cumNPP = cumsum(NPP),
-                                              timestamp = as.POSIXct(paste(sprintf("%02d",Year),sprintf("%02d",Month),sprintf("%02d",1),sep="-"),tz="GMT")) 
+  df <- df%>%mutate(timestamp = as.POSIXct(paste(sprintf("%02d",Year),sprintf("%02d",Month),sprintf("%02d",1),sep="-"),tz="GMT")) 
   df2<-df%>%filter(Year>=2015)
   
   flxdata<-flxdata_daily%>%
@@ -208,11 +206,11 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F,numSamps=500){
   
   dataX<- flxdata%>% 
     group_by(year,month) %>%
-    dplyr::summarise(gppOb=mean(gpp),nppOb=mean(npp),etOb=mean(et),recoOb=mean(reco),rsOb=mean(rs),
-                     swcOb=mean(swc),neeOb=mean(nee))%>%mutate(cumGppObs=cumsum(gppOb),cumNppObs=cumsum(nppOb))
+    dplyr::summarise(gppOb=mean(gpp),gppsum=sum(gpp),nppOb=mean(npp),nppsum=sum(npp),etOb=mean(et),recoOb=mean(reco),rsOb=mean(rs),
+                     swcOb=mean(swc),neeOb=mean(nee))%>%mutate(cumGppObs=cumsum(gppsum),cumNppObs=cumsum(nppsum))
   df2<- (df2%>% 
            group_by(Year,Month) %>%
-           dplyr::summarise(GPP=mean(GPP),EvapTransp=mean(EvapTransp),Reco=mean(Reco),Rs=mean(Rs),NPP=mean(NPP),
+           dplyr::summarise(GPPsum=sum(GPP*7),NPPsum=sum(NPP*7),GPP=mean(GPP),EvapTransp=mean(EvapTransp),Reco=mean(Reco),Rs=mean(Rs),NPP=mean(NPP),
                             volSWC_rz=mean(volSWC_rz),NEE=mean(NEE),timestamp=median(timestamp),LAI=mean(LAI),t.proj=median(t.proj)))
   
   modif<-ifelse(nrow(df)<600,1.66,7.142857)
@@ -220,8 +218,8 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F,numSamps=500){
   dataX<-dataX %>% right_join(df2, by=c("year"="Year","month"="Month"))
   
   dataX$simGpp<-df2$GPP*modif
-  dataX$simCGpp<-dplyr::pull(df2%>%dplyr::mutate(gppC=cumsum(GPP*modif))%>%dplyr::select(gppC))
-  dataX$simCNpp<-dplyr::pull(df2%>%dplyr::mutate(nppC=cumsum(NPP*modif))%>%dplyr::select(nppC))
+  dataX$simCGpp<-dplyr::pull(df2%>%dplyr::mutate(gppC=cumsum(GPPsum*modif))%>%dplyr::select(gppC))
+  dataX$simCNpp<-dplyr::pull(df2%>%dplyr::mutate(nppC=cumsum(NPPsum*modif))%>%dplyr::select(nppC))
   
   dataX$simReco<-df2$Reco*modif
   dataX$simNEE<-df2$NEE*modif
@@ -242,7 +240,7 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F,numSamps=500){
       res<- do.call(fr3PGDN,sitka)%>%
                    filter(Year>=2015)%>%
                    group_by(Year,Month)%>%
-        dplyr::summarise(GPP=mean(GPP),NEE=mean(NEE),volSWC_rz=mean(volSWC_rz),EvapTransp=mean(EvapTransp)/7,Reco=mean(Reco),Rs=mean(Rs),N=mean(N),LAI=mean(LAI),dg=mean(dg),totC=mean(totC),totN=mean(totN),NPP=mean(NPP),alphaAn=mean(Reco/Rs))
+        dplyr::summarise(GPPsum=sum(GPP*7),NPPsum=sum(NPP*7),GPP=mean(GPP),NEE=mean(NEE),volSWC_rz=mean(volSWC_rz),EvapTransp=mean(EvapTransp)/7,Reco=mean(Reco),Rs=mean(Rs),N=mean(N),LAI=mean(LAI),dg=mean(dg),totC=mean(totC),totN=mean(totN),NPP=mean(NPP),alphaAn=mean(Reco/Rs))
    
     return(res)
   }
@@ -260,7 +258,7 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F,numSamps=500){
   outSample <- split(outSample, seq(nrow(outSample)))
   outRes<- lapply(outSample, runModel) 
   
-paramName<-list("GPP","NEE","volSWC_rz","EvapTransp","Reco","Rs","N","LAI","dg","totC","totN","NPP","alphaAn")
+paramName<-list("GPP","NEE","volSWC_rz","EvapTransp","Reco","Rs","N","LAI","dg","totC","totN","NPP","alphaAn","GPPsum","NPPsum")
 intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
 
   data<-flxdata_daily%>%
@@ -272,24 +270,32 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
   
   coefVar<-0.2
   
-  predPos  <- intvsS[,1]$`89%`*modif + 2  * sapply( 1:length(sdMin$sdgpp), function(i) max( coefVar* abs(sdMin$sdgpp[i]),0.05))
-  predNeg  <- intvsS[,1]$`11%`*modif - 2 * sapply( 1:length(sdMin$sdgpp), function(i) max( coefVar* abs(sdMin$sdgpp[i]),0.05))
+  predPos  <- intvsS[,1]$`89%`*modif + 2  * sapply( 1:length(dataX$gppOb), function(i) max( coefVar* abs(dataX$gppOb[i]),0.05))
+  predNeg  <- intvsS[,1]$`11%`*modif - 2 * sapply( 1:length(dataX$gppOb), function(i) max( coefVar* abs(dataX$gppOb[i]),0.05))
   predm  <- intvsS[,1]$`50%`*modif# - 2 * 0.3
   
   predNPPPos  <- intvsS[,12]$`89%`*modif + 2  * sapply( 1:length(sdMin$sdnpp), function(i) max( coefVar* abs(sdMin$sdnpp[i]),0.05))
   predNPPNeg  <- intvsS[,12]$`11%`*modif - 2 * sapply( 1:length(sdMin$sdnpp), function(i) max( coefVar* abs(sdMin$sdnpp[i]),0.05))
   predmNPP  <- intvsS[,12]$`50%`*modif# - 2 * 0.3
   
+  predPosSum  <- intvsS[,14]$`89%`*modif + 2  * sapply( 1:length(dataX$gppsum), function(i) max( coefVar* abs(dataX$gppsum[i]),0.05))
+  predNegSum  <- intvsS[,14]$`11%`*modif - 2 * sapply( 1:length(dataX$gppsum), function(i) max( coefVar* abs(dataX$gppsum[i]),0.05))
+  predmSum  <- intvsS[,14]$`50%`*modif# - 2 * 0.3
+  
+  predNPPPosSum  <- intvsS[,15]$`89%`*modif + 2  * sapply( 1:length(dataX$nppsum), function(i) max( coefVar* abs(dataX$nppsum[i]),0.05))
+  predNPPNegSum  <- intvsS[,15]$`11%`*modif - 2 * sapply( 1:length(dataX$nppsum), function(i) max( coefVar* abs(dataX$nppsum[i]),0.05))
+  predmNPPSum  <- intvsS[,15]$`50%`*modif# - 2 * 0.3
   
   
   
-  dataX$simCGppPos<-predPos
-  dataX$simCGppNeg<-predNeg
+  
+  dataX$simCGppPos<-predPosSum
+  dataX$simCGppNeg<-predNegSum
   dataX$simCGppNeg<-dplyr::pull(dataX%>%dplyr::mutate(GPPCneg=cumsum(simCGppNeg))%>%dplyr::select(GPPCneg))
   dataX$simCGppPos<-dplyr::pull(dataX%>%dplyr::mutate(GPPCpos=cumsum(simCGppPos))%>%dplyr::select(GPPCpos))
   
-  dataX$simCNppPos<-predNPPPos
-  dataX$simCNppNeg<-predNPPNeg
+  dataX$simCNppPos<-predNPPPosSum
+  dataX$simCNppNeg<-predNPPNegSum
   dataX$simCNppNeg<-dplyr::pull(dataX%>%dplyr::mutate(NPPCneg=cumsum(simCNppNeg))%>%dplyr::select(NPPCneg))
   dataX$simCNppPos<-dplyr::pull(dataX%>%dplyr::mutate(NPPCpos=cumsum(simCNppPos))%>%dplyr::select(NPPCpos))
   
