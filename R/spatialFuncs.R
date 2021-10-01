@@ -22,7 +22,7 @@ library(stringr)
 #'@param variable whether to process all CHESS climate variables or select individual ones to process (e.g. precip, temp etc. )
 #'@param numChunks function creates chunks of 10,000 grid cells going down the UK, 1:39 covers scotland, higher values cover the rest of UK
 #'@return climate data with coordinates
-spatSplitX<-function(dataDir,saveFile,outputDir,dates=c(1970:1980),variable="all",numChunks=c(1:10)){
+spatSplitX<-function(dataDir,saveFile,outputDir,dates=c(1960:1980),variable="all",numChunks=c(1:10)){
   files <- list.files(path = dataDir, pattern = "\\.nc$", full.names = TRUE, 
                       recursive = T)
   fileNames <- sub("\\/.*", "",list.files(path = dataDir, pattern = "\\.nc$", full.names = F, 
@@ -220,8 +220,17 @@ calcRH<-function(Tmean,Tref=273.16,p,q){
 #' @param site site data
 #' @param clm climate data
 #' @param param_draw parameter draws
-FR3PG_spat_run <- function(site, clm,param_draw,grid_id){
+FR3PG_spat_run <- function(site, clm,param_draw,grid_id,soil){
   library(lubridate)
+  if(soil==2) {param_draw$pars <- lapply(param_draw$pars, function(x) {x$wiltPoint<-0.126
+  x$fieldCap<-0.268
+  x$satPoint<-0.461
+ return(x)})}
+  
+  if(soil==1) {param_draw$pars <- lapply(param_draw$pars, function(x) {x$wiltPoint<-0.057
+  x$fieldCap<-0.122
+  x$satPoint<-0.46
+  return(x)})}
   
     if(is.na(clm[1,3])==T) return (tibble::as_tibble(data.frame(Year=NA,grid_id=grid_id,Wsbr_q05=NA,Wsbr_q95=NA,Wsbr_value=NA,
                                                                 Rs_q05=NA,Rs_q95=NA,Rs_value=NA,
@@ -231,7 +240,8 @@ FR3PG_spat_run <- function(site, clm,param_draw,grid_id){
                                                                 GPP_q05=NA,GPP_q95=NA,GPP_value=NA,
                                                                 NPP_q05=NA,NPP_q95=NA,NPP_value=NA,
                                                                 NEE_q05=NA,NEE_q95=NA,NEE_value=NA,
-                                                                Reco_q05=NA,Reco_q95=NA,Reco_value=NA)) ) else
+                                                                Reco_q05=NA,Reco_q95=NA,Reco_value=NA,
+                                                                LAI_q05=NA,LAI_q95=NA,LAI_value=NA)) ) else
     
     
     FR3pgRun<-function(params){
@@ -268,7 +278,7 @@ FR3PG_spat_run <- function(site, clm,param_draw,grid_id){
 
       clm<-clm%>%
         dplyr::group_by(Year,week)%>%
-        dplyr::summarise(Month=median(Month),Tmax=max(Tmax),Tmin=min(Tmin),Tmean=mean(Tmean),Rain=sum(Rain*86400),SolarRad=mean(SolarRad),FrostDays=0,MonthIrrig=0,VPD=mean(VPD))
+        dplyr::summarise(Month=median(Month),Tmax=max(Tmax),Tmin=min(Tmin),Tmean=mean(Tmean),Rain=sum(Rain*86400),SolarRad=mean((SolarRad*86400)/1e+6),FrostDays=0,MonthIrrig=0,VPD=mean(VPD))
       
       baseParms$weather<-as.data.frame(clm)
       
@@ -295,31 +305,18 @@ FR3PG_spat_run <- function(site, clm,param_draw,grid_id){
        group_by(Year,mcmc_id)%>%
        dplyr::summarise(
          grid_id=grid_id,
-
          dg = mean(dg,  na.rm = T),
-
          Rs = mean(Rs, na.rm = T),
-
          EvapTransp = mean(EvapTransp, na.rm = T),
-        
          volSWC_rz = mean(volSWC_rz, na.rm = T),
-        
          yc = mean(yc, na.rm = T),
-         
          GPPsum = sum(GPP,  na.rm = T),
-         
          NPPsum = sum(NPP, na.rm = T),
-         
          NEEsum = sum(NEE, na.rm = T),    
-         
          GPP = mean(GPP,  na.rm = T),
- 
          NPP = mean(NPP, na.rm = T),
- 
          NEE = mean(NEE, na.rm = T),
-         
          Reco = mean(Reco, na.rm = T),
-
          LAI = mean (LAI, na.rm = T)
          
        )%>%    
@@ -374,7 +371,11 @@ FR3PG_spat_run <- function(site, clm,param_draw,grid_id){
 
       Reco_q05 = quantile(Reco, 0.05, na.rm = T),
       Reco_q95 = quantile(Reco, 0.95, na.rm = T),
-      Reco_value = quantile(Reco, 0.5, na.rm = T)
+      Reco_value = quantile(Reco, 0.5, na.rm = T),
+      
+      LAI_q05 = quantile(LAI, 0.05, na.rm = T),
+      LAI_q95 = quantile(LAI, 0.95, na.rm = T),
+      LAI_value = quantile(LAI, 0.5, na.rm = T)
       
     )
 },
@@ -388,7 +389,8 @@ error = function(cond){
                                            GPP_q05=NA,GPP_q95=NA,GPP_value=NA,
                                            NPP_q05=NA,NPP_q95=NA,NPP_value=NA,
                                            NEE_q05=NA,NEE_q95=NA,NEE_value=NA,
-                                           Reco_q05=NA,Reco_q95=NA,Reco_value=NA))
+                                           Reco_q05=NA,Reco_q95=NA,Reco_value=NA,
+                                           LAI_q05=NA,LAI_q95=NA,LAI_value=NA))
 })
 
     

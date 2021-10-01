@@ -310,10 +310,10 @@ getClimDatX<-function(timeStep="monthly",climDir){
   
     clm_df_full<-read.csv(paste0(climDir,"clm_df_full.csv"))
     clm_df_daily<-read.csv(paste0(climDir,"weather_day_basfor.csv"))
-
-
-  
-  
+    #clm_df_daily2<-read.csv(paste0(climDir,"weather_day.csv"))
+   # clm_df_daily2[which(clm_df_daily2$Year>2014 & clm_df_daily2$Year <2019),]<-clm_df_daily[,-13]
+    #clm_df_daily<-clm_df_daily2
+    
   #Add date
   
   clm_df_daily<- rbind(do.call("rbind", replicate(22, (clm_df_daily[1:730,]), simplify = FALSE)),clm_df_daily[732:1461,])
@@ -343,12 +343,13 @@ getClimDatX<-function(timeStep="monthly",climDir){
   
   clm_df_daily <- PredictWeatherVariables(weather = clm_df_daily)
   clm_df_daily$FrostHours<-0#ifelse(clm_df_daily$Tmean<=0,1,0)
+  clm_df_daily$rainDays<-ifelse(clm_df_daily$Rain>0,1,0)
   
   clm_df_weekly<-clm_df_daily%>%
     group_by(Year,week)%>%
     summarise(Year=median(Year),Month=median(month(Date)),Tmax=max(Tmax),Tmin=min(Tmin),
               Tmean=mean(Tmean),Rain=sum(Rain),SolarRad=mean(SolarRad)
-              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100),Wind=mean(Wind))
+              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100),rainDays=sum(rainDays))
   
   
   
@@ -356,14 +357,14 @@ getClimDatX<-function(timeStep="monthly",climDir){
     group_by(Year,month)%>%
     summarise(Year=median(Year),Month=median(month(Date)),Tmax=max(Tmax),Tmin=min(Tmin),
               Tmean=mean(Tmean),Rain=sum(Rain),SolarRad=mean(SolarRad)
-              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100),Wind=mean(Wind))
+              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100))
   
   
   clm_df_daily<-clm_df_daily%>%
     group_by(Year,DOY)%>%
     summarise(Year=median(Year),week=median(week),Month=median(month(Date)),Tmax=max(Tmax),Tmin=min(Tmin),
               Tmean=mean(Tmean),Rain=sum(Rain),SolarRad=mean(SolarRad)
-              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100),Wind=mean(Wind))
+              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100))
   
   
   if(timeStep=="monthly") return (clm_df_full)

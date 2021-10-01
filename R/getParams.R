@@ -68,7 +68,7 @@ getParms<-function(weather=clm_df_full,
                    poolFractn = 0,
                    e20 = 2.2,
                    rhoAir = 1.2,
-                   lambda = 2450000,
+                   lambda = 2460000,
                    VPDconv = 0.000622,
                    fracBB0 = 0.3,
                    fracBB1 = 0.1,
@@ -113,20 +113,22 @@ getParms<-function(weather=clm_df_full,
                    wiltPoint = 0.14, #Wilting point in m^3/m^3? need to convert to mm per meter with rooting depth?
                    fieldCap =0.2,#Field capacity
                    satPoint= 0.35, #field saturation point
-                   K_s=12, #Soil conductivity
+                   K_s=0.5, #Soil conductivity
                    shared_area=4, #shared area of rooting and non-rooting zone
                    V_nr=1, #Volume of non-rooting zone
                    maxRootDepth=1,
                    sigma_zR =1.5, #area/depth explored by 1kg of root biomass
                    SWC_nr=10, #SWC of non-rooting zone at time 0
-                   E_S1 =2.5, #Cumulitive evap threshold (kg^m-2) - sensitive to length of time-step, e.g. monthly time-step means wetting event only occurs at end of month
-                   E_S2 =1.5, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
+                   E_S1 =0.05, #Cumulitive evap threshold (kg^m-2) - sensitive to length of time-step, e.g. monthly time-step means wetting event only occurs at end of month
+                   E_S2 =1, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
                    MaxASW_state=50,
-                   K_drain=400,
+                   K_drain=0.5,
                    timeStp = 12, # time step, 52 for weekly, 12 for monthly and 365 for daily
                    rainMod =1, #rain adjustment for sensitivity analyses
                    tempMod =1, #rain adjustment for sensitivity analyses
-                   fsMod=1
+                   fsMod=1,
+                   startN=12,
+                   startC=400
                    ){
   
  list(weather=weather,
@@ -255,7 +257,9 @@ getParms<-function(weather=clm_df_full,
               timeStp = timeStp, # time step, 52 for weekly, 12 for monthly and 365 for daily
       rainMod=rainMod,
       tempMod=tempMod,
-      fsMod=fsMod
+      fsMod=fsMod,
+      startN=startN,
+      startC=startC
   )
 }
 
@@ -389,7 +393,9 @@ getParmsPine<-function(weather=clm_df_pine,
                    timeStp = 12, # time step, 52 for weekly, 12 for monthly and 365 for daily
                    rainMod =1, #rain adjustment for sensitivity analyses
                    tempMod =1, #rain adjustment for sensitivity analyses
-                   fsMod=1
+                   fsMod=1,
+                   startN=6,
+                   startC=100
                    
 ){
   
@@ -519,7 +525,9 @@ getParmsPine<-function(weather=clm_df_pine,
        timeStp = timeStp, # time step, 52 for weekly, 12 for monthly and 365 for daily
        rainMod=rainMod,
        tempMod=tempMod,
-       fsMod=fsMod
+       fsMod=fsMod,
+       startN=startN,
+       startC=startC
        
   )
 }

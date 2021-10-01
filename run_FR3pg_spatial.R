@@ -68,12 +68,12 @@ param_draw$pars<-unname(param_draw$pars$`list(split(param_drawX, 1:NROW(param_dr
 #Create some random forests to match with the spatial climate data 
 
 simDat$site<-list(data.frame(from=(paste0( round(1971),"-01-01")),to=paste0( round(2016),"-30-12")))
-
-
+soilLocVals<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\soilDataLocs.RDS")
+simDat<-as_tibble(merge(simDat,soilLocVals,by.x=c("x","y"),by.y=c("x","y")))
 #run grid squares in parallel - as running over grid squares should be very scaleable
 #outTemp <-pmap(simDat$site, simDat$clm,as.list(simDat$grid_id), .f=~FR3PG_spat_run(site=..1, clm=..2,grid_id=..3,param_draw=param_draw),.progress = T)
 
-outTemp<-mapply(FR3PG_spat_run, site = simDat$site, clm = simDat$clm,grid_id=as.list(simDat$grid_id),MoreArgs = list(param_draw=param_draw),SIMPLIFY = F)
+outTemp<-mapply(FR3PG_spat_run, site = simDat$site, clm = simDat$clm,soil=simDat$soil,grid_id=as.list(simDat$grid_id),MoreArgs = list(param_draw=param_draw),SIMPLIFY = F)
 #outTemp<-do.call(rbind,outTemp)
 
 #bind into a single tibble
@@ -210,5 +210,160 @@ g4<-out %>%
   
   
   
+
+    outSpatY<-outSpat%>%filter(Year==year|is.na(Year)==T)
+    #outSpatY<-outSpatY[duplicated(outSpatY$grid_id),]
+    
+    outSpatY$Chunk<-substr(outSpatY$fName,1,2)
+    outSpatY$Chunk<-sub("_", "",  outSpatY$Chunk)
+    outSpatY$Chunk[is.na(outSpatY$Wsbr_q05)]<-NA
+    
+    
+    g1<-  ggplot() +
+        geom_raster(data = outSpatY , aes(x = x, y = y, fill = as.numeric(Chunk)))+
+        theme_bw()+
+        theme(axis.title.x=element_blank(),
+              axis.text.x=element_blank(),
+              axis.ticks.x=element_blank(),
+              axis.title.y=element_blank(),
+              axis.text.y=element_blank(),
+              axis.ticks.y=element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank())+
+        ggtitle("Big chunks")+
+        coord_equal() + 
+        scale_fill_viridis_c("Chunk",option = "plasma")
+    
   
+    
+
+    outSpatX<-filter(outSpatY,Chunk>(40))
+    outSpatX<-filter(outSpatX,Chunk<(49))
+    
+    outSpatX$SmallChunk<-substr(outSpatX$fName,4,6)
+    #fg<-data.frame(sc=unique(outSpatX$SmallChunk))
+    #fg$numVal<-1:nrow(fg)
+   # outSpatX2<-merge(outSpatX,fg,by.x="SmallChunk",by.y="sc")
+    
+    
+ g2<-  ggplot() +
+        geom_raster(data = outSpatX , aes(x = x, y = y, fill = as.numeric(SmallChunk)))+
+        theme_bw()+
+        theme(axis.title.x=element_blank(),
+              axis.text.x=element_blank(),
+              axis.ticks.x=element_blank(),
+              axis.title.y=element_blank(),
+              axis.text.y=element_blank(),
+              axis.ticks.y=element_blank(),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank())+
+        ggtitle("Small chunks")+
+        coord_equal() + 
+        scale_fill_viridis_c("Smaller split",option = "plasma", na.value="gray70")
+
+ggarrange(g1,g2,common.legend = T,legend="bottom")
+
+
+
+require(data.table) 
+library(stringr)
+fileLocs<-"/work/scratch-nopw/drcameron/outBASFOR"
+filenames<-list.files(path = fileLocs, pattern = "\\.csv$", full.names = F, 
+                     recursive = T)
+
+
+readComb<-function(file){
+  print(file)
+ff<-read.csv(file)
+fName<- substr(file,8,22)
+ff$fName<-sub(".csv","",file)
+  return(ff)
+}
+ans = rbindlist(lapply(filenames, readComb),fill=T)
+saveRDS(ans,"/home/users/aaronm7/BASFOR_spatOut_30_09.RDS")
+
+
+
+
+
+
+
+
+
+outSpat<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\SoNWal_spatOut_24_09.RDS")
+soilDataLocs<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\soilDataLocs.RDS")
+outSpat2<-merge(outSpat,soilDataLocs,by.x=c("x","y"),by.y=c("x","y"))
+
+basOut3<-merge(outSpatY,basOut2,by.x=c("x","y"),by.y=c("x","y"))
+
+
+for(i in c(1990:2016)){
+  outSpatY<-as.data.frame(outSpat2%>%filter(Year==i|is.na(Year)==T))
+  outSpatY<-outSpatY[!(is.na(outSpatY$Year) == T & is.na(outSpatY$Wsbr_q05) == F ), ]
   
+  #basOut3<-filter(basOut3,y>8e+05)
+  #basOut3<-filter(basOut3,y<8.5e+05)
+  
+print(ggplot() +
+  geom_raster(data = basOut3 , aes(x = x, y = y, fill = (GPP_value*7.14)))+
+  theme_bw()+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())+
+  ggtitle(i)+
+  coord_equal() + 
+  scale_fill_viridis_c(limits=c(0,10),"Chunk",option = "A"),na.value="white")
+
+}
+
+
+
+basOut<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\BASFOR_spatOut_27_09.RDS")
+
+
+
+
+filenames<-unique(outSpatY$fName)
+readComb<-function(file){
+  ff<-filter(outSpatY,fName==file)
+  fName<- substr(file,7,20)
+  ff$fName<-paste0(sub("_","",fName),"_",1:nrow(ff))
+  return(ff)
+}
+#ans = rbindlist(lapply(filenames, readComb))
+lkList<-readRDS("locNames.RDS")#data.frame(fName=ans$fName,x=ans$x,y=ans$y)
+
+basOut<-filter(basOut,avg.period==2015)
+basOut$fName<-substr(basOut$fName,8,20)
+basOut2<-merge(lkList,basOut,by.x="loc",by.y="fName")
+
+ggplot() +
+  geom_raster(data = basOut2 , aes(x = x, y = y, fill = as.numeric(GPP_gCm2d)))+
+  theme_bw()+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())+
+  ggtitle(i)+
+  coord_equal() + 
+  scale_fill_viridis_c(limits=c(0,10),"Chunk",option = "A")
+
+
+
+
+soilDB2X<-merge(lkList,soilDB2,by.x=c("x","y"),by.y=c("x","y"),all=F)
+soilDB2X$fName<-substr(soilDB2X$fName,1,nchar(soilDB2X$fName)-3)
+
+outSpatY$fName<-substr(outSpatY$fName,8,15)
+
+soilDB2xX<-merge(soilDB2X,outSpatY,by.x="fName",by.y="fName",all=F)
+

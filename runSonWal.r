@@ -46,22 +46,22 @@ nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","s
   
 ##update with some example calibrated parameters
 exampParams<-readRDS("data//exampParams.RDS")
-exParms<-mergeChains(out$chain)
+exParms<-mergeChains(exampParams$chain)
 exParms<-miscTools::colMedians(as.data.frame(exParms))
 names(exParms)<-nm
-
 sitka[nm]<-exParms[nm]
 
 #run SoNWal
 output<-do.call(fr3PGDN,sitka)%>%
-  filter(Year>2014)
+  filter(Year>1961)
+plot(output$LAI)
+plot(output$EvapTransp)
+
+##plotting QUICK PLOT - DOES NOT INCLUDE UNCERTAINTY! BUT QUICK :) -grouping aggregates the data, can be either "week" or "month"
+quickPlot(flxdata_daily,output,grouping="month")
 
 
-##plotting QUICK PLOT (copy in function below) - DOES NOT INCLUDE UNCERTAINTY BUT QUICK :) -grouping aggregates the data, is either "week" or "month"
-quickPlot(flxdata_daily,output,grouping="week")
-
-
-#full plots - much slower but gives credible intervals and uncertainty of observed data - num samps is how many samples from posterior to use
-results<-plotResultsNewMonthly(output,ShortTS=T,out=exampParams,numSamps=100)
-ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]])
+#full plots - much slower but gives credible intervals and uncertainty of observed data - num samps is how many samples from posterior to use (>=500 ideal but 50-100 will give a pretty solid output for a quick checking)
+results<-plotResultsNewMonthly(output,ShortTS=T,out=exampParams,numSamps=50)
+ggarrange(results[[1]],results[[2]],results[[8]],results[[3]],results[[5]],results[[4]])
 ggarrange(results[[15]],results[[9]],results[[10]],results[[11]],results[[13]],results[[14]])

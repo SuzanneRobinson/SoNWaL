@@ -59,11 +59,11 @@ sitka<-getParms(weather=clm_df_full,
 #######################################################
 #names of parameters to fit
 
-exampParams<-read.csv("exampParams.csv")
+#exampParams<-read.csv("exampParams.csv")
 nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
       "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k")
+      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC")
 sitka[nm]<-exampParams[nm]
 
 
@@ -71,15 +71,15 @@ out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Pr
 
 #out<-getSample(out,start=12000,thin=5,numSamples=500)
 #codM<-out$chain[[2]][c(1:5000),]
-codM<-as.data.frame(out$chain[[2]])
+codM<-as.data.frame(out$chain[[3]])
 codM<-mergeChains(out$chain)
 
 codM<-miscTools::colMedians(as.data.frame(codM))
 codM<-tail(as.data.frame(codM),1)
 names(codM)<-nm
 
-priorSamp<-priorVals$sampler(35000)
-MCMCtrace(getSample(out,coda = T,thin=2,start=5000),wd="C:\\Users\\aaron.morris", post_zm=F,iter=10000,priors = priorSamp)
+#priorSamp<-priorVals$sampler(35000)
+#MCMCtrace(getSample(out,coda = T,thin=2,start=5000),wd="C:\\Users\\aaron.morris", post_zm=F,iter=10000,priors = priorSamp)
 
 sitka<-getParms(waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
 #sitka$E_S1<-2
@@ -124,12 +124,12 @@ plot(output$LAI)
 plot(output$N)
 plot(ff$EvapTransp)
 tail(output$GPP)
-ff<-filter(output,Year>2014)
+#ff<-filter(output,Year>2014)
 plot(ff$fSW)
 plot(ff$volSWC_rz)
 plot(ff$EvapTransp)
 plot(output$totN)
-plot(ff$GPP)
+plot(ff$GPP*7.14,col="red")
 
 #ff<-filter(output,t<=100)
 
@@ -151,7 +151,7 @@ output<-do.call(fr3PGDN,sitka)%>%
   dplyr::summarise(mean=mean(GPP*7.14,na.rm=TRUE))
 plot(output$mean)
 
-results<-plotResultsNewMonthly(output,ShortTS=T,out=out)
+results<-plotResultsNewMonthly(output,ShortTS=T,out=out,numSamps = 25)
 #results
 ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]])
 
