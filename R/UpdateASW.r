@@ -67,25 +67,15 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
 
       #Calculate accumulated soil evaporation for the month using soilEvap function
       throughFall<-Rain -RainIntcptn
-      evapRes <- soilEvap(parms, weather, state, interRad,h,throughFall)
+      evapRes <- soilEvap(parms, weather, state, interRad,h)
       state[["potentialEvap"]]<-evapRes[[2]]
       
       
-     evapSoil<-min(evapRes[[1]], (state[["SWC_rz"]]+state[["SWC_nr"]]))
+     evapSoil<-min(evapRes[[1]], (state[["SWC_rz"]]))
      #soil evaporation Minus monthly rainfall and irrigation gives cumulative E_S value - does not include drainage as that is loss from bottom of profile, this is top layer evaporation until drying at surface
      E_S <- max(evapSoil -throughFall - MonthIrrig,0) 
      state[["E_S"]] <- E_S
       
-      
-      
-     # evapSoil<-min(evapRes[[1]], (state[["SWC_rz"]]+state[["SWC_nr"]]))
-     # #soil evaporation Minus monthly rainfall and irrigation gives cumulative E_S value - does not include drainage as that is loss from bottom of profile, this is top layer evaporation until drying at surface
-     # E_S <- max(evapSoil - MonthIrrig,0) 
-     # state[["E_S"]] <- max(min(evapRes[[2]], (state[["SWC_rz"]]+state[["SWC_nr"]]))- MonthIrrig-throughFall,0)
-      
-      
-      
-  
       #Calculate drainage from root zone to non-root zone and out of non-root zone, where SWC of root zone exceeds field capacity of the soil zone (eq A.11)
       #Drainage parameter based on soil texture *24 to get from hourly to daily rates - use daily rates in these functions as they calc drainage of t days. 
       K_drain_rz=parms[["K_drain"]]#max((4.56*((state[["SWC_rz"]]/(z_r*1000))/parms[["satPoint"]])^18.4)*24,0.00001)
@@ -103,23 +93,19 @@ function (state, weather, site, parms, general.info) #requires leaffall and leaf
       #volume of water moving from root zone to non-root zone is diff between current state of root zone SWC and updated root zone SWC
       rz_nrz_recharge<-state[["SWC_rz"]]-SWC_rz
 
-      #calc fraction of soil is root zone
-     # rootFrac<-1#max(z_r/parms[["V_nr"]],0.2)
-
       #update SWC by adding drainage from root zone and removing drainage out from non-root zone
-     # state[["SWC_nr"]] <- min(max(state[["SWC_nr"]]+ ((Rain- RainIntcptn)*(1-rootFrac))- (evapSoil*(1-rootFrac)) -nrz_out_drain-SWC_rzRecharge,0),volSWC_sat*vnr*1000)
        state[["SWC_nr"]] <- min(max(state[["SWC_nr"]]+rz_nrz_drain -nrz_out_drain+rz_nrz_recharge,0),volSWC_sat*vnr*1000)
       
       #Update root zone SWC with the addition of rainfall, irrigation, minus evap and drainage into non-root zone
-      state[["SWC_rz"]] <- min(max(SWC_rz +Rain- RainIntcptn + MonthIrrig  - evapSoil-Transp - rz_nrz_drain,0),volSWC_sat*z_r*1000)
-
+       state[["SWC_rz"]] <- min(max(SWC_rz + Rain + MonthIrrig - RainIntcptn - evapSoil-Transp - rz_nrz_drain,0),volSWC_sat*z_r*1000)
+       
       #to get total evaptranspiration use evapRes not E_S as this is modified by rainfall and so is amount soil has lost but not amount "evaporating" from soil
       EvapTransp <- min(Transp  + evapSoil,SWC_rz) +RainIntcptn
       EvapTransp<-ifelse(EvapTransp<0,0,EvapTransp)
 
       
       #Volumetric SWC of rooting zone (z_r converted to mm as SWC in mm), equiv to SWC fraction in observed data - water to soil ratio
-      volSWC_rz<-( SWC_rz/(z_r*1000))
+      volSWC_rz<-( state[["SWC_rz"]]/(z_r*1000))
 
       #ASW calculated as SWC in the root zone divided by depth (mm) minus volumetric SWC of soil profile at wilting point
       # See Almedia and Sands eq A.2 and landsdown and sands 7.1.1
