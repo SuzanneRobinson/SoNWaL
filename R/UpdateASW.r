@@ -51,29 +51,6 @@ UpdateASW <-
     #intercepted rain evaporates based on solar radiation hitting leaves
     CanEvapSol <- h*((CanEvap*(Delta*netRad+BLcond*Pa*Cp*(VPD*1000)))/(lambda*((gamma+Delta)*CanEvap+gamma*BLcond))) #Etransp/lambda * h
     rIntercptEvap <- min((CanEvapSol*365/parms[["timeStp"]]),RainIntcptn) #general.info$daysinmonth[month] * CanTransp
-  #rIntercptEvap*exp((-log(2)*rIntercptEvap*0.4)/LAI)?
-    
-    #  rIntercptEvap<-    min(rIntercptEvap*exp((-log(2)*rIntercptEvap*MaxIntcptn)/LAI),0.15 * ifelse(LAImaxIntcptn <= 0, 1, min(1, LAI/LAImaxIntcptn)) * Rain)
-  #  
-  #  fg<-NULL
-  #  rFall<-seq(0,100,0.01)
-  #  for(i in rFall){
-  #    Rain<-i
-  #    fg<-rbind(fg, min(rIntercptEvap*exp((-log(2)*rIntercptEvap*MaxIntcptn)/LAI),0.15 * ifelse(LAImaxIntcptn <= 0, 1, min(1, LAI/LAImaxIntcptn)) * Rain)
-  #    
-  #    )
-  #  }
-  #  plot(fg)
-  #  plot((fg/rFall)/100)
-
-        #interception decreases with increased rainfall within the time-step - here rainfall interception is reduced by .5 as the volume of rain intercepted during a time-step reaches 15mm
-    #vol intercepted begins to decrease with very hard rain, at 15 +.5*15 (22.5) vol intercepted begins to decrease
-  # rEvents<-function(LAI,Rain,CanEvapSol,MaxIntcptn){
-  #   return(min((1-(exp(-MaxIntcptn*LAI)))*Rain,((CanEvapSol)+0.2)*LAI))
-  # }
-  # rIntercptEvap<-RainDays*rEvents(LAI=LAI,Rain=Rain/RainDays,CanEvapSol/RainDays,MaxIntcptn=MaxIntcptn)
-#
- 
     
     #non-Intercepted radiation
     interRad<-max((RAD.day * 1e+06/h),0)-max((RAD.day * 1e+06/h)*(1-exp(-parms[["k"]]*LAI)),0)
@@ -96,9 +73,6 @@ UpdateASW <-
       volSWC_wp= (parms[["wiltPoint"]])
       volSWC_fc= (parms[["fieldCap"]])
       volSWC_sat= (parms[["satPoint"]])
-      
-     # state[["SWC_nr"]]<- min(state[["SWC_nr"]],(parms[["fieldCap"]])*vnr*1000)
-    #  state[["SWC_rz"]]  <-    min(state[["SWC_rz"]],(parms[["fieldCap"]])*z_r*1000)
       
       #Calculate accumulated soil evaporation for the month using soilEvap function
       throughFall<-Rain -rIntercptEvap
@@ -159,7 +133,6 @@ UpdateASW <-
       
     }
     
-    #print(scaleSW)
     GPP <- state[["GPP"]]
     NPP <- state[["NPP"]]
     state[["GPP"]] <- GPP * scaleSW
