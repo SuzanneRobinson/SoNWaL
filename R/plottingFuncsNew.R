@@ -188,7 +188,7 @@ plotResultsNewMonthly <- function(df,out,ShortTS=F,numSamps=500){
   library(matrixStats)
   library(future)
   nmc = nrow(out$chain[[1]])
-  outSample   <- getSample(out,start=10,thin=5)
+  outSample   <- getSample(out,start=nmc/1.1,thin=5)
   codM<-miscTools::colMedians(as.data.frame(outSample))
   sitka[.GlobalEnv$nm]<-codM[.GlobalEnv$nm]
   df<-do.call(fr3PGDN,sitka)

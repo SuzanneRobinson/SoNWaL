@@ -78,7 +78,7 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
       
     coefVar1=0.1
     coefVar2=0.3
-    coefVar3=0.3
+    coefVar3=0.2
     
     dev <- c(sapply( 1:length(sdAlphaAnn$sdAlphaAnn), function(i) max( coefVar2* abs(sdAlphaAnn$sdAlphaAnn[i]),0.01) ),
              sapply( 1:length(sdMin$sdgpp), function(i) max( coefVar3* abs(sdMin$sdgpp[i]),0.01) ),

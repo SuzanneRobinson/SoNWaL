@@ -45,15 +45,20 @@ soilWC<-function(parms,weather,state,K_s,SWC,soilVol){
   #soil water in rooting zone at t0 (start of time-step)
   SWC_rz0 = state[["SWC_rz"]]
   
-
+  
   #rooting depth / volume - Almedia describes this as depth, assumed to be proportional in paper to biomass
   z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone/max root depth
-
+  #z_r=min(z_r,V_nr)
+  
   V_rz = z_r #Almedia and Sands paper suggests volume of root zone is equivalent to z_r
-
- volSWC_rz<-min((SWC_rz0 /(z_r*1000)),parms[["satPoint"]])
   
 
+  volSWC_rz<-min((SWC_rz0 /(z_r*1000)),parms[["satPoint"]])
+  
+ # Ksat<-4.56
+ # nk<-18.4
+ # K_s=max((Ksat*(volSWC_rz/parms[["satPoint"]])^nk)*24,0.000001)
+  
   #Shared area, area is in m^2, so area around the tree?
   A = parms[["shared_area"]]
   
@@ -70,6 +75,7 @@ soilWC<-function(parms,weather,state,K_s,SWC,soilVol){
   #State of soil water content in rooting zone at the end of the time step
   SWC_rz = (((SWC_rz0 * V_nrx - SWC_nr0 * V_rz) / (V_rz + V_nrx)) * exp(-t /t_s0)) +
     (V_rz / (V_rz + V_nrx) * (SWC_rz0 + SWC_nr0)) 
+  # print(paste0("SWC_rz= ", SWC_rz ))
   return(SWC_rz)
 }
 
@@ -125,26 +131,25 @@ soilEvap<-function(parms,weather,state,interRad,h){
   e20 <- parms[["e20"]]
   rhoAir <- parms[["rhoAir"]]
   lambda <- parms[["lambda"]]#Volumetric latent heat of vaporization. Energy required per water volume vaporized (J/kg-1) (see penman monteith)
-  VPD <- weather[["VPD"]] * exp(state[["LAI"]] * (-log(2)) / 5)
+  #VPD significantly reduced at the soil level due to increase in below canopy humidity
+  VPD <- weather[["VPD"]] * exp(state[["LAI"]] * (-log(4)) / 5)
   E_S1 = (parms[["E_S1"]])
   E_S2 = (parms[["E_S2"]])
-
   
   #size of time-step. This is for monthly time steps
   if (parms[["timeStp"]] ==12) t =   days_in_month(weather[["Month"]]) 
   if (parms[["timeStp"]] ==52) t =   7
   if (parms[["timeStp"]] ==365) t =  1
-  if (is.numeric(t)==F) print ("unsupported time step used")
-
+  if (is.numeric(t)==F) print("unsupported time step used")
   
   soilBoundaryCond<-0.01
   soilCond<-1e+10
-interRad<-max(interRad,0.00001)
+  interRad<-max(interRad,0.00001)
  
-Delta = 145 #Rate of change of saturation specific humidity with air temperature. (Pa/K−1)
-Cp = 1004 #specific heat cap of air J/kg-1
-Pa = 1.204 #Dry air density kg/m-3
-gamma = 66.1 # phsychrometric constant Pa/K-1
+  Delta = 145 #Rate of change of saturation specific humidity with air temperature. (Pa/K−1)
+  Cp = 1004 #specific heat cap of air J/kg-1
+  Pa = 1.204 #Dry air density kg/m-3
+  gamma = 66.1 # phsychrometric constant Pa/K-1
 
   e0<-max(h*(soilCond*(Delta*interRad+soilBoundaryCond*Pa*Cp*((VPD*1000)))/(lambda*((gamma+Delta)*soilCond+gamma*soilBoundaryCond))),0)
   e0<-e0*365/parms[["timeStp"]]
@@ -160,9 +165,9 @@ gamma = 66.1 # phsychrometric constant Pa/K-1
 
 ##Soil water growth modifier
 SWGmod<-function(SWconst,SWpower,MoistRatio){
-  #f_theta<-(1-(1-MoistRatio)^SWpower)/(1+((1-MoistRatio)/SWconst)^SWpower)
+  f_theta<-(1-(1-MoistRatio)^SWpower)/(1+((1-MoistRatio)/SWconst)^SWpower)
   
-  f_theta<-(1-(1-MoistRatio)^SWpower)/(1+(1-2*SWconst^SWpower)*((1-MoistRatio)/SWconst)^SWpower)
+#  f_theta<-(1-(1-MoistRatio)^SWpower)/(1+(1-2*SWconst^SWpower)*((1-MoistRatio)/SWconst)^SWpower)
   
   
   return(f_theta)

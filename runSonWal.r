@@ -39,11 +39,10 @@ sitka<-getParms(weather=clm_df_full,
 #######################################################
 
   
-nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
+  nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
         "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
         "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn")
-  
+        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC")
 ##update with some example calibrated parameters
 exampParams<-readRDS("data//exampParams.RDS")
 exParms<-mergeChains(exampParams$chain)
@@ -53,15 +52,15 @@ sitka[nm]<-exParms[nm]
 
 #run SoNWal
 output<-do.call(fr3PGDN,sitka)%>%
-  filter(Year>1961)
+  filter(Year>1971)
 plot(output$LAI)
-plot(output$EvapTransp)
+plot(output$volSWC_rz)
 
 ##plotting QUICK PLOT - DOES NOT INCLUDE UNCERTAINTY! BUT QUICK :) -grouping aggregates the data, can be either "week" or "month"
 quickPlot(flxdata_daily,output,grouping="month")
 
 
 #full plots - much slower but gives credible intervals and uncertainty of observed data - num samps is how many samples from posterior to use (>=500 ideal but 50-100 will give a pretty solid output for a quick checking)
-results<-plotResultsNewMonthly(output,ShortTS=T,out=exampParams,numSamps=50)
+results<-plotResultsNewMonthly(output,ShortTS=T,out=exampParams,numSamps=25)
 ggarrange(results[[1]],results[[2]],results[[8]],results[[3]],results[[5]],results[[4]])
 ggarrange(results[[15]],results[[9]],results[[10]],results[[11]],results[[13]],results[[14]])

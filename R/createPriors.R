@@ -74,8 +74,8 @@ createPriors_sitka<-function(sitka){
       1,#K_s
       4,#V_nr
       3,#sigma_zR
-      5,#E_S1
-      5,#E_S2
+      35,#E_S1
+      35,#E_S2
       6, #shared_area
       4, #maxRootDepth
       1, #K_drain
@@ -145,7 +145,7 @@ createPriors_sitka<-function(sitka){
   pMaxima[[34]]<-0.3
   pMinima[[34]]<-0.01
   
-  sdVals<-(pMaxima-pMinima)*0.3
+  sdVals<-(pMaxima-pMinima)*0.6
   #ES1 and 2 on very different scales so set manually
   sdVals[5]<-2
   
@@ -165,9 +165,9 @@ createPriors_sitka<-function(sitka){
   pMaxima[[51]]<-0.9
   pMinima[[51]]<-0.7
   
-  pMaxima[[52]]<-0.2
+  pMaxima[[52]]<-0.9
   pMinima[[52]]<-0.05
-  sdVals[[52]]<-0.05
+  sdVals[[52]]<-0.4
   
   pMaxima[[33]]<-0.3
   pMinima[[33]]<-0.01
@@ -184,6 +184,9 @@ createPriors_sitka<-function(sitka){
   pMinima[[55]]<-10
   sdVals[[55]]<-200
   
+  pMaxima[[21]]<-0.1
+  pMinima[[21]]<-0.001
+  sdVals[[21]]<-.1
   
   priorVals <- createTruncatedNormalPrior(mean = pValues, sd=sdVals,
                                           lower = pMinima, upper = pMaxima)
