@@ -78,8 +78,8 @@ codM<-miscTools::colMedians(as.data.frame(codM))
 codM<-tail(as.data.frame(codM),1)
 names(codM)<-nm
 
-#priorSamp<-priorVals$sampler(35000)
-#MCMCtrace(getSample(out,coda = T,thin=2,start=5000),wd="C:\\Users\\aaron.morris", post_zm=F,iter=10000,priors = priorSamp)
+priorSamp<-priorVals$sampler(35000)
+MCMCtrace(getSample(out,coda = T,thin=2,start=5000),wd="C:\\Users\\aaron.morris", post_zm=F,iter=10000,priors = priorSamp)
 
 sitka<-getParms(waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
 #sitka$E_S1<-2
