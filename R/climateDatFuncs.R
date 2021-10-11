@@ -308,15 +308,19 @@ getClimDatX<-function(timeStep="monthly",climDir){
   library(dplyr)
   library(lubridate)
   
-    clm_df_full<-read.csv(paste0(climDir,"clm_df_full.csv"))
-    clm_df_daily<-read.csv(paste0(climDir,"weather_day_basfor.csv"))
-    #clm_df_daily2<-read.csv(paste0(climDir,"weather_day.csv"))
-   # clm_df_daily2[which(clm_df_daily2$Year>2014 & clm_df_daily2$Year <2019),]<-clm_df_daily[,-13]
-    #clm_df_daily<-clm_df_daily2
-    
+
+  clm_df_full<-read.csv(paste0(climDir,"clm_df_full.csv"))
+  clm_df_daily<-read.csv(paste0(climDir,"weather_day_basfor.csv"))
+  #clm_df_daily2<-read.csv(paste0(climDir,"weather_day.csv"))
+  # clm_df_daily2[which(clm_df_daily2$Year>2014 & clm_df_daily2$Year <2019),]<-clm_df_daily[,-13]
+  #clm_df_daily<-clm_df_daily2
+  
   #Add date
   
   clm_df_daily<- rbind(do.call("rbind", replicate(22, (clm_df_daily[1:730,]), simplify = FALSE)),clm_df_daily[732:1461,])
+  #clm_df_daily<-rbind(clm_df_daily[732:1461,],do.call("rbind", replicate(11, clm_df_daily, simplify = FALSE)))
+  #clm_df_daily<-filter(clm_df_daily,DOY!=366)
+  
   clm_df_daily$Year<-rep(1973:2018,each=365)
   
   clm_df_full$date<-as.Date(paste(clm_df_full$Year,"-",clm_df_full$Month,"-01",sep=""))
@@ -325,15 +329,15 @@ getClimDatX<-function(timeStep="monthly",climDir){
   clm_df_daily$week<-week(clm_df_daily$Date)
   clm_df_daily$month<-month(clm_df_daily$Date)
   clm_df_daily[which(clm_df_daily$DOY==365&clm_df_daily$week==1),"week"]<-52
-
+  
   modDat<-filter(clm_df_daily,Year>2014)
   predDat<-filter(clm_df_daily,Year<=2014)
-
+  
   
   
   mod1<-lm(SolarRad~Tmax+Tmean+Rain,data=modDat[-c(1275,2103,615),])
   
- # predDat$SolarRad<-predict(mod1,newdata = predDat)
+  # predDat$SolarRad<-predict(mod1,newdata = predDat)
   
   
   clm_df_daily<-rbind(predDat,modDat)

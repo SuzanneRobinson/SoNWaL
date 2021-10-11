@@ -63,10 +63,14 @@ sitka<-getParms(timeStp = 12)
 #read in and update sitka params with current MCMC results
 #out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\monthly_outx_2021-02-265949.RDS")
 codM<-as.data.frame(mergeChains(out$chain))
+
 nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
       "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","rainMod","tempMod")
+      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn")
+
+
+
 names(codM)<-nm
 codM<-miscTools::colMedians(as.data.frame(codM))
 sitka[nm]<-codM[nm]
@@ -79,7 +83,7 @@ sitka$weather[sitka$weather$Year>=2015,6]<-sitka$weather[sitka$weather$Year>=201
     {
       output<-do.call(fr3PGDN,sitka)%>%
       filter(Year>=2015)%>%
-        mutate(meanNPP = mean(GPP)*7.14)
+        mutate(meanNPP = mean(LAI))
                
       mean(output$meanNPP,na.rm=T)
     },
@@ -156,3 +160,32 @@ g2<-ggplot(senseOutTemp,aes(x=(inputVal*100)-100,y=func_output,col=Model))+
 
 
 ggarrange(g1,g2,common.legend = T, legend ="bottom")
+
+
+resi<-NULL
+parSamp<-getSample(out,start=10000,numSamples=200)
+for(i in c(1:nrow(parSamp))){
+  nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
+        "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
+        "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
+        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC")
+  
+
+  codM<-parSamp[i,]
+  names(codM)<-nm
+  
+  sitka<-getParms(waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
+  sitka[nm]<-codM[nm]
+  
+  output<-do.call(fr3PGDN,sitka)
+
+  ff<-data.frame(mean=mean(output$LAI),max=max(output$LAI))
+  resi<-rbind(resi,ff)
+}
+
+
+for(i in c(1:ncol(parSamp))){
+  
+  plot(resi$max~parSamp[,i],main=nm[i])
+  
+}

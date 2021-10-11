@@ -184,11 +184,9 @@ YC.finder <- function(HT,AGE)
 
 
 ## Function to plot the model against the Harwood data.
-plotResultsNewMonthly <- function(df,out,ShortTS=F,numSamps=500){
+plotResultsNewMonthly <- function(df,outSample,ShortTS=F,numSamps=500){
   library(matrixStats)
   library(future)
-  nmc = nrow(out$chain[[1]])
-  outSample   <- getSample(out,start=10,thin=5)
   codM<-miscTools::colMedians(as.data.frame(outSample))
   sitka[.GlobalEnv$nm]<-codM[.GlobalEnv$nm]
   df<-do.call(fr3PGDN,sitka)

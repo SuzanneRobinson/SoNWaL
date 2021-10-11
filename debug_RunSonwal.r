@@ -67,19 +67,21 @@ nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","s
 sitka[nm]<-exampParams[nm]
 
 
-out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_3_T.RDS")
+
+out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_2_T.RDS")
 
 #out<-getSample(out,start=12000,thin=5,numSamples=500)
 #codM<-out$chain[[2]][c(1:5000),]
-codM<-as.data.frame(out$chain[[3]])
+codM<-as.data.frame(out$chain[[4]])
 codM<-mergeChains(out$chain)
 
 codM<-miscTools::colMedians(as.data.frame(codM))
 codM<-tail(as.data.frame(codM),1)
 names(codM)<-nm
 
-#priorSamp<-priorVals$sampler(35000)
-#MCMCtrace(getSample(out,coda = T,thin=2,start=5000),wd="C:\\Users\\aaron.morris", post_zm=F,iter=10000,priors = priorSamp)
+
+priorSamp<-priorVals$sampler(35000)
+MCMCtrace(getSample(out,coda = T,thin=2,start=5000),wd="C:\\Users\\aaron.morris", post_zm=F,iter=10000,priors = priorSamp)
 
 sitka<-getParms(waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
 #sitka$E_S1<-2
@@ -151,10 +153,12 @@ output<-do.call(fr3PGDN,sitka)%>%
   dplyr::summarise(mean=mean(GPP*7.14,na.rm=TRUE))
 plot(output$mean)
 
-results<-plotResultsNewMonthly(output,ShortTS=T,out=out,numSamps = 25)
-#results
-ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]])
 
+#Plot results
+nmc = nrow(out$chain[[1]])
+outSample   <- getSample(out,start=nmc/1.1,thin=5)
+results<-plotResultsNewMonthly(output,ShortTS=T,out=out,numSamps = 25)
+ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]])
 ggarrange(results[[15]],results[[9]],results[[10]],results[[11]],results[[13]],results[[14]])
 
 

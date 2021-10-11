@@ -1,4 +1,3 @@
-      
 #     ____     _ __  _      __     __            _____          __           __   #
 #    / __/__  (_) / | | /| / /__ _/ /____ ____  / ___/__  ___  / /____ ___  / /_  #
 #   _\ \/ _ \/ / /  | |/ |/ / _ `/ __/ -_) __/ / /__/ _ \/ _ \/ __/ -_) _ \/ __/  #
@@ -35,16 +34,12 @@ soilWC<-function(parms,weather,state,K_s,SWC,soilVol){
   #soil water in rooting zone at t0 (start of time-step)
   SWC_rz0 = state[["SWC_rz"]]
 
-  #rooting depth / volume - Almedia describes this as depth, assumed to be proportional in paper to biomass
+    #rooting depth / volume - Almedia describes this as depth, assumed to be proportional in paper to biomass
   z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone/max root depth
 
   V_rz = z_r #Almedia and Sands paper suggests volume of root zone is equivalent to z_r
   
-# Ksat<-4.56
-# nk<-18.4
- volSWC_rz<-min((SWC_rz0 /(z_r*1000)),parms[["satPoint"]])
-  
-  #K_s=max((Ksat*(volSWC_rz/parms[["satPoint"]])^nk)*24,0.000001)
+  volSWC_rz<-min((SWC_rz0 /(z_r*1000)),parms[["satPoint"]])
   
   #Shared area, area is in m^2, so area around the tree?
   A = parms[["shared_area"]]
@@ -60,9 +55,10 @@ soilWC<-function(parms,weather,state,K_s,SWC,soilVol){
   
   #State of soil water content in rooting zone at the end of the time step
   SWC_rz = (((SWC_rz0 * V_nrx - SWC_nr0 * V_rz) / (V_rz + V_nrx)) * exp(-t /t_s0)) +
-    (V_rz / (V_rz + V_nrx) * (SWC_rz0 + SWC_nr0))  #(V_rz*(SWC_rz0 + SWC_nr0)/(V_rz + V_nrx))-SWC_rz0#
 
-    return(SWC_rz)
+    (V_rz / (V_rz + V_nrx) * (SWC_rz0 + SWC_nr0)) 
+  # print(paste0("SWC_rz= ", SWC_rz ))
+  return(SWC_rz)
 }
 
 
@@ -115,72 +111,31 @@ drainageFunc<-function(parms,weather,SWC,soilVol,K_drain){
 soilEvap <- function(parms, weather, state, interRad, h,throughFall) {
   e20 <- parms[["e20"]]
   rhoAir <- parms[["rhoAir"]]
-  lambda <-parms[["lambda"]]#Volumetric latent heat of vaporization. Energy required per water volume vaporized (J/kg-1) (see penman monteith)
-  VPDconv <- parms[["VPDconv"]]
-  VPD <- weather[["VPD"]] * exp(state[["LAI"]] * (-log(2)) / 5)
-  
+  lambda <- parms[["lambda"]]#Volumetric latent heat of vaporization. Energy required per water volume vaporized (J/kg-1) (see penman monteith)
+  #VPD significantly reduced at the soil level due to increase in below canopy humidity
+  VPD <- weather[["VPD"]] * exp(state[["LAI"]] * (-log(4)) / 5)
   E_S1 = (parms[["E_S1"]])
   E_S2 = (parms[["E_S2"]])
   
-  
   #size of time-step. This is for monthly time steps
-  if (parms[["timeStp"]] == 12)
-    t =   days_in_month(weather[["Month"]])
-  if (parms[["timeStp"]] == 52)
-    t =   7
-  if (parms[["timeStp"]] == 365)
-    t =  1
-  if (is.numeric(t) == F)
-    print ("unsupported time step used")
+  if (parms[["timeStp"]] ==12) t =   days_in_month(weather[["Month"]]) 
+  if (parms[["timeStp"]] ==52) t =   7
+  if (parms[["timeStp"]] ==365) t =  1
+  if (is.numeric(t)==F) print("unsupported time step used")
   
-  
-  soilBoundaryCond <- 0.01
-  soilCond <- 1e+10
-  #convert joules m^2 per hour to watts m^2 (1 Wm^2 = 1 J m^2 per second)
-  interRad <- max(interRad, 0.00001)
-  
-  
+  soilBoundaryCond<-0.01
+  soilCond<-1e+10
+  interRad<-max(interRad,0.00001)
   Delta = 145 #Rate of change of saturation specific humidity with air temperature. (Pa/K−1)
   Cp = 1004 #specific heat cap of air J/kg-1
   Pa = 1.204 #Dry air density kg/m-3
   gamma = 66.1 # phsychrometric constant Pa/K-1
-  
-  e0<-max(h*(soilCond*(Delta*interRad+soilBoundaryCond*Pa*Cp*((VPD*1000)))/
-               (lambda*((gamma+Delta)*soilCond+gamma*soilBoundaryCond))),0)
+
+  e0<-max(h*(soilCond*(Delta*interRad+soilBoundaryCond*Pa*Cp*((VPD*1000)))/(lambda*((gamma+Delta)*soilCond+gamma*soilBoundaryCond))),0)
   e0<-e0*365/parms[["timeStp"]]
-  #E_S0 is E_S at the start of the time-step
-  
-  #rainDays<-max(weather[["rainDays"]],1)
-#
-  #  daysApart<-ifelse(rainDays>0,t/rainDays,t)
-  #throughFallPerDay<-throughFall/rainDays
 
   E_S0 = state[["E_S"]]
-  
-#for (i in c(1:rainDays)){
-#  E_S0=max(E_S0-throughFallPerDay,0)
-##Duration of phase 1 evaporation
-#t_S1 = E_S1 / e0
-#
-#
-##Solved for t equation A.10 in Almedia, to get equivalent t for E_S0 value
-#t0 = t_S1 + (E_S2 / e0 / 2) * ((1 + (E_S0 - E_S1) / E_S2) ^2 - 1)
-## t0 = as.numeric((((-2 * E_S0 * E_S1) + (E_S0 ^ 2) + (2 * E_S0) +
-# #                         (E_S1 ^ 2) - (2 * E_S1) + 1 + (2 * e0 * E_S2 * t_S1) - (E_S2 ^ 2) ) / (2 * e0 * E_S2)))
-#
-#t0 <- ifelse(t0 < 0, 0, t0)
-#
-##Integrate equation A.9 to get value at time t (assuming t is number of days in month)
-##and Calc E_S using t+t0 to get amount of evaporation between t0 and t
-#E_Sum = if ((daysApart + t0) <= t_S1) e0 * (daysApart + t0) - E_S0 else (E_S1 + E_S2 * (sqrt(1 + 2 * (e0 / E_S2) * ((daysApart + t0) - t_S1) - 1))) - E_S0
-#E_S0 =E_S0+E_Sum
-#eX=eX+E_Sum
-#
-#}
-#
 
-
-  
   E_S<-E_S0+ifelse(E_S0<=E_S1,e0,e0/(1+(E_S0-E_S1)/E_S2))
   
   return(list(E_S,e0))
@@ -191,9 +146,8 @@ soilEvap <- function(parms, weather, state, interRad, h,throughFall) {
 
 ##Soil water growth modifier
 SWGmod<-function(SWconst,SWpower,MoistRatio){
-
-  f_theta<-(1-(1-MoistRatio)^SWpower)/(1+(1-2*SWconst^SWpower)*((1-MoistRatio)/SWconst)^SWpower)
-  
+  f_theta<-(1-(1-MoistRatio)^SWpower)/(1+((1-MoistRatio)/SWconst)^SWpower)
+#  f_theta<-(1-(1-MoistRatio)^SWpower)/(1+(1-2*SWconst^SWpower)*((1-MoistRatio)/SWconst)^SWpower)
   return(f_theta)
 }
 
