@@ -151,10 +151,12 @@ output<-do.call(fr3PGDN,sitka)%>%
   dplyr::summarise(mean=mean(GPP*7.14,na.rm=TRUE))
 plot(output$mean)
 
-results<-plotResultsNewMonthly(output,ShortTS=T,out=out,numSamps = 25)
-#results
-ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]])
 
+#Plot results
+nmc = nrow(out$chain[[1]])
+outSample   <- getSample(out,start=nmc/1.1,thin=5)
+results<-plotResultsNewMonthly(output,ShortTS=T,out=out,numSamps = 25)
+ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]])
 ggarrange(results[[15]],results[[9]],results[[10]],results[[11]],results[[13]],results[[14]])
 
 

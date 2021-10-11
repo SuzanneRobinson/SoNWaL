@@ -45,8 +45,7 @@ sitka<-getParms(weather=clm_df_full,
         "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC")
 ##update with some example calibrated parameters
 exampParams<-readRDS("data//exampParams.RDS")
-exParms<-mergeChains(exampParams$chain)
-exParms<-miscTools::colMedians(as.data.frame(exParms))
+exParms<-miscTools::colMedians(as.data.frame(exampParams))
 names(exParms)<-nm
 sitka[nm]<-exParms[nm]
 
@@ -61,6 +60,7 @@ quickPlot(flxdata_daily,output,grouping="month")
 
 
 #full plots - much slower but gives credible intervals and uncertainty of observed data - num samps is how many samples from posterior to use (>=500 ideal but 50-100 will give a pretty solid output for a quick checking)
+
 results<-plotResultsNewMonthly(output,ShortTS=T,out=exampParams,numSamps=25)
-ggarrange(results[[1]],results[[2]],results[[8]],results[[3]],results[[5]],results[[4]])
-ggarrange(results[[15]],results[[9]],results[[10]],results[[11]],results[[13]],results[[14]])
+ggarrange(results[[1]],results[[2]],results[[8]],results[[3]],results[[5]],results[[4]],ncol=2,nrow=3)
+ggarrange(results[[15]],results[[9]],results[[10]],results[[11]],results[[13]],results[[14]],ncol=2,nrow=3)
