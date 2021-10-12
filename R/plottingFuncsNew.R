@@ -43,6 +43,7 @@ plotResultsPine <- function(outP,ShortTS=F){
                             volSWC_rz=mean(volSWC_rz),NEE=mean(NEE),timestamp=median(timestamp),LAI=mean(LAI),t.proj=median(t.proj)))
   
   modif<-ifelse(nrow(df)<600,1.66,7.142857)
+  nDays<-ifelse(nrow(df)<600,30,7)
   
   dataX<-dataX %>% right_join(df2, by=c("year"="Year","month"="Month"))
   
@@ -67,7 +68,7 @@ plotResultsPine <- function(outP,ShortTS=F){
     res<- do.call(fr3PGDN,pine)%>%
       filter(Year>=1996)%>%
       group_by(Year,Month)%>%
-      dplyr::summarise(GPP=mean(GPP),NEE=mean(NEE),volSWC_rz=mean(volSWC_rz),EvapTransp=mean(EvapTransp)/7,Reco=mean(Reco),Rs=mean(Rs),N=mean(N),LAI=mean(LAI),dg=mean(dg),totC=mean(totC),totN=mean(totN),NPP=mean(NPP),alphaAn=mean(Reco/Rs))
+      dplyr::summarise(GPP=mean(GPP),NEE=mean(NEE),volSWC_rz=mean(volSWC_rz),EvapTransp=mean(EvapTransp)/nDays,Reco=mean(Reco),Rs=mean(Rs),N=mean(N),LAI=mean(LAI),dg=mean(dg),totC=mean(totC),totN=mean(totN),NPP=mean(NPP),alphaAn=mean(Reco/Rs))
     
     return(res)
   }
@@ -212,6 +213,7 @@ plotResultsNewMonthly <- function(df,outSample,ShortTS=F,numSamps=500){
                             volSWC_rz=mean(volSWC_rz),NEE=mean(NEE),timestamp=median(timestamp),LAI=mean(LAI),t.proj=median(t.proj)))
   
   modif<-ifelse(nrow(df)<600,1.66,7.142857)
+  nDays<-ifelse(nrow(df)<600,30,7)
   
   dataX<-dataX %>% right_join(df2, by=c("year"="Year","month"="Month"))
   
@@ -238,7 +240,7 @@ plotResultsNewMonthly <- function(df,outSample,ShortTS=F,numSamps=500){
       res<- do.call(fr3PGDN,sitka)%>%
                    filter(Year>=2015)%>%
                    group_by(Year,Month)%>%
-        dplyr::summarise(GPPsum=sum(GPP*7),NPPsum=sum(NPP*7),GPP=mean(GPP),NEE=mean(NEE),volSWC_rz=mean(volSWC_rz),EvapTransp=mean(EvapTransp)/7,Reco=mean(Reco),Rs=mean(Rs),N=mean(N),LAI=mean(LAI),dg=mean(dg),totC=mean(totC),totN=mean(totN),NPP=mean(NPP),alphaAn=mean(Reco/Rs))
+        dplyr::summarise(GPPsum=sum(GPP*7),NPPsum=sum(NPP*7),GPP=mean(GPP),NEE=mean(NEE),volSWC_rz=mean(volSWC_rz),EvapTransp=mean(EvapTransp)/nDays,Reco=mean(Reco),Rs=mean(Rs),N=mean(N),LAI=mean(LAI),dg=mean(dg),totC=mean(totC),totN=mean(totN),NPP=mean(NPP),alphaAn=mean(Reco/Rs))
    
     return(res)
   }

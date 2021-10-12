@@ -108,7 +108,7 @@ drainageFunc<-function(parms,weather,SWC,soilVol,K_drain){
 #Calc using penman monteith eq. g_c is infinite - could be better modified by soil dryness etc.
 
 
-soilEvap <- function(parms, weather, state, interRad, h,throughFall) {
+soilEvap <- function(parms, weather, state, interRad, h,throughFall,pseudo=F) {
   e20 <- parms[["e20"]]
   rhoAir <- parms[["rhoAir"]]
   lambda <- parms[["lambda"]]#Volumetric latent heat of vaporization. Energy required per water volume vaporized (J/kg-1) (see penman monteith)
@@ -130,6 +130,41 @@ soilEvap <- function(parms, weather, state, interRad, h,throughFall) {
   Cp = 1004 #specific heat cap of air J/kg-1
   Pa = 1.204 #Dry air density kg/m-3
   gamma = 66.1 # phsychrometric constant Pa/K-1
+  rainDays<-max(weather[["rainDays"]],1)
+  rain<-throughFall/rainDays
+  
+  e0<-max(h*(soilCond*(Delta*interRad+soilBoundaryCond*Pa*Cp*((VPD*1000)))/
+               (lambda*((gamma+Delta)*soilCond+gamma*soilBoundaryCond))),0)
+  e0<-e0*365/parms[["timeStp"]]
+  E_S0 = state[["E_S"]]
+  
+  if(pseudo==T){
+  daysApart<-(365/parms[["timeStp"]])/rainDays
+  eX=0
+  if(weather[["rainDays"]]>0){
+  for (i in c(1:rainDays)){
+  E_S0=max(E_S0-rain,0)
+  t_S1 = E_S1 / e0
+  
+  if (E_S0 <= E_S1) {
+    t0 = E_S0 / e0
+  } else
+  {
+    #Solved for t equation A.10 in Almedia, to get equivalent t for E_S0 value
+    t0 = as.numeric((((-2 * E_S0 * E_S1) + (E_S0 ^ 2) + (2 * E_S0) +
+                        (E_S1 ^ 2) - (2 * E_S1) + 1 + (2 * e0 * E_S2 * t_S1) - (E_S2 ^ 2)
+    ) / (2 * e0 * E_S2)))
+  }
+  E_Sum = if ((daysApart + t0) <= t_S1) e0 * (daysApart + t0) - E_S0 else (E_S1 + E_S2 * (sqrt(1 + 2 * (e0 / E_S2) * ((daysApart + t0) - t_S1) - 1))) - E_S0
+  E_S0 =E_S0+E_Sum
+  eX=eX+E_Sum
+  
+  }
+  }
+  return(list(E_S0,eX))
+  } 
+  if (pseudo==F)
+  {
 
   e0<-max(h*(soilCond*(Delta*interRad+soilBoundaryCond*Pa*Cp*((VPD*1000)))/(lambda*((gamma+Delta)*soilCond+gamma*soilBoundaryCond))),0)
   e0<-e0*365/parms[["timeStp"]]
@@ -139,7 +174,7 @@ soilEvap <- function(parms, weather, state, interRad, h,throughFall) {
   E_S<-E_S0+ifelse(E_S0<=E_S1,e0,e0/(1+(E_S0-E_S1)/E_S2))
   
   return(list(E_S,e0))
-  
+  }
 }
 
 

@@ -1,38 +1,11 @@
 
-
-
-
-
-## Extract simulated data for use in likelihood function for shorter time-steps
-#daily (and therefore weekly) data is in grams per meter square per day, so need to convert 3pg output from tons per hectare
-sampleOutputTS<-function(df,sY,eY){
-  df<- filter(df,Year>=sY&Year<=eY)
-  m<-c(aggregate(df$GPP~ df$Month+df$Year,FUN=mean)[,3]*100/7,
-       aggregate(df$NPP~ df$Month+df$Year,FUN=mean)[,3]*100/7,
-       aggregate(df$NEE~ df$Month+df$Year,FUN=mean)[,3]*100/7,
-       aggregate(df$Reco~ df$Month+df$Year,FUN=mean)[,3]*100/7,
-       aggregate(df$Rs~ df$Month+df$Year,FUN=mean)[,3]*100/7,
-       aggregate(df$Etransp~ df$Month+df$Year,FUN=sum)[,3],
-       filter(df,Year==2015&Month==8)$LAI[1],
-       filter(df,Year==2018&Month==8)$LAI[1],
-       filter(df,Year==2018&Month==8)$N[1],
-       filter(df,Year==2018&Month==8)$dg[1],
-     #  filter(df,Year==2015&Month==7)$Wr[1],
-     #  filter(df,Year==2015&Month==7)$difRoots[1],
-       filter(df,Year==2015&Month==7)$totC[1],
-       filter(df,Year==2015&Month==7)$totN[1],
-       aggregate(df$volSWC_rz~ df$Month+df$Year,FUN=mean)[,3]
-  )
-  m
-  return(m)
-}
-
 ## Extract simulated data for use in likelihood function for shorter time-steps
 #monthly data is in tons per hectare per month which matches 3pg output so no need to convert
 sampleOutputMonth<-function(df,sY,eY){
   #convert to average grams per m2 per day depending on timestep of model
   modif<- if(nrow(df)<600) 1.6 else 7.142857
-
+nDays<- if(nrow(df)<600) 30 else 7
+  
      df<-df%>%
       filter(Year>=sY&Year<=eY)%>%
       mutate(GPP=GPP*modif)%>%
@@ -47,7 +20,7 @@ sampleOutputMonth<-function(df,sY,eY){
        aggregate(df$NEE~ df$Month+df$Year,FUN=mean)[,3],
       # aggregate(df$Reco~ df$Month+df$Year,FUN=mean)[,3],
        #aggregate(df$Rs~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$EvapTransp/7~ df$Month+df$Year,FUN=mean)[,3],
+       aggregate(df$EvapTransp/nDays~ df$Month+df$Year,FUN=mean)[,3],
        filter(df,Year==2015&Month==8)$LAI[1],
        filter(df,Year==2018&Month==8)$LAI[1],
        filter(df,Year==2018&Month==8)$N[1],
@@ -434,9 +407,9 @@ NLL_weekly<- function(p){
       #use sampleOutputTS if using smaller time-steps
       modelled <-sampleOutputWeekly(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
       
-      NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,sum(dnorm(modelled,.GlobalEnv$observed,GlobalEnv$dev,log=T)))
+      NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,flogL(data=.GlobalEnv$observed,sims=modelled,data_s=.GlobalEnv$dev))
       
-NlogLik<-ifelse(max(output$LAI)>8,-Inf,NlogLik)
+NlogLik<-ifelse(max(output$LAI)>9.5,-Inf,NlogLik)
 #        NlogLik<-ifelse(mean(tail(output$LAI,500))<1,-Inf,NlogLik)
       NlogLik<-ifelse(min(output$totN)<1,-Inf,NlogLik)
       

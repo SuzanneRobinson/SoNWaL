@@ -119,7 +119,7 @@ getParms<-function(weather=clm_df_full,
                    maxRootDepth=1,
                    sigma_zR =1.5, #area/depth explored by 1kg of root biomass
                    SWC_nr=10, #SWC of non-rooting zone at time 0
-                   E_S1 =0.05, #Cumulitive evap threshold (kg^m-2) - sensitive to length of time-step, e.g. monthly time-step means wetting event only occurs at end of month
+                   E_S1 =1, #Cumulitive evap threshold (kg^m-2) - sensitive to length of time-step, e.g. monthly time-step means wetting event only occurs at end of month
                    E_S2 =1, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
                    MaxASW_state=50,
                    K_drain=0.5,
@@ -128,7 +128,8 @@ getParms<-function(weather=clm_df_full,
                    tempMod =1, #rain adjustment for sensitivity analyses
                    fsMod=1,
                    startN=12,
-                   startC=400
+                   startC=400,
+                   pseudo=F #whether to use pseudo time-steps
                    ){
   
  list(weather=weather,
@@ -259,7 +260,8 @@ getParms<-function(weather=clm_df_full,
       tempMod=tempMod,
       fsMod=fsMod,
       startN=startN,
-      startC=startC
+      startC=startC,
+      pseudo=pseudo
   )
 }
 
@@ -395,7 +397,8 @@ getParmsPine<-function(weather=clm_df_pine,
                    tempMod =1, #rain adjustment for sensitivity analyses
                    fsMod=1,
                    startN=6,
-                   startC=100
+                   startC=100,
+                   pseudo=F
                    
 ){
   
@@ -527,7 +530,8 @@ getParmsPine<-function(weather=clm_df_pine,
        tempMod=tempMod,
        fsMod=fsMod,
        startN=startN,
-       startC=startC
+       startC=startC,
+       pseudo=pseudo
        
   )
 }

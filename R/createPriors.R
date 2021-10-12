@@ -15,8 +15,8 @@ createPriors_sitka<-function(sitka){
     0.05, #K_s
     0.3, #V_nr
     0.2, #sigma_zR
-    0.01, #E_S1
-    0.01, #E_S2
+    0.0001, #E_S1
+    0.001, #E_S2
     2, #shared_area
     0.3, #maxRootDepth
     0.05, #K_drain
@@ -74,8 +74,8 @@ createPriors_sitka<-function(sitka){
       1,#K_s
       4,#V_nr
       3,#sigma_zR
-      35,#E_S1
-      35,#E_S2
+      2,#E_S1
+      2,#E_S2
       6, #shared_area
       4, #maxRootDepth
       1, #K_drain
