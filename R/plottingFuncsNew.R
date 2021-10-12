@@ -234,7 +234,6 @@ plotResultsNewMonthly <- function(df,outSample,ShortTS=F,numSamps=500){
   
   runModel<- function(p){
     require("dplyr")
-    require("batMods")
     sitka[.GlobalEnv$nm]<-p
 
       res<- do.call(fr3PGDN,sitka)%>%
@@ -253,8 +252,6 @@ plotResultsNewMonthly <- function(df,outSample,ShortTS=F,numSamps=500){
    }
   
 
-  outSample<-getSample(out,start=nmc/2,thin=1,numSamples = numSamps)
-  outSample<-as.data.frame(outSample)
   outSample <- split(outSample, seq(nrow(outSample)))
   outRes<- lapply(outSample, runModel) 
   

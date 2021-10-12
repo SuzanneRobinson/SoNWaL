@@ -55,6 +55,6 @@ output<-do.call(fr3PGDN,sitka)
 quickPlot(flxdata_daily,output,grouping="month")
 
 #full plots - much slower but gives credible intervals and uncertainty of observed data - num samps is how many samples from posterior to use (>=500 ideal but 50-100 will give a pretty solid output for a quick checking)
-results<-plotResultsNewMonthly(output,ShortTS=T,out=exampParams,numSamps=25)
+results<-plotResultsNewMonthly(output,ShortTS=T,outSample=exampParams,numSamps=25)
 ggarrange(results[[1]],results[[2]],results[[8]],results[[3]],results[[5]],results[[4]],ncol=2,nrow=3)
 ggarrange(results[[15]],results[[9]],results[[10]],results[[11]],results[[13]],results[[14]],ncol=2,nrow=3)
