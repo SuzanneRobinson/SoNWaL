@@ -32,7 +32,8 @@ sampleOutputTS<-function(df,sY,eY){
 sampleOutputMonth<-function(df,sY,eY){
   #convert to average grams per m2 per day depending on timestep of model
   modif<- if(nrow(df)<600) 1.6 else 7.142857
-
+  nDays<- if(nrow(df)<600) 30 else 7
+  
      df<-df%>%
       filter(Year>=sY&Year<=eY)%>%
       mutate(GPP=GPP*modif)%>%
@@ -47,7 +48,7 @@ sampleOutputMonth<-function(df,sY,eY){
        aggregate(df$NEE~ df$Month+df$Year,FUN=mean)[,3],
       # aggregate(df$Reco~ df$Month+df$Year,FUN=mean)[,3],
        #aggregate(df$Rs~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$EvapTransp/7~ df$Month+df$Year,FUN=mean)[,3],
+       aggregate(df$EvapTransp/nDays~ df$Month+df$Year,FUN=mean)[,3],
        filter(df,Year==2015&Month==8)$LAI[1],
        filter(df,Year==2018&Month==8)$LAI[1],
        filter(df,Year==2018&Month==8)$N[1],

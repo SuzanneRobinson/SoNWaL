@@ -16,14 +16,14 @@ library("ggpubr")
 startYear = 2015
 endYear = 2018
 #install.packages("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\fr3PGDN_2.0.tar.gz", repos = NULL, type="source")
-timeStep<-"monthly"
+timeStep<-"weekly"
 
 #Directory where climate data is stored (default is "data" in SonWal folder)
 climDir<-("Data/")
 
 
 ## read in and format climate data
-clm_df_full<-data.frame(getClimDatX("monthly",climDir))%>%
+clm_df_full<-data.frame(getClimDatX(timeStep,climDir))%>%
   filter(Year<2019)
 
 
@@ -60,7 +60,7 @@ sitka<-getParms(weather=clm_df_full,
 #names of parameters to fit
 
 #exampParams<-read.csv("exampParams.csv")
-nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
+nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","shared_area","maxRootDepth","K_drain",
       "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
       "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC")
@@ -68,11 +68,11 @@ sitka[nm]<-exampParams[nm]
 
 
 
-out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_2_T.RDS")
+out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_3_T.RDS")
 
 #out<-getSample(out,start=12000,thin=5,numSamples=500)
 #codM<-out$chain[[2]][c(1:5000),]
-codM<-as.data.frame(out$chain[[4]])
+codM<-as.data.frame(out$chain[[2]])
 codM<-mergeChains(out$chain)
 
 codM<-miscTools::colMedians(as.data.frame(codM))
@@ -80,8 +80,8 @@ codM<-tail(as.data.frame(codM),1)
 names(codM)<-nm
 
 
-#priorSamp<-priorVals$sampler(35000)
-#MCMCtrace(getSample(out,coda = T,thin=2,start=5000),wd="C:\\Users\\aaron.morris", post_zm=F,iter=10000,priors = priorSamp)
+priorSamp<-priorVals$sampler(35000)
+MCMCtrace(getSample(out,coda = T,thin=2,start=5000),wd="C:\\Users\\aaron.morris", post_zm=F,iter=10000,priors = priorSamp)
 
 sitka<-getParms(waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
 #sitka$E_S1<-2
@@ -117,7 +117,7 @@ sitka[nm]<-codM[nm]
 #}
 #sitka$pFS20<-0.1
 output<-do.call(fr3PGDN,sitka)
-ff<-filter(output,Year>2014)
+ff<-filter(output,Year>2010&Year<2019)
 plot(output$LAI)
 
 
@@ -133,33 +133,13 @@ plot(ff$EvapTransp)
 plot(output$totN)
 plot(ff$GPP*7.14,col="red")
 
-#ff<-filter(output,t<=100)
-
-sum(tail(ff$YlN,1),tail(ff$ON,1),tail(ff$YrN,1))
-sum(tail(ff$YlC,1),tail(ff$OC,1),tail(ff$YrC,1))
-
-mean((ff$YlN)/(ff$Nav))
-mean((ff$ON)/(ff$Nav))
-mean((ff$YrN)/(ff$Nav))
-
-
-sum((ff$YlN[4000]),(ff$ON[4000]),(ff$YrN[4000]))
-sum((ff$YlC[4000]),(ff$OC[4000]),(ff$YrC[4000]))
-
-
-output<-do.call(fr3PGDN,sitka)%>%
-  filter(Year>=2015)%>%
-  group_by(Year,Month)%>%
-  dplyr::summarise(mean=mean(GPP*7.14,na.rm=TRUE))
-plot(output$mean)
-
 
 #Plot results
 nmc = nrow(out$chain[[1]])
-outSample   <- getSample(out,start=nmc/1.1,thin=5)
-results<-plotResultsNewMonthly(output,ShortTS=T,out=outSample,numSamps = 25)
-ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]])
-ggarrange(results[[15]],results[[9]],results[[10]],results[[11]],results[[13]],results[[14]])
+outSample   <- as.data.frame(getSample(out,start=nmc/1.1,thin=5,numSamps = 250))
+results<-plotResultsNewMonthly(output,ShortTS=T,out=outSample,numSamps = 50)
+ggarrange(results[[1]],results[[8]],results[[2]],results[[3]],results[[5]],results[[4]],nrow=3,ncol=2)
+ggarrange(results[[15]],results[[9]],results[[10]],results[[11]],results[[13]],results[[14]],nrow=3,ncol=2)
 
 
 ggarrange(results[[1]],results[[2]],results[[3]],results[[5]],results[[4]],results[[6]],results[[15]],results[[9]],results[[10]],results[[11]],results[[13]],results[[14]])

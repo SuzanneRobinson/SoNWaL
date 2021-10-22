@@ -180,9 +180,9 @@ YCfunc<-function(out){
   MAI[1,2]<-0
   MAI$y<-(predict(loess(MAI$y~MAI$x)))
   
- # plot(CAI,col="white")
- # lines(MAI,col="blue")
-  #lines(CAI,col="red")
+  plot(CAI,col="white")
+  lines(MAI,col="blue")
+  lines(CAI,col="red")
   
   
   interSec<- tryCatch(
@@ -222,14 +222,33 @@ calcRH<-function(Tmean,Tref=273.16,p,q){
 #' @param param_draw parameter draws
 FR3PG_spat_run <- function(site, clm,param_draw,grid_id,soil){
   library(lubridate)
-  if(soil==2) {param_draw$pars <- lapply(param_draw$pars, function(x) {x$wiltPoint<-0.126
-  x$fieldCap<-0.268
-  x$satPoint<-0.461
+  if(soil==2) {param_draw$pars <- lapply(param_draw$pars, function(x) {x$wiltPoint<-0.2327
+  x$fieldCap<-0.3618
+  x$satPoint<-0.6247
+  
+  x$ES_1<-0.1
+  x$ES_2<-0.25
+  x$V_nr<- x$V_nr*1.5
+  x$maxRootDepth<- x$maxRootDepth*1.5
  return(x)})}
   
-  if(soil==1) {param_draw$pars <- lapply(param_draw$pars, function(x) {x$wiltPoint<-0.057
-  x$fieldCap<-0.122
-  x$satPoint<-0.46
+  if(soil==1) {param_draw$pars <- lapply(param_draw$pars, function(x) {x$wiltPoint<-0.0688
+  x$fieldCap<-0.19885
+  x$satPoint<-0.487
+  x$ES_1<-20.018454
+  x$ES_2<-13.051244
+  x$V_nr<- x$V_nr*1.2
+  x$maxRootDepth<- x$maxRootDepth*1.2
+  return(x)})}
+  
+  if(soil==3) {param_draw$pars <- lapply(param_draw$pars, function(x) {x$wiltPoint<-0.278
+  x$fieldCap<-0.1
+  x$satPoint<-0.25
+  return(x)})}
+  
+  if(soil==4) {param_draw$pars <- lapply(param_draw$pars, function(x) {x$wiltPoint<-0.299
+  x$fieldCap<-0.422
+  x$satPoint<-0.490
   return(x)})}
   
     if(is.na(clm[1,3])==T) return (tibble::as_tibble(data.frame(Year=NA,grid_id=grid_id,Wsbr_q05=NA,Wsbr_q95=NA,Wsbr_value=NA,
@@ -249,10 +268,10 @@ FR3PG_spat_run <- function(site, clm,param_draw,grid_id,soil){
       baseParms<- getParms(timeStp = 52, waterBalanceSubMods = T)
 
       #Update parameters with proposals 
-      nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
+      nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","shared_area","maxRootDepth","K_drain",
             "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
             "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-            "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC")
+            "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","k","startN","startC")
 
       baseParms[nm]<-as.data.frame(params[nm])
 
@@ -284,7 +303,7 @@ FR3PG_spat_run <- function(site, clm,param_draw,grid_id,soil){
       
       #run model and output data
       out<-do.call(fr3PGDN,baseParms)
-      out$age<-rev(as.numeric(2018-out$Year))
+      out$age<-rev(as.numeric(max(out$Year,na.rm=T)-out$Year))
       out$MAI<-(out$Vu)/out$age
       out$CAI<-c(rep(0,52),diff(out$Vu,lag=52))
 

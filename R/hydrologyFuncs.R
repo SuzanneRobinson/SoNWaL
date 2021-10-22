@@ -108,74 +108,84 @@ drainageFunc<-function(parms,weather,SWC,soilVol,K_drain){
 #Calc using penman monteith eq. g_c is infinite - could be better modified by soil dryness etc.
 
 
-soilEvap <- function(parms, weather, state, interRad, h,throughFall,pseudo=F) {
-  e20 <- parms[["e20"]]
-  rhoAir <- parms[["rhoAir"]]
-  lambda <- parms[["lambda"]]#Volumetric latent heat of vaporization. Energy required per water volume vaporized (J/kg-1) (see penman monteith)
-  #VPD significantly reduced at the soil level due to increase in below canopy humidity
-  VPD <- weather[["VPD"]] * exp(state[["LAI"]] * (-log(4)) / 5)
-  E_S1 = (parms[["E_S1"]])
-  E_S2 = (parms[["E_S2"]])
-  
-  #size of time-step. This is for monthly time steps
-  if (parms[["timeStp"]] ==12) t =   days_in_month(weather[["Month"]]) 
-  if (parms[["timeStp"]] ==52) t =   7
-  if (parms[["timeStp"]] ==365) t =  1
-  if (is.numeric(t)==F) print("unsupported time step used")
-  
-  soilBoundaryCond<-0.01
-  soilCond<-1e+10
-  interRad<-max(interRad,0.00001)
-  Delta = 145 #Rate of change of saturation specific humidity with air temperature. (Pa/K−1)
-  Cp = 1004 #specific heat cap of air J/kg-1
-  Pa = 1.204 #Dry air density kg/m-3
-  gamma = 66.1 # phsychrometric constant Pa/K-1
-  rainDays<-max(weather[["rainDays"]],1)
-  rain<-throughFall/rainDays
-  
-  e0<-max(h*(soilCond*(Delta*interRad+soilBoundaryCond*Pa*Cp*((VPD*1000)))/
-               (lambda*((gamma+Delta)*soilCond+gamma*soilBoundaryCond))),0)
-  e0<-e0*365/parms[["timeStp"]]
-  E_S0 = state[["E_S"]]
-  
-  if(pseudo==T){
-  daysApart<-(365/parms[["timeStp"]])/rainDays
-  eX=0
-  if(weather[["rainDays"]]>0){
-  for (i in c(1:rainDays)){
-  E_S0=max(E_S0-rain,0)
-  t_S1 = E_S1 / e0
-  
-  if (E_S0 <= E_S1) {
-    t0 = E_S0 / e0
-  } else
-  {
-    #Solved for t equation A.10 in Almedia, to get equivalent t for E_S0 value
-    t0 = as.numeric((((-2 * E_S0 * E_S1) + (E_S0 ^ 2) + (2 * E_S0) +
-                        (E_S1 ^ 2) - (2 * E_S1) + 1 + (2 * e0 * E_S2 * t_S1) - (E_S2 ^ 2)
-    ) / (2 * e0 * E_S2)))
+soilEvap <-
+  function(parms,
+           weather,
+           state,
+           interRad,
+           h,
+           throughFall,
+           pseudo = F) {
+    e20 <- parms[["e20"]]
+    rhoAir <- parms[["rhoAir"]]
+    lambda <-
+      parms[["lambda"]]#Volumetric latent heat of vaporization. Energy required per water volume vaporized (J/kg-1) (see penman monteith)
+    #VPD significantly reduced at the soil level due to increase in below canopy humidity
+    VPD <- weather[["VPD"]] * exp(state[["LAI"]] * (-log(4)) / 5)
+    E_S1 = (parms[["E_S1"]])
+    E_S2 = (parms[["E_S2"]])
+    
+    #size of time-step. This is for monthly time steps
+    if (parms[["timeStp"]] == 12)
+      t =   days_in_month(weather[["Month"]])
+    if (parms[["timeStp"]] == 52)
+      t =   7
+    if (parms[["timeStp"]] == 365)
+      t =  1
+    if (is.numeric(t) == F)
+      print("unsupported time step used")
+    
+    soilBoundaryCond <- 0.01
+    soilCond <- 1e+10
+    interRad <- max(interRad, 1e-5)
+    Delta = 145 #Rate of change of saturation specific humidity with air temperature. (Pa/K−1)
+    Cp = 1004 #specific heat cap of air J/kg-1
+    Pa = 1.204 #Dry air density kg/m-3
+    gamma = 66.1 # phsychrometric constant Pa/K-1
+    rainDays <- max(weather[["rainDays"]], 1)
+    rain <- throughFall / rainDays
+    
+    e0 <-
+      max(h * (
+        soilCond * (Delta * interRad + soilBoundaryCond * Pa * Cp * ((VPD * 1000))) /
+          (lambda * ((gamma + Delta) * soilCond + gamma * soilBoundaryCond
+          ))
+      ), 0)
+    e0 <- e0 * 365 / parms[["timeStp"]]
+    E_S0 = state[["E_S"]]
+    
+    #whether to use pseudo time-steps for soil evaporation (more useful if using longer overall time-steps such as monthly)
+    if (pseudo == T) {
+      daysApart <- (365 / parms[["timeStp"]]) / rainDays
+      eX = 0
+      if (weather[["rainDays"]] > 0) {
+        for (i in c(1:rainDays)) {
+          E_S0 = max(E_S0 - rain, 0)
+          t_S1 = E_S1 / e0
+          
+          if (E_S0 <= E_S1) {t0 = E_S0 / e0} else
+            {
+            t0 = as.numeric((((-2 * E_S0 * E_S1) + (E_S0 ^ 2) + (2 * E_S0) +
+                                (E_S1 ^ 2) - (2 * E_S1) + 1 + (2 * e0 * E_S2 * t_S1) - (E_S2 ^ 2)) / (2 * e0 * E_S2)))}
+          E_Sum = if ((daysApart + t0) <= t_S1) e0 * (daysApart + t0) - E_S0 else (E_S1 + E_S2 * (sqrt(1 + 2 * (e0 / E_S2) * ((daysApart + t0) - t_S1) - 1)))- E_S0
+          
+          E_S0 = E_S0 + E_Sum
+          eX = eX + E_Sum}
+      }
+      return(list(E_S0, eX))
+    }
+    if (pseudo == F){
+      e0 <-max(h * (soilCond * (Delta * interRad + soilBoundaryCond * Pa * Cp * ((VPD * 1000))) /(lambda * ((gamma + Delta) * soilCond + gamma * soilBoundaryCond))), 0)
+      e0 <- e0 * 365 / parms[["timeStp"]]
+      
+      ##ARE ES_1 AND ES_2 RELATIVE AND DIMENSIONLESS IN SOME WAY?
+      E_S0 = state[["E_S"]]
+      
+      E_S <- E_S0 + ifelse(E_S0 <= E_S1, e0, e0 / (1 + (E_S0 - E_S1) / E_S2))
+      
+      return(list(E_S, e0))
+    }
   }
-  E_Sum = if ((daysApart + t0) <= t_S1) e0 * (daysApart + t0) - E_S0 else (E_S1 + E_S2 * (sqrt(1 + 2 * (e0 / E_S2) * ((daysApart + t0) - t_S1) - 1))) - E_S0
-  E_S0 =E_S0+E_Sum
-  eX=eX+E_Sum
-  
-  }
-  }
-  return(list(E_S0,eX))
-  } 
-  if (pseudo==F)
-  {
-
-  e0<-max(h*(soilCond*(Delta*interRad+soilBoundaryCond*Pa*Cp*((VPD*1000)))/(lambda*((gamma+Delta)*soilCond+gamma*soilBoundaryCond))),0)
-  e0<-e0*365/parms[["timeStp"]]
-
-  E_S0 = state[["E_S"]]
-
-  E_S<-E_S0+ifelse(E_S0<=E_S1,e0,e0/(1+(E_S0-E_S1)/E_S2))
-  
-  return(list(E_S,e0))
-  }
-}
 
 
 

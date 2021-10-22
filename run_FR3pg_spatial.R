@@ -72,7 +72,7 @@ soilLocVals<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Docum
 simDat<-as_tibble(merge(simDat,soilLocVals,by.x=c("x","y"),by.y=c("x","y")))
 #run grid squares in parallel - as running over grid squares should be very scaleable
 #outTemp <-pmap(simDat$site, simDat$clm,as.list(simDat$grid_id), .f=~FR3PG_spat_run(site=..1, clm=..2,grid_id=..3,param_draw=param_draw),.progress = T)
-
+simDat$soil[is.na(simDat$soil)==T]<-0
 outTemp<-mapply(FR3PG_spat_run, site = simDat$site, clm = simDat$clm,soil=simDat$soil,grid_id=as.list(simDat$grid_id),MoreArgs = list(param_draw=param_draw),SIMPLIFY = F)
 #outTemp<-do.call(rbind,outTemp)
 
@@ -80,7 +80,7 @@ outTemp<-mapply(FR3PG_spat_run, site = simDat$site, clm = simDat$clm,soil=simDat
 out<-as_tibble(data.table::rbindlist(outTemp,fill=T))
 #re-add grid_id values
 #out$grid_id<-simDat$grid_id
-grF<-simDat[,c(1,3,4)]
+grF<-simDat[,c(1,2,3,7,8,9)]
 out<-merge(out,grF,by.x="grid_id",by.y = "grid_id")
 
 saveRDS(out,paste0("/work/scratch-nopw/alm/spatOutput/","SoNWal_",fileName))
@@ -271,7 +271,7 @@ fileLocs<-"/work/scratch-nopw/drcameron/outBASFOR"
 filenames<-list.files(path = fileLocs, pattern = "\\.csv$", full.names = F, 
                      recursive = T)
 
-
+##basfor combine function
 readComb<-function(file){
   print(file)
 ff<-read.csv(file)
@@ -283,6 +283,19 @@ ans = rbindlist(lapply(filenames, readComb),fill=T)
 saveRDS(ans,"/home/users/aaronm7/BASFOR_spatOut_30_09.RDS")
 
 
+#SoNWal combine function
+fileLocs<-"/work/scratch-nopw/alm/spatOutput"
+filenames<-list.files(path = fileLocs, pattern = "\\.RDS$", full.names = F, 
+                      recursive = T)
+readComb<-function(file){
+  print(file)
+  ff<-readRDS(file)
+  fName<- substr(file,8,22)
+  ff$fName<-sub(".RDS","",fName)
+  return(ff)
+}
+ans = rbindlist(lapply(filenames, readComb),fill=T)
+saveRDS(ans,"/home/users/aaronm7/SoNWal_spatOut_13_10.RDS")
 
 
 
@@ -290,7 +303,8 @@ saveRDS(ans,"/home/users/aaronm7/BASFOR_spatOut_30_09.RDS")
 
 
 
-outSpat<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\SoNWal_spatOut_24_09.RDS")
+
+outSpat<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\SoNWal_spatOut_13_10.RDS")
 soilDataLocs<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\soilDataLocs.RDS")
 outSpat2<-merge(outSpat,soilDataLocs,by.x=c("x","y"),by.y=c("x","y"))
 
@@ -298,14 +312,14 @@ basOut3<-merge(outSpatY,basOut2,by.x=c("x","y"),by.y=c("x","y"))
 
 
 for(i in c(1990:2016)){
-  outSpatY<-as.data.frame(outSpat2%>%filter(Year==i|is.na(Year)==T))
+  outSpatY<-as.data.frame(outSpat%>%filter(Year==i|is.na(Year)==T))
   outSpatY<-outSpatY[!(is.na(outSpatY$Year) == T & is.na(outSpatY$Wsbr_q05) == F ), ]
   
   #basOut3<-filter(basOut3,y>8e+05)
   #basOut3<-filter(basOut3,y<8.5e+05)
   
 print(ggplot() +
-  geom_raster(data = basOut3 , aes(x = x, y = y, fill = (GPP_value*7.14)))+
+  geom_raster(data = outSpatY , aes(x = x, y = y, fill = (GPP_value*7.14)))+
   theme_bw()+
   theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
@@ -317,7 +331,7 @@ print(ggplot() +
         panel.grid.minor = element_blank())+
   ggtitle(i)+
   coord_equal() + 
-  scale_fill_viridis_c(limits=c(0,10),"Chunk",option = "A"),na.value="white")
+  scale_fill_viridis_c("Chunk",option = "A"),na.value="white")
 
 }
 
@@ -338,7 +352,7 @@ readComb<-function(file){
 #ans = rbindlist(lapply(filenames, readComb))
 lkList<-readRDS("locNames.RDS")#data.frame(fName=ans$fName,x=ans$x,y=ans$y)
 
-basOut<-filter(basOut,avg.period==2015)
+basOut<-filter(basOut,avg.period==1995)
 basOut$fName<-substr(basOut$fName,8,20)
 basOut2<-merge(lkList,basOut,by.x="loc",by.y="fName")
 
@@ -355,7 +369,7 @@ ggplot() +
         panel.grid.minor = element_blank())+
   ggtitle(i)+
   coord_equal() + 
-  scale_fill_viridis_c(limits=c(0,10),"Chunk",option = "A")
+  scale_fill_viridis_c(limits=c(0,12),"Chunk",option = "A")
 
 
 

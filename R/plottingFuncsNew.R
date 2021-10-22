@@ -188,6 +188,7 @@ YC.finder <- function(HT,AGE)
 plotResultsNewMonthly <- function(df,outSample,ShortTS=F,numSamps=500){
   library(matrixStats)
   library(future)
+  outSample<-sample_n(outSample,numSamps)
   codM<-miscTools::colMedians(as.data.frame(outSample))
   sitka[.GlobalEnv$nm]<-codM[.GlobalEnv$nm]
   df<-do.call(fr3PGDN,sitka)
@@ -197,7 +198,6 @@ plotResultsNewMonthly <- function(df,outSample,ShortTS=F,numSamps=500){
   df <- df[c(2:nrow(df)),]
   if(nrow(df)>600) df$week<-c(1:53) else df$week<-1
   df <- df%>%mutate(timestamp = as.POSIXct(paste(sprintf("%02d",Year),sprintf("%02d",Month),sprintf("%02d",1),sep="-"),tz="GMT")) 
-  df2<-df%>%filter(Year>=2015)
   
   flxdata<-flxdata_daily%>%
     mutate(week=week(as.Date(yday, origin = paste0(year,"-01-01"))))%>%
@@ -207,10 +207,12 @@ plotResultsNewMonthly <- function(df,outSample,ShortTS=F,numSamps=500){
     group_by(year,month) %>%
     dplyr::summarise(gppOb=mean(gpp),gppsum=sum(gpp),nppOb=mean(npp),nppsum=sum(npp),etOb=mean(et),recoOb=mean(reco),rsOb=mean(rs),
                      swcOb=mean(swc),neeOb=mean(nee))%>%mutate(cumGppObs=cumsum(gppsum),cumNppObs=cumsum(nppsum))
-  df2<- (df2%>% 
+  df2<- (df%>% 
            group_by(Year,Month) %>%
            dplyr::summarise(GPPsum=sum(GPP*7),NPPsum=sum(NPP*7),GPP=mean(GPP),EvapTransp=mean(EvapTransp),Reco=mean(Reco),Rs=mean(Rs),NPP=mean(NPP),
                             volSWC_rz=mean(volSWC_rz),NEE=mean(NEE),timestamp=median(timestamp),LAI=mean(LAI),t.proj=median(t.proj)))
+  df3<-df2%>%filter(Year>=1971)
+  df2<-df2%>%filter(Year>=2015)
   
   modif<-ifelse(nrow(df)<600,1.66,7.142857)
   nDays<-ifelse(nrow(df)<600,30,7)
@@ -229,15 +231,14 @@ plotResultsNewMonthly <- function(df,outSample,ShortTS=F,numSamps=500){
   dataX$timestamp<-df2$timestamp
   dataX$month<-month(dataX$timestamp)  
   
-  
 
+  
   
   runModel<- function(p){
     require("dplyr")
     sitka[.GlobalEnv$nm]<-p
 
       res<- do.call(fr3PGDN,sitka)%>%
-                   filter(Year>=2015)%>%
                    group_by(Year,Month)%>%
         dplyr::summarise(GPPsum=sum(GPP*7),NPPsum=sum(NPP*7),GPP=mean(GPP),NEE=mean(NEE),volSWC_rz=mean(volSWC_rz),EvapTransp=mean(EvapTransp)/nDays,Reco=mean(Reco),Rs=mean(Rs),N=mean(N),LAI=mean(LAI),dg=mean(dg),totC=mean(totC),totN=mean(totN),NPP=mean(NPP),alphaAn=mean(Reco/Rs))
    
@@ -253,7 +254,11 @@ plotResultsNewMonthly <- function(df,outSample,ShortTS=F,numSamps=500){
   
 
   outSample <- split(outSample, seq(nrow(outSample)))
-  outRes<- lapply(outSample, runModel) 
+  outResX<- lapply(outSample, runModel) 
+  outResX<-lapply(outResX, function(x) filter(x, Year <= 2018))
+ # outResX<-lapply(outResX, function(x) filter(x, Year >= 2015))
+  outRes<-lapply(outResX, function(x) filter(x, Year >= 2015))
+
   
 paramName<-list("GPP","NEE","volSWC_rz","EvapTransp","Reco","Rs","N","LAI","dg","totC","totN","NPP","alphaAn","GPPsum","NPPsum")
 intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
@@ -411,6 +416,8 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
           axis.text=element_text(size=14))
   
   
+  paramName<-list("GPP","NEE","volSWC_rz","EvapTransp","Reco","Rs","N","LAI","dg","totC","totN","NPP","alphaAn","GPPsum","NPPsum")
+  intvsS2<-mapply(getIntv,paramName,MoreArgs = list(modLst=outResX))
   
   dfLeaf<-df2%>%group_by(Year,Month) %>%
     dplyr::summarise(LAI=mean(LAI),t.proj=median(t.proj))
@@ -466,26 +473,26 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
   )
   names(alphaN)<-c("year","age","alphaN")
   
-  predPosN  <- intvsS[,7]$`89%` # + 2 * 0.01
-  predNegN   <- intvsS[,7]$`11%` #- 2  * 0.01
-  predmN   <-   intvsS[,7]$`50%`
+  predPosN  <- intvsS2[,7]$`89%` # + 2 * 0.01
+  predNegN   <- intvsS2[,7]$`11%` #- 2  * 0.01
+  predmN   <-   intvsS2[,7]$`50%`
   
-  predPosLAI  <- intvsS[,8]$`89%` # + 2 * 0.01
-  predNegLAI   <- intvsS[,8]$`11%` #- 2  * 0.01
-  predmLAI   <-   intvsS[,8]$`50%`
+  predPosLAI  <- intvsS2[,8]$`89%` # + 2 * 0.01
+  predNegLAI   <- intvsS2[,8]$`11%` #- 2  * 0.01
+  predmLAI   <-   intvsS2[,8]$`50%`
   
-  predPosDG  <- intvsS[,9]$`89%` # + 2 * 0.01
-  predNegDG    <- intvsS[,9]$`11%` #- 2  * 0.01
-  predmDG    <-   intvsS[,9]$`50%`
+  predPosDG  <- intvsS2[,9]$`89%` # + 2 * 0.01
+  predNegDG    <- intvsS2[,9]$`11%` #- 2  * 0.01
+  predmDG    <-   intvsS2[,9]$`50%`
   
 
-  predPosTotC  <- intvsS[,10]$`89%` # + 2 * 0.125
-  predNegTotC    <- intvsS[,10]$`11%` #- 2  * 0.125
-  predmTotC    <-   intvsS[,10]$`50%`
+  predPosTotC  <- intvsS2[,10]$`89%` # + 2 * 0.125
+  predNegTotC    <- intvsS2[,10]$`11%` #- 2  * 0.125
+  predmTotC    <-   intvsS2[,10]$`50%`
   
-  predPosTotN  <- intvsS[,11]$`89%`  #+ 2 * 0.125
-  predNegTotN    <- intvsS[,11]$`11%` #- 2  * 0.125
-  predmTotN    <-   intvsS[,11]$`50%`
+  predPosTotN  <- intvsS2[,11]$`89%`  #+ 2 * 0.125
+  predNegTotN    <- intvsS2[,11]$`11%` #- 2  * 0.125
+  predmTotN    <-   intvsS2[,11]$`50%`
 
   dataX$predmAlphaAn<-intvsS[,13]$`50%`
   dataX$predPosAlphaAn<-intvsS[,13]$`89%`
@@ -493,28 +500,28 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
   alphaAnMean<-dataX%>%group_by(year)%>%summarise(predmAlphaAn=mean(predmAlphaAn),predPosAlphaAn=mean(predPosAlphaAn),predNegAlphaAn=mean(predNegAlphaAn))
   
   pLAI<-ggplot()+theme_bw()+
-    geom_line(data=df2,aes(x=Year+Month/dt,y=predmLAI))+
+    geom_line(data=df3,aes(x=Year+Month/dt,y=predmLAI))+
     geom_point(data=leaf,aes(x=year,y=lai),shape=16,size=3,colour="red")+
     geom_pointrange(data=leaf,aes(x=year,y=lai,ymin=lai-lai*0.1, ymax=lai+lai*0.1),colour="red")+
-    geom_ribbon(aes(ymin=predNegLAI,ymax=predPosLAI,x=df2$Year+df2$Month/dt),fill="orange",alpha=0.3)+
+    geom_ribbon(aes(ymin=predNegLAI,ymax=predPosLAI,x=df3$Year+df3$Month/dt),fill="orange",alpha=0.3)+
     labs(x="Year",y=expression(paste("LAI"," ","[",cm^-2," ",cm^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
   pStemNo<-ggplot()+theme_bw()+
-    geom_line(data=df2,aes(x=Year+Month/dt,y=predmN))+
+    geom_line(data=df3,aes(x=Year+Month/dt,y=predmN))+
     geom_point(data=stemNo,aes(x=year,y=stem),shape=16,size=3,colour="red")+
     geom_pointrange(data=stemNo,aes(x=year,y=stem,ymin=stem-stem*0.1, ymax=stem+stem*0.1),colour="red")+
-    geom_ribbon(aes(ymin=predNegN,ymax=predPosN,x=df2$Year+df2$Month/dt),fill="orange",alpha=0.3)+
+    geom_ribbon(aes(ymin=predNegN,ymax=predPosN,x=df3$Year+df3$Month/dt),fill="orange",alpha=0.3)+
     labs(x="Year",y=expression(paste("N"," ","[",ha^-1,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
   pDBH<-ggplot()+theme_bw()+
-    geom_line(data=df2,aes(x=Year+Month/dt,y=predmDG))+
+    geom_line(data=df3,aes(x=Year+Month/dt,y=predmDG))+
     geom_point(data=DBH,aes(x=year,y=dbh),shape=16,size=3,colour="red")+
     geom_pointrange(data=DBH,aes(x=year,y=dbh,ymin=dbh-dbh*0.1, ymax=dbh+dbh*0.1),colour="red")+
-    geom_ribbon(aes(ymin=predNegDG,ymax=predPosDG,x=df2$Year+df2$Month/dt),fill="orange",alpha=0.3)+
+    geom_ribbon(aes(ymin=predNegDG,ymax=predPosDG,x=df3$Year+df3$Month/dt),fill="orange",alpha=0.3)+
     labs(x="Year",y="DBH [cm]")+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
@@ -534,19 +541,19 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
           axis.text=element_text(size=14))    
   
   ptotC<-ggplot()+theme_bw()+
-    geom_line(data=df2,aes(x=Year+Month/dt,y=predmTotC))+
+    geom_line(data=df3,aes(x=Year+Month/dt,y=predmTotC))+
     geom_point(data=totC,aes(x=year,y=totC),shape=16,size=3,colour="red")+
     geom_pointrange(data=totC,aes(x=year,y=totC,ymin=totC-totC*0.5, ymax=totC+totC*0.5),colour="red")+
-    geom_ribbon(aes(ymin=predNegTotC,ymax=predPosTotC,x=df2$Year+df2$Month/dt),fill="orange",alpha=0.3)+
+    geom_ribbon(aes(ymin=predNegTotC,ymax=predPosTotC,x=df3$Year+df3$Month/dt),fill="orange",alpha=0.3)+
     labs(x="Year",y="totC [t/ha]")+ 
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
   ptotN<-ggplot()+theme_bw()+
-    geom_line(data=df2,aes(x=Year+Month/dt,y=predmTotN))+
+    geom_line(data=df3,aes(x=Year+Month/dt,y=predmTotN))+
     geom_point(data=totN,aes(x=year,y=totN),shape=16,size=3,colour="red")+
     geom_pointrange(data=totN,aes(x=year,y=totN,ymin=totN-totN*0.5, ymax=totN+totN*0.5),colour="red")+
-    geom_ribbon(aes(ymin=predNegTotN,ymax=predPosTotN,x=df2$Year+df2$Month/dt),fill="orange",alpha=0.3)+
+    geom_ribbon(aes(ymin=predNegTotN,ymax=predPosTotN,x=df3$Year+df3$Month/dt),fill="orange",alpha=0.3)+
     labs(x="Year",y="totN [t/ha]")+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
