@@ -64,11 +64,11 @@ nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","shared_area","m
       "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
       "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC")
-sitka[nm]<-exampParams[nm]
 
 
 
-out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_3_T.RDS")
+out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_1_T.RDS")
+#clm1<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\spatialChunk_28_22.RDS")
 
 #out<-getSample(out,start=12000,thin=5,numSamples=500)
 #codM<-out$chain[[2]][c(1:5000),]
@@ -80,8 +80,8 @@ codM<-tail(as.data.frame(codM),1)
 names(codM)<-nm
 
 
-priorSamp<-priorVals$sampler(35000)
-MCMCtrace(getSample(out,coda = T,thin=2,start=5000),wd="C:\\Users\\aaron.morris", post_zm=F,iter=10000,priors = priorSamp)
+#priorSamp<-priorVals$sampler(35000)
+#MCMCtrace(getSample(out,coda = T,thin=1,start=100),wd="C:\\Users\\aaron.morris", post_zm=F,iter=10000,priors = priorSamp)
 
 sitka<-getParms(waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
 #sitka$E_S1<-2
@@ -117,8 +117,10 @@ sitka[nm]<-codM[nm]
 #}
 #sitka$pFS20<-0.1
 output<-do.call(fr3PGDN,sitka)
-ff<-filter(output,Year>2010&Year<2019)
+ff<-filter(output,Year>2014&Year<2100)
+plot(ff$Rs)
 plot(output$LAI)
+
 
 
 
@@ -136,7 +138,7 @@ plot(ff$GPP*7.14,col="red")
 
 #Plot results
 nmc = nrow(out$chain[[1]])
-outSample   <- as.data.frame(getSample(out,start=nmc/1.1,thin=5,numSamps = 250))
+outSample   <- as.data.frame(getSample(out,start=nmc/1.1,thin=5,numSamps = 50))
 results<-plotResultsNewMonthly(output,ShortTS=T,out=outSample,numSamps = 50)
 ggarrange(results[[1]],results[[8]],results[[2]],results[[3]],results[[5]],results[[4]],nrow=3,ncol=2)
 ggarrange(results[[15]],results[[9]],results[[10]],results[[11]],results[[13]],results[[14]],nrow=3,ncol=2)
@@ -151,7 +153,17 @@ ggsave(paste0(fileNm,timeStep,"_",iters,".png"),width = 400,
 
 
 
-resultsPine<-plotResultsPine(outP)
+#Plot results Pine
+outP<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_pine_1_T.RDS")
+pine<-getParmsPine(waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
+pine$weather<-clm_df_pine
+#Set management
+presc<-data.frame(cycle=c(1,1,1),t=c(15,25,35),pNr=c(0.4,0.3,0.075),thinWl=c(0.4,0.3,0.075),
+                  thinWsbr=c(0.4,0.3,0.075),thinWr=c(0.4,0.3,0.075),t.nsprouts=c(1,1,1))
+pine$presc<-presc
+resultsPine2<-plotResultsPine(outP)
+
+pineDiags<-diagPlotsPine(outP=outP,nm = nm )
 
 #cv is ratio of sd to mean, cv * value of meanNEE
 #sdmin_NEE               <- cv_EC * abs(data_NEEmean_value) #gives you the standard deviation for the averaged data points (assuming cv 20%)

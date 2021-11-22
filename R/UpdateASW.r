@@ -130,7 +130,7 @@ if (pseudo==F){
       
       scaleSW <-1#ifelse( (Transp+evapSoil)  + RainIntcptn== 0 ,1,EvapTransp/((Transp+evapSoil) + RainIntcptn))
 
-      Etransp <- rIntercptEvap
+      Etransp <- z_r
     } 
     if (parms[["waterBalanceSubMods"]] == F) {
       EvapTransp <- min(Transp + RainIntcptn, ASWrain)
@@ -150,6 +150,6 @@ if (pseudo==F){
     state[c("RainIntcptn", "netRad", "CanCond", "Etransp", "CanTransp", 
             "Transp", "EvapTransp", "excessSW", "scaleSW")] <- c(RainIntcptn, 
                                                                  netRad, CanCond, Etransp, CanTransp, Transp, EvapTransp, 
-                                                                 rz_nrz_drain, scaleSW)
+                                                                 rz_nrz_drain+nrz_out_drain, scaleSW)
     return(state)
   }

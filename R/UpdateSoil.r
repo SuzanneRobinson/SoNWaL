@@ -18,6 +18,7 @@ UpdateSoil <-
     difRoots <- state[["difRoots"]]
     dg <- state[["dg"]]
     fT <- state[["fT"]]
+    #fsMod for shiny app
     fSW <- if(state[["t"]]>45) state[["fSW"]]*parms[["fsMod"]] else state[["fSW"]]
     klmax <- parms[["klmax"]]*12/parms[["timeStp"]] # switch from monthly rates to time-step rates
     krmax <- parms[["krmax"]]*12/parms[["timeStp"]]
@@ -75,13 +76,19 @@ UpdateSoil <-
       
       
       
-      if (Tav < Tmin | Tav > Tmax) {
-        fT <- 0
-      }
-      else {
-        fT <- ((Tav - Tmin)/(Topt - Tmin)) * ((Tmax - Tav)/(Tmax - 
-                                                              Topt))^((Tmax - Topt)/(Topt - Tmin))
-      }
+     if (Tav < Tmin | Tav > Tmax) {
+       fT <- 0
+     }
+     else {
+       fT <- ((Tav - Tmin)/(Topt - Tmin)) * ((Tmax - Tav)/(Tmax - 
+                                                             Topt))^((Tmax - Topt)/(Topt - Tmin))
+     }
+      
+   #   Q10= ifelse(Tav<Topt,2,0.1)
+
+  #    fT<-1*Q10^((Tav-Topt)/10)
+    
+      
       Wds <- 0
       Wdl <- 0
       Wdr <- 0
@@ -137,6 +144,15 @@ UpdateSoil <-
     ## Update available nitrogen pool
     Nav <- Nav + Navflx - Un
     Nav <- ifelse(is.na(max( Navm, Nav )),0,max( Navm, Nav))  ## A small change to accommodate Bayesian calibration and avoid NAs
+ 
+      #values in cm
+   # z_r = parms[["V_nr"]]*100#z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]])*100
+   #   excessSW<-state[["excessSW"]]/10
+   #   fieldCap<-parms[["fieldCap"]]
+   #   NleachX<-(excessSW/(excessSW+fieldCap))^z_r
+   #   Nleach <- ifelse(is.na(NleachX*Nav)==T,0,NleachX*Nav)
+   #   Nav <- Nav-Nleach
+
     if( Nav > Navx){
       Nleach <- Nav - Navx
       Nav <- Navx
@@ -171,3 +187,20 @@ UpdateSoil <-
         NEE,Reco,Ra,Rs)
     return(state)
   }
+
+
+#R2<-NULL
+#for(i in (1:40)){
+#Q10= ifelse(i<15,2,0.1)
+#  
+#R1=1
+#T2=i
+#T1<-15
+#R2<-rbind(R2,R1*Q10^((T2-T1)/10))
+#}
+#
+#plot(R2)
+#
+#Q10=(R2/R1)^(10/(T2-T1))
+#
+#plot(Q10)

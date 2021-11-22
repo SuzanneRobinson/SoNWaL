@@ -5,13 +5,22 @@ function (state, weather, site, parms, general.info)
     Tmax <- parms[["Tmax"]]
     Topt <- parms[["Topt"]]
     Tav <- weather[["Tmean"]]
+    
+   #Q10= ifelse(Tav<Topt,parms[["Q10X"]],parms[["Q10"]])
+   #
+   #R1=1
+   #T2=Tav*0.8
+   #T1<-Topt
+   #fT<-R1*Q10^((T2-T1)/10)
     if (Tav < Tmin | Tav > Tmax) {
-        fT <- 0
+      fT <- 0
     }
     else {
-        fT <- ((Tav - Tmin)/(Topt - Tmin)) * ((Tmax - Tav)/(Tmax - 
-            Topt))^((Tmax - Topt)/(Topt - Tmin))
+      fT <- ((Tav - Tmin)/(Topt - Tmin)) * ((Tmax - Tav)/(Tmax - 
+                                                            Topt))^((Tmax - Topt)/(Topt - Tmin))
     }
+   
+    
     kF <- parms[["kF"]]
     FrostDays <- weather[["FrostDays"]]
     fF <- 1 - kF * (FrostDays/parms[["timeStp"]])

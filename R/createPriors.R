@@ -14,11 +14,11 @@ createPriors_sitka<-function(sitka,sd=F){
     0.3,#satPoint
     0.05, #K_s
     0.3, #V_nr
-    0.2, #sigma_zR
+    0.1, #sigma_zR
     0.0001, #E_S1
     0.001, #E_S2
-    2, #shared_area
-    0.3, #maxRootDepth
+    1, #shared_area
+    0.2, #maxRootDepth
     0.05, #K_drain
     0.588503613257886, #pFS2
     0.752929538228874, #pFS20
@@ -64,6 +64,8 @@ createPriors_sitka<-function(sitka,sd=F){
     0.6,
     1,
     10
+  #  0.01,
+  #  1.2
   )
   
   f.increase <-
@@ -77,7 +79,7 @@ createPriors_sitka<-function(sitka,sd=F){
       2,#E_S1
       2,#E_S2
       6, #shared_area
-      4, #maxRootDepth
+      1.5, #maxRootDepth
       1, #K_drain
       0.573973679288588,#pFS2
       0.235352308855631,#pFS20
@@ -123,6 +125,8 @@ createPriors_sitka<-function(sitka,sd=F){
       0.4,
       15,
       500
+   #   1,
+   #   3.5
     )
   
   ##Need to check what priors we are using!
@@ -185,6 +189,14 @@ createPriors_sitka<-function(sitka,sd=F){
   pMinima[[55]]<-10
   sdVals[[55]]<-200
   
+#  pMaxima[[56]]<-1
+#  pMinima[[56]]<-0.01
+#  sdVals[[56]]<-0.5
+#  
+#  pMaxima[[57]]<-3.5
+#  pMinima[[57]]<-1.2
+#  sdVals[[57]]<-1
+  
 
   pMaxima[[21]]<-0.2
   pMinima[[21]]<-0.001
@@ -204,7 +216,7 @@ createPriors_sitka<-function(sitka,sd=F){
 
 
 
-createPriors_pine<-function(pine){
+createPriors_pine<-function(pine,sd=F){
   
   
   nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
@@ -332,9 +344,9 @@ createPriors_pine<-function(pine){
     )
   
   ##Need to check what priors we are using!
-  pMaxima <- as.vector(unlist(sitka[nm])*(1+(f.increase)))
-  pMinima <- as.vector(unlist(sitka[nm])*(1-(f.decrease)))
-  pValues <- as.vector(unlist(sitka[nm]))
+  pMaxima <- as.vector(unlist(pine[nm])*(1+(f.increase)))
+  pMinima <- as.vector(unlist(pine[nm])*(1-(f.decrease)))
+  pValues <- as.vector(unlist(pine[nm]))
   
   pMaxima[1:11] <- f.increase[1:11]
   pMinima[1:11] <- f.decrease[1:11]
@@ -383,13 +395,15 @@ createPriors_pine<-function(pine){
   
   sdVals[[53]]<-0.03
   
-  pMaxima[[54]]<-15
+  pMaxima[[54]]<-350
   pMinima[[54]]<-1
-  sdVals[[54]]<-4
+  sdVals[[54]]<-100
+  pValues[[52]]<-50
   
-  pMaxima[[55]]<-500
+  pMaxima[[55]]<-5000
   pMinima[[55]]<-10
-  sdVals[[55]]<-200
+  sdVals[[55]]<-2000
+  pValues[[55]]<-2000
   
   
   pMaxima[[21]]<-0.2

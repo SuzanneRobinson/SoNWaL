@@ -58,13 +58,13 @@ ggarrange(linPLot,nonLinPlot)
 ###Run with actual model 
 
 #get parameters (currently using monthly timestep for sense analysis)
-sitka<-getParms(timeStp = 12)
+sitka<-getParms(timeStp = 52)
 
 #read in and update sitka params with current MCMC results
 #out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\monthly_outx_2021-02-265949.RDS")
 codM<-as.data.frame(mergeChains(out$chain))
 
-nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
+nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","shared_area","maxRootDepth","K_drain",
       "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
       "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn")
@@ -83,7 +83,7 @@ sitka$weather[sitka$weather$Year>=2015,6]<-sitka$weather[sitka$weather$Year>=201
     {
       output<-do.call(fr3PGDN,sitka)%>%
       filter(Year>=2015)%>%
-        mutate(meanNPP = mean(LAI))
+        mutate(meanNPP = mean(NPP)*7.14)
                
       mean(output$meanNPP,na.rm=T)
     },
@@ -98,16 +98,25 @@ sitka$weather[sitka$weather$Year>=2015,6]<-sitka$weather[sitka$weather$Year>=201
 ##Set priors
 priors<-createPriors_sitka(sitka=sitka)
 
+
+
+
+MorrisTestFunc<-function(mod="tempMod"){
 #param names to test for sensitivity
-nm<-c("tempMod")
+nm<-c(mod)
 
 #create priors/ranges for hydrological params, plus add some for rain and temp mods
 pMaxima<-priors$upper[1:length(nm)]
 pMinima<-priors$lower[1:length(nm)]
+
+if(mod=="rainMod"){
 pMinima[c(1)]<-.2#up and down by 50% for rainfall
 pMaxima[c(1)]<-1.8
+}
+if(mod=="tempMod"){
 pMinima[c(1)]<-0.8#up and down by 10% for temperature
 pMaxima[c(1)]<-1.2
+}
 Uprior <- createPrior(lower = pMinima, upper = pMaxima)
 
 #observed years to fit to
@@ -119,8 +128,6 @@ morris_setup <- createBayesianSetup(
   likelihood = likelihoodFunc, 
   prior = Uprior, 
   names = nm)
-
-
 
 #set.seed(50)
 #run morris sensitivity analysis
@@ -136,30 +143,24 @@ morrisOut <- morris(
 
 #tabulate and plot results
 senseOutTempX<-data.frame(func_output=morrisOut$y,inputVal=morrisOut$X[,1])
-senseOutRain<-data.frame(func_output=morrisOut$y,inputVal=morrisOut$X[,1])
 
-senseOutRain2$Model<-"3PG"
-senseOutTemp$Model<-"SonWal"
-senseOutRainX<-rbind(senseOutRain,senseOutRain2)
-
-g1<-ggplot(senseOutRain,aes(x=(inputVal*100)-100,y=func_output,col=Model))+
+senseOutTempX$Model<-"SonWal"
+labs<-ifelse(mod=="tempMod","Temperature change (%)", "Rainfall change (%)")
+g1<-ggplot(senseOutTempX,aes(x=(inputVal*100)-100,y=func_output))+
   geom_point(alpha=0.8)+
   geom_smooth()+
   ylab(expression(paste("NPP [gC"," ",cm^-2,"]",sep="")))+
-  xlab("Rainfall change (%)")+
+  xlab(labs)+
   theme_bw()+
   scale_color_viridis_d()
+return(g1)
 
-g2<-ggplot(senseOutTemp,aes(x=(inputVal*100)-100,y=func_output,col=Model))+
-  geom_point(alpha=0.8)+ 
-  geom_smooth()+
-  ylab(expression(paste("NPP [gC"," ",cm^-2,"]",sep="")))+
-  xlab("Temperature change (%)")+
-  theme_bw()+
-  scale_color_viridis_d()
+}
 
 
-ggarrange(g1,g2,common.legend = T, legend ="bottom")
+MorrisTestFunc()
+
+
 
 
 resi<-NULL

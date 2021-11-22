@@ -57,7 +57,9 @@ sampleOutputMonth<-function(df,sY,eY){
        #  filter(df,Year==2015&Month==7)$difRoots[1],
        filter(df,Year==2015&Month==7)$totC[1],
        filter(df,Year==2015&Month==7)$totN[1],
-       aggregate(df$volSWC_rz~ df$Month+df$Year,FUN=mean)[,3]
+       aggregate(df$volSWC_rz~ df$Month+df$Year,FUN=mean)[,3],
+      aggregate(df$Rs~ df$Month+df$Year,FUN=mean)[,3]
+      
   )
   m
   return(m)
@@ -391,9 +393,18 @@ sampleOutputPine_noHyd<-function(df,sY,eY){
 ## Likelihood function
 NLL<- function(p){
   sitka[.GlobalEnv$nm]<-p
-  NlogLik <- tryCatch(
+ 
+   NlogLik <- tryCatch(
     {
-      output<-do.call(fr3PGDN,sitka)
+    #  runMod<-function(parms){
+      output<-   do.call(fr3PGDN,sitka)
+      #}
+      
+    #  siteLst<-list(sitka,sitka,sitka,sitka,sitka,sitka,sitka)
+      
+    #  plan(multisession, workers = 7)
+      
+      #system.time(future_map(siteLst,runMod))
       #use sampleOutputTS if using smaller time-steps
       modelled <-sampleOutputMonth(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
       

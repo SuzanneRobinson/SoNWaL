@@ -68,7 +68,11 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
                 pull(data%>%
                        group_by(year,grp) %>%
                        dplyr::summarise(swc=mean(swc))%>%
-                       select(swc))                ## SWC
+                       select(swc))  ,
+                pull(data%>%
+                       group_by(year,grp) %>%
+                       dplyr::summarise(rs=mean(rs))%>%
+                       select(rs))## SWC
                 
   )
   
@@ -94,9 +98,9 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
            #  1,
            214.76*0.5,
            7.15*0.5,
-           sapply( 1:length(sdMin$sdswc), function(i) max( coefVar3* abs(sdMin$sdswc[i]),0.01) )
-           
-  )
+           sapply( 1:length(sdMin$sdswc), function(i) max( coefVar3* abs(sdMin$sdswc[i]),0.01) ),
+           sapply( 1:length(sdMin$sdrs), function(i) max( coefVar2* abs(sdMin$sdrs[i]),0.01) ))
+  
   
   
   return(list(observed,dev))

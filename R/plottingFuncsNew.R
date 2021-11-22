@@ -14,7 +14,7 @@ plotResultsPine <- function(outP,ShortTS=F){
   
   library(matrixStats)
   nmc = nrow(outP$chain[[1]])
-  outSample   <- getSample(outP,start=nmc/5,thin=5)
+  outSample   <- getSample(outP,start=nmc/1.2,thin=1)
   numSamples = 25# min(1000, nrow(outSample))
   codM<-miscTools::colMedians(as.data.frame(outSample))
   pine[.GlobalEnv$nm]<-codM[.GlobalEnv$nm]
@@ -33,10 +33,12 @@ plotResultsPine <- function(outP,ShortTS=F){
     mutate(week=week(as.Date(yday, origin = paste0(year,"-01-01"))))%>%
     mutate(month=month(as.Date(yday, origin = paste0(year,"-01-01"))))
   
-  dataX<- flxdata%>% 
-    group_by(year,month) %>%
-    dplyr::summarise(gppOb=mean(gpp),nppOb=mean(npp),etOb=mean(et),recoOb=mean(reco),rsOb=mean(rs),
-                     swcOb=mean(swc),neeOb=mean(nee))%>%mutate(cumGppObs=cumsum(gppOb),cumNppObs=cumsum(nppOb))
+  #get stand data
+  standDat <- getData(site=sites[site],dataset="STAND")%>%
+    filter(species_id=="pisy")
+  #get soil data
+  soildata <-  getData( sites[site], dataset="SOIL")
+  
   df2<- (df2%>% 
            group_by(Year,Month) %>%
            dplyr::summarise(GPP=mean(GPP),EvapTransp=mean(EvapTransp),Reco=mean(Reco),Rs=mean(Rs),NPP=mean(NPP),
@@ -45,26 +47,12 @@ plotResultsPine <- function(outP,ShortTS=F){
   modif<-ifelse(nrow(df)<600,1.66,7.142857)
   nDays<-ifelse(nrow(df)<600,30,7)
   
-  dataX<-dataX %>% right_join(df2, by=c("year"="Year","month"="Month"))
-  
-  dataX$simGpp<-df2$GPP*modif
-  dataX$simCGpp<-dplyr::pull(df2%>%dplyr::mutate(gppC=cumsum(GPP*modif))%>%dplyr::select(gppC))
-  dataX$simCNpp<-dplyr::pull(df2%>%dplyr::mutate(nppC=cumsum(NPP*modif))%>%dplyr::select(nppC))
-  
-  dataX$simReco<-df2$Reco*modif
-  dataX$simNEE<-df2$NEE*modif
-  dataX$simEtransp<-df2$EvapTransp
-  dataX$simswc<-df2$volSWC_rz
-  dataX$simRs<-df2$Rs*modif
-  dataX$timestamp<-df2$timestamp
-  dataX$month<-month(dataX$timestamp)  
-  
-  
-  
-  
   runModel<- function(p){
+    pine<-getParmsPine(waterBalanceSubMods=T, timeStp = 52)
+    presc<-data.frame(cycle=c(1,1,1),t=c(15,25,35),pNr=c(0.4,0.3,0.075),thinWl=c(0.4,0.3,0.075),
+                      thinWsbr=c(0.4,0.3,0.075),thinWr=c(0.4,0.3,0.075),t.nsprouts=c(1,1,1))
     pine[.GlobalEnv$nm]<-p
-    
+    pine$presc<-presc
     res<- do.call(fr3PGDN,pine)%>%
       filter(Year>=1996)%>%
       group_by(Year,Month)%>%
@@ -76,12 +64,12 @@ plotResultsPine <- function(outP,ShortTS=F){
   getIntv<-function(paramName,modLst){
     
     simDat =   do.call(cbind,lapply(modLst, "[",  paramName))
-    res<-as.data.frame(rowQuantiles(as.matrix(simDat), probs = c(0.025, 0.5, 0.975)))
+    res<-as.data.frame(rowQuantiles(as.matrix(simDat), probs = c(0.11, 0.5, 0.89)))
     return(res)
   }
   
   
-  outSample<-getSample(outP,start=nmc/1.2,thin=1,numSamples = 25)
+  outSample<-getSample(outP,start=nmc/1.2,thin=1,numSamples = 100)
   outSample<-as.data.frame(outSample)
   outSample <- split(outSample, seq(nrow(outSample)))
   outRes<-lapply(outSample, runModel)
@@ -95,6 +83,30 @@ plotResultsPine <- function(outP,ShortTS=F){
   fluxDat$week<-week(fluxDat$date)
   fluxDat$week[fluxDat$week==53]<-52
   SWCData$week[SWCData$week==53]<-52
+  
+  #mean LAI - could not find exact dates so using yearly average
+  LAI<-aggregate(standDat$lai~standDat$year,FUN=mean)
+  names(LAI)<-c("year","LAI")
+  
+  #tree density
+  treeDen<-aggregate(standDat$density_treeha~standDat$year,FUN=mean)
+  names(treeDen)<-c("year","treeDen")
+  
+  #DBH
+  dbh<-aggregate(standDat$dbhBA_cm~standDat$year,FUN=mean)
+  names(dbh)<-c("year","dbh")
+  
+  #carbon and nitrogen measured at differing soil depths - currently taking average
+  massExt<-function(soildata,varMass){
+    sProfM<- ((soildata$lowerDepth_cm - soildata$upperDepth_cm))*0.01
+    t_ha<-10000*sProfM*soildata$density_gcm3*varMass
+    return(t_ha)
+  }
+  totC<-sum(massExt(soildata,soildata$c_percent),na.rm=TRUE)
+  totN<-sum(massExt(soildata,soildata$n_percent),na.rm=TRUE)
+  
+  
+  
   
   convrtUnit=(12.011 * 24 * 60 * 60)/1000000 # convert to grams per day of C
   
@@ -135,9 +147,7 @@ plotResultsPine <- function(outP,ShortTS=F){
   predPosNEE  <- intvsS[,2]$`89%`*modif + 2  * sapply( 1:length(obsDat$NEE), function(i) max( coefVar* abs(obsDat$NEE[i]),0.05))
   predNegNEE  <- intvsS[,2]$`11%`*modif - 2 * sapply( 1:length(obsDat$NEE), function(i) max( coefVar* abs(obsDat$NEE[i]),0.05))
   predmNEE  <- intvsS[,2]$`50%`*modif# - 2 * 0.3
-  
-  
-  
+
   nee<-ggplot()+theme_bw()+
     geom_line(data=obsDat,aes(x=timestamp,y=predmNEE),colour="black",size=1)+
     geom_point(data=obsDat,aes(x=timestamp,y=NEE),colour="red",size=2)+
@@ -151,21 +161,83 @@ plotResultsPine <- function(outP,ShortTS=F){
   predPosSWC  <- intvsS[,3]$`89%`[13:228] + 2  * sapply( 1:length(obsDatSWC$swc), function(i) max( coefVar* abs(obsDatSWC$swc[i]),0.05))
   predNegSWC  <- intvsS[,3]$`11%`[13:228] - 2 * sapply( 1:length(obsDatSWC$swc), function(i) max( coefVar* abs(obsDatSWC$swc[i]),0.05))
   predmSWC  <- intvsS[,3]$`50%`[13:228]# - 2 * 0.3
-  
-  
-  
+
   swc<-ggplot()+theme_bw()+
     geom_line(data=obsDatSWC,aes(x=timestamp,y=predmSWC),colour="black",size=1)+
     geom_point(data=obsDatSWC,aes(x=timestamp,y=swc),colour="red",size=2)+
     geom_ribbon(aes(x=obsDatSWC$timestamp,ymin=predNegSWC,ymax=predPosSWC),alpha=0.5,fill="orange")+
     scale_x_datetime(limits=c(as.POSIXct("1996-01-01",tz="GMT"),as.POSIXct("2015-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("NEE [gC"," ",cm^-2,"]",sep="")))+
+    labs(x="Year",y=("SWC"))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
   
+  coefVar2<-0.1
+  LAIdat<-data.frame(LAI=intvsS[,8]$`50%`,lower=intvsS[,8]$`11%`,upper=intvsS[,8]$`89%`,year=obsDat$year)%>%group_by(year)%>%summarise(LAI=mean(LAI),upper=mean(upper),lower=mean(lower))%>%filter(year<2012)
+ LAIdat$obs<-LAI$LAI[-1]
+   LAIdat$upper  <- LAIdat$upper+ 2  * sapply( 1:length(LAIdat$obs), function(i) max( coefVar2* abs(LAIdat$obs[i]),0.05))
+  LAIdat$lower  <- LAIdat$lower - 2 * sapply( 1:length(LAIdat$obs), function(i) max( coefVar2* abs(LAIdat$obs[i]),0.05))
+  LAIdat$LAI  <- LAIdat$LAI# - 2 * 0.3
   
-  gpp1<-ggarrange(gpp,nee,swc)
+  
+  
+  LAI<-ggplot()+theme_bw()+
+    geom_line(data=LAIdat,aes(x=year,y=LAI),colour="black",size=1)+
+    geom_point(data=LAIdat,aes(x=year,y=obs),colour="red",size=2)+
+    geom_ribbon(data=LAIdat,aes(x=year,ymin=lower,ymax=upper),alpha=0.5,fill="orange")+
+    labs(x="Year",y=("LAI"))+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+  
+  Ndat<-data.frame(N=intvsS[,7]$`50%`,lower=intvsS[,7]$`11%`,upper=intvsS[,7]$`89%`,year=obsDat$year)%>%group_by(year)%>%summarise(N=mean(N),upper=mean(upper),lower=mean(lower))%>%filter(year<2012)
+  Ndat$obs<-treeDen$treeDen[-1]
+  Ndat$upper  <- Ndat$upper+ 2  * sapply( 1:length(Ndat$obs), function(i) max( coefVar2* abs(Ndat$obs[i]),0.05))
+  Ndat$lower  <- Ndat$lower - 2 * sapply( 1:length(Ndat$obs), function(i) max( coefVar2* abs(Ndat$obs[i]),0.05))
+  Ndat$N  <- Ndat$N# - 2 * 0.3
+  
+  Nplot<-ggplot()+theme_bw()+
+    geom_line(data=Ndat,aes(x=year,y=N),colour="black",size=1)+
+    geom_point(data=Ndat,aes(x=year,y=obs),colour="red",size=2)+
+    geom_ribbon(data=Ndat,aes(x=year,ymin=lower,ymax=upper),alpha=0.5,fill="orange")+
+    labs(x="Year",y=("N"))+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+  
+  dbhdat<-data.frame(N=intvsS[,9]$`50%`,lower=intvsS[,9]$`11%`,upper=intvsS[,9]$`89%`,year=obsDat$year)%>%group_by(year)%>%summarise(N=mean(N),upper=mean(upper),lower=mean(lower))%>%filter(year<2012)
+  dbhdat$obs<-dbh$dbh[-1]
+  dbhdat$upper  <- dbhdat$upper+ 2  * sapply( 1:length(dbhdat$obs), function(i) max( coefVar2* abs(dbhdat$obs[i]),0.05))
+  dbhdat$lower  <- dbhdat$lower - 2 * sapply( 1:length(dbhdat$obs), function(i) max( coefVar2* abs(dbhdat$obs[i]),0.05))
+  dbhdat$N  <- dbhdat$N# - 2 * 0.3
+  
+  dbhplot<-ggplot()+theme_bw()+
+    geom_line(data=dbhdat,aes(x=year,y=N),colour="black",size=1)+
+    geom_point(data=dbhdat,aes(x=year,y=obs),colour="red",size=2)+
+    geom_ribbon(data=dbhdat,aes(x=year,ymin=lower,ymax=upper),alpha=0.5,fill="orange")+
+    labs(x="Year",y=("DBH (cm)"))+
+    theme(axis.title=element_text(size=14),
+          axis.text=element_text(size=14))
+  
+#  
+#  predPosC  <- intvsS[,10]$`89%`
+#  predNegC  <- intvsS[,10]$`11%`
+#  predmC  <- intvsS[,10]$`50%`# - 2 * 0.3
+#  obsDat$totC<-NA
+#  obsDat$totC[12]<-totC
+#  
+#  totCplot<-ggplot()+theme_bw()+
+#    geom_line(data=obsDat,aes(x=timestamp,y=predmC),colour="black",size=1)+
+#    geom_point(data=obsDat,aes(x=timestamp,y=totC),colour="red",size=2)+
+#    geom_ribbon(aes(x=obsDat$timestamp,ymin=predNegC,ymax=predPosC),alpha=0.5,fill="orange")+
+#    scale_x_datetime(limits=c(as.POSIXct("1996-01-01",tz="GMT"),as.POSIXct("2015-01-01",tz="GMT")))+    
+#    labs(x="Year",y=expression(paste("NEE [gC"," ",cm^-2,"]",sep="")))+
+#    theme(axis.title=element_text(size=14),
+#          axis.text=element_text(size=14))
+#  
+  
+  
+  gpp1<-ggarrange(gpp,nee,swc,LAI,dbhplot,Nplot)
   
   return(list(gpp1))
 }
@@ -956,5 +1028,223 @@ quickPlot<-function(flxdata_daily,output,grouping="month"){
   
 }
 
+
+
+diagPlots<-function(out,flxdata_daily,nm){
+  lm_eqn <- function(m){
+    
+    eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
+                     list(a = format(unname(coef(m)[1]), digits = 2),
+                          b = format(unname(coef(m)[2]), digits = 2),
+                          r2 = format(summary(m)$r.squared, digits = 3)))
+    as.character(as.expression(eq));
+  }
+  
+  
+  flxdata_daily$month<-month(flxdata_daily$timestamp)
+  cf<-7.14
+  flxdata_weekly<-flxdata_daily%>%
+    filter(year>2014)%>%
+    group_by(year,month)%>%
+    summarise(gpp=mean(gpp),npp=mean(npp),nee=mean(nee),reco=mean(reco),rs=mean(rs),et=mean(et),swc=mean(swc),timestamp=median(timestamp))
+  
+  
+  codM<-mergeChains(out$chain)
+  codM<-miscTools::colMedians(as.data.frame(codM))
+  names(codM)<-nm
+  
+  sitka<-getParms(waterBalanceSubMods=T, timeStp =  52)
+  sitka[nm]<-codM[nm]
+  
+  output<-do.call(fr3PGDN,sitka)
+  ff<-output%>%
+    filter(Year>2014&Year<2100)%>%
+  group_by(Year,Month)%>%
+    summarise(GPP=mean(GPP),NEE=mean(NEE),EvapTransp=mean(EvapTransp),volSWC_rz=mean(volSWC_rz))
+  
+  flxdata_weekly$simGPP<-ff$GPP*7.14
+  flxdata_weekly$simET<-ff$EvapTransp/7
+  flxdata_weekly$simSWC<-ff$volSWC_rz
+  flxdata_weekly$simNEE<-ff$NEE*7.14
+  
+  g1<-ggplot(data=flxdata_weekly,aes(x=as.numeric(simGPP), y=as.numeric(gpp)))+
+    theme_bw()+
+    geom_point(colour="red",size=2)+
+    geom_smooth(method='lm',col="black")+
+    ylab("Observed")+
+    xlab("Simulated")+
+    xlim(0,15)+
+    ylim(0,15)+
+    geom_abline(intercept =0 , slope = 1, lty="dashed")+
+  ggtitle(expression(paste("GPP [gC"," ",cm^-2,day^-1,"]",sep="")))+
+    theme(axis.title=element_text(size=10),
+          axis.text=element_text(size=10))
+  
+  g2<-ggplot(data=flxdata_weekly,aes(x=as.numeric(simET), y=as.numeric(et)))+
+    theme_bw()+
+    geom_point(colour="red",size=2)+
+    geom_smooth(method='lm',col="black")+
+    ylab("Observed")+
+    xlab("Simulated")+
+    xlim(0,3.5)+
+    ylim(0,3.5)+
+    ggtitle(expression(paste("Evapotranspiration [mm"," ",day^-1,"]",sep="")))+
+    geom_abline(intercept =0 , slope = 1, lty="dashed")+
+    theme(axis.title=element_text(size=10),
+          axis.text=element_text(size=10))
+  
+  g3<-ggplot(data=flxdata_weekly,aes(x=as.numeric(simSWC), y=as.numeric(swc)))+
+    theme_bw()+
+    geom_point(colour="red",size=2)+
+    geom_smooth(method='lm',col="black")+
+    ylab("Observed")+
+    xlab("Simulated")+
+    xlim(0.22,0.32)+
+    ylim(0.22,0.32)+
+    ggtitle(expression(paste("SWC"," [%]",sep="")))+
+    geom_abline(intercept =0 , slope = 1, lty="dashed")+
+    theme(axis.title=element_text(size=10),
+          axis.text=element_text(size=10))
+  
+  
+  g4<-ggplot(data=flxdata_weekly,aes(x=as.numeric(simNEE), y=as.numeric(nee)))+
+    theme_bw()+
+    geom_point(colour="red",size=2)+
+    geom_smooth(method='lm',col="black")+
+    ylab("Observed")+
+    xlab("Simulated")+
+    xlim(-6,2)+
+    ylim(-6,2)+
+    geom_abline(intercept =0 , slope = 1, lty="dashed")+
+    ggtitle(expression(paste("NEE [gC"," ",cm^-2,day^-1,"]",sep="")))+
+    theme(axis.title=element_text(size=10),
+          axis.text=element_text(size=10))
+  
+  mod1<-lm(simGPP~gpp,data=flxdata_weekly)
+  mod2<-lm(simET~et,data=flxdata_weekly)
+  mod3<-lm(simSWC~swc,data=flxdata_weekly)
+  mod4<-lm(simNEE~nee,data=flxdata_weekly)
+  
+
+  g1 <- g1 + geom_text(x = 10.8, y = 1, label = lm_eqn(mod1), parse = TRUE,size=3)
+  g2 <- g2 + geom_text(x = 2.475, y = 0.25, label = lm_eqn(mod2), parse = TRUE,size=3)
+  g3 <- g3 + geom_text(x = 0.288, y = 0.225, label = lm_eqn(mod3), parse = TRUE,size=3)
+  g4 <- g4 + geom_text(x = -0.25, y = -5.5, label = lm_eqn(mod4), parse = TRUE,size=3)
+  
+  ggarrange(g1,g2,g3,g4)
+  
+}
+
+
+
+
+diagPlotsPine<-function(outP,nm){
+  setDB(db_name ="C:/Users/aaron.morris/OneDrive - Forest Research/Documents/Projects/PRAFOR/models/PROFOUND_data/ProfoundData/ProfoundData.sqlite")
+  
+  lm_eqn <- function(m){
+    
+    eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
+                     list(a = format(unname(coef(m)[1]), digits = 2),
+                          b = format(unname(coef(m)[2]), digits = 2),
+                          r2 = format(summary(m)$r.squared, digits = 3)))
+    as.character(as.expression(eq));
+  }
+  
+  
+  fluxDat <- getData(site=sites[site],dataset="FLUX")
+  fluxDat$timestamp<-as.POSIXct(fluxDat$date)
+  fluxDat$month<-month(fluxDat$timestamp)
+  swcDat<-getSWC()
+  swcDat$timestamp<-as.POSIXct(swcDat$date)
+   
+  convrtUnit=(12.011 * 24 * 60 * 60)/1000000 # convert to grams per day of C
+
+  flxdata<-fluxDat%>%
+    filter(year>1995)%>%
+    group_by(year,month)%>%
+    summarise(gpp=mean(gppDtCutRef_umolCO2m2s1*convrtUnit),nee=mean(neeCutRef_umolCO2m2s1*convrtUnit),timestamp=median(timestamp))
+  
+  swcDat<-swcDat%>%
+    filter(year>1995)%>%
+    group_by(year,month)%>%
+    summarise(swc=mean(swc),timestamp=median(timestamp))
+  
+  flxdata<-merge(flxdata,swcDat,by.x=c("year","month"),by.y = c("year","month"),all=T)
+  flxdata<-flxdata[with(flxdata, order(year, month)), ]
+  
+  codM<-mergeChains(outP$chain)
+  codM<-miscTools::colMedians(as.data.frame(codM))
+  names(codM)<-nm
+  
+  pine<-getParmsPine(waterBalanceSubMods=T, timeStp =  52)
+  pine[nm]<-codM[nm]
+  
+  output<-do.call(fr3PGDN,pine)
+  ff<-output%>%
+    filter(Year>1995&Year<2100)%>%
+    group_by(Year,Month)%>%
+    summarise(GPP=mean(GPP),NEE=mean(NEE),EvapTransp=mean(EvapTransp),volSWC_rz=mean(volSWC_rz))
+  
+  flxdata$simGPP<-ff$GPP*7.14
+  flxdata$simET<-ff$EvapTransp/7
+  flxdata$simSWC<-ff$volSWC_rz
+  flxdata$simNEE<-ff$NEE*7.14
+  
+  flxdata<-filter(flxdata,year!=2007)
+  
+  g1<-ggplot(data=flxdata,aes(x=as.numeric(simGPP), y=as.numeric(gpp)))+
+    theme_bw()+
+    geom_point(colour="red",size=2)+
+    geom_smooth(method='lm',col="black")+
+    ylab("Observed")+
+    xlab("Simulated")+
+    xlim(0,11)+
+    ylim(0,11)+
+    geom_abline(intercept =0 , slope = 1, lty="dashed")+
+    ggtitle(expression(paste("GPP [gC"," ",cm^-2,day^-1,"]",sep="")))+
+    theme(axis.title=element_text(size=10),
+          axis.text=element_text(size=10))
+  
+ 
+  
+  g3<-ggplot(data=flxdata,aes(x=as.numeric(simSWC), y=as.numeric(swc)))+
+    theme_bw()+
+    geom_point(colour="red",size=2)+
+    geom_smooth(method='lm',col="black")+
+    ylab("Observed")+
+    xlab("Simulated")+
+    xlim(0.18,0.45)+
+    ylim(0.18,0.45)+
+    ggtitle(expression(paste("SWC"," [",day^-1,"]",sep="")))+
+    geom_abline(intercept =0 , slope = 1, lty="dashed")+
+    theme(axis.title=element_text(size=10),
+          axis.text=element_text(size=10))
+  
+  
+  g4<-ggplot(data=flxdata,aes(x=as.numeric(simNEE), y=as.numeric(nee)))+
+    theme_bw()+
+    geom_point(colour="red",size=2)+
+    geom_smooth(method='lm',col="black")+
+    ylab("Observed")+
+    xlab("Simulated")+
+    xlim(-5.5,1)+
+    ylim(-5.5,1)+
+    geom_abline(intercept =0 , slope = 1, lty="dashed")+
+    ggtitle(expression(paste("NEE [gC"," ",cm^-2,day^-1,"]",sep="")))+
+    theme(axis.title=element_text(size=10),
+          axis.text=element_text(size=10))
+  
+  mod1<-lm(simGPP~gpp,data=flxdata)
+  mod3<-lm(simSWC~swc,data=flxdata)
+  mod4<-lm(simNEE~nee,data=flxdata)
+  
+  
+  g1 <- g1 + geom_text(x = 9, y = 1, label = lm_eqn(mod1), parse = TRUE,size=3)
+  g3 <- g3 + geom_text(x = 0.4, y = 0.2, label = lm_eqn(mod3), parse = TRUE,size=3)
+  g4 <- g4 + geom_text(x = -0.25, y = -5.3, label = lm_eqn(mod4), parse = TRUE,size=3)
+  
+  ggarrange(g1,g3,g4)
+  
+}
 
 

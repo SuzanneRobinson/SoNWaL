@@ -115,8 +115,8 @@ getParms<-function(weather=clm_df_full,
                    satPoint= 0.35, #field saturation point
                    K_s=0.5, #Soil conductivity
                    shared_area=4, #shared area of rooting and non-rooting zone
-                   V_nr=1, #Volume of non-rooting zone
-                   maxRootDepth=1,
+                   V_nr=0.5, #Volume of non-rooting zone
+                   maxRootDepth=0.5,
                    sigma_zR =1.5, #area/depth explored by 1kg of root biomass
                    SWC_nr=10, #SWC of non-rooting zone at time 0
                    E_S1 =0.3, #Cumulitive evap threshold (kg^m-2) - sensitive to length of time-step, e.g. monthly time-step means wetting event only occurs at end of month
@@ -130,6 +130,8 @@ getParms<-function(weather=clm_df_full,
                    startN=12,
                    startC=400,
                    pseudo=F #whether to use pseudo time-steps
+                  # ,Q10=0.5,
+                  # Q10X=2
                    ){
   
  list(weather=weather,
@@ -261,7 +263,9 @@ getParms<-function(weather=clm_df_full,
       fsMod=fsMod,
       startN=startN,
       startC=startC,
-      pseudo=pseudo
+      pseudo=pseudo#,
+     # Q10=Q10,
+      #Q10X=Q10X
   )
 }
 
@@ -385,11 +389,11 @@ getParmsPine<-function(weather=clm_df_pine,
                    K_s=12, #Soil conductivity
                    shared_area=4, #shared area of rooting and non-rooting zone
                    V_nr=3, #Volume of non-rooting zone
-                   maxRootDepth=2.5,
+                   maxRootDepth=0.5,
                    sigma_zR =0.5, #area/depth explored by 1kg of root biomass
                    SWC_nr=10, #SWC of non-rooting zone at time 0
-                   E_S1 =2.5, #Cumulitive evap threshold (kg^m-2) - sensitive to length of time-step, e.g. monthly time-step means wetting event only occurs at end of month
-                   E_S2 =1.5, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
+                   E_S1 =0.3, #Cumulitive evap threshold (kg^m-2) - sensitive to length of time-step, e.g. monthly time-step means wetting event only occurs at end of month
+                   E_S2 =0.6, #how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
                    MaxASW_state=50,
                    K_drain=400,
                    timeStp = 12, # time step, 52 for weekly, 12 for monthly and 365 for daily

@@ -1,4 +1,4 @@
-###UK spatial data extraction
+#####UK spatial data extraction
 #library(tidyr)
 #library(purrr)
 #library(BayesianTools)
@@ -14,6 +14,7 @@
 #library(parallel)
 #library(stringr)
 #library(proj4)
+#library(stars)
 #
 #
 #clm<-nc_open("C:/Users//aaron.morris//OneDrive - Forest Research//Documents//Projects//PRAFOR//models//spatial_met_data//CHESS//daily//chess-met_huss_gb_1km_daily_19610101-19610131.nc")
@@ -39,18 +40,39 @@
 ##clmRast<-clmRast[,-1]
 #
 #
-#soilTex<- brick("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\txsrfdo_directory_dom_stu\\txsrfdo\\w001001.adf",
+#soilTexD<- brick("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\txsrfdo_directory_dom_stu\\txsrfdo\\w001001.adf",
 #                crs="+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
+##
+#soilTexD <- projectRaster(soilTexD, r,method = "ngb") 
+#sg<-raster::crop(soilTexD,r)
 #
-#soilTex <- projectRaster(soilTex, crs="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0",method = "ngb") 
-#sg<-crop(soilTex,r)
-#sg2 <- projectRaster(sg, r,method = "ngb")
-#mergedSoil<-stack(r,sg2)
-#clmRast$soil<-getValues(mergedSoil$txsrfdo)
+#soilLocVals<-raster("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\soilDepth.tif")
+#soilLocVals <- projectRaster(soilLocVals, r,method = "ngb")
+#soilLocVals<-crop(soilLocVals,r)
+#
+#soilCond<-raster("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\ths_fao_octop.tif")
+#soilWP<-raster("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\wp_fao.tif")
+#soilFC<-raster("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\fc_fao.tif")
+#soilSat<-raster("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\ks_fao_octop.tif")
+#soilTex<-brick(soilCond,soilWP,soilFC,soilSat)
+#
+#soilTex <- projectRaster(soilTex, r,method = "ngb")
+#soilTex<-crop(soilTex,r)
 #
 #
+#mergedSoil<-stack(sg,soilTex,soilLocVals)
+#clmRast$wp<-getValues(mergedSoil$wp_fao)
+#clmRast$fc<-getValues(mergedSoil$fc_fao)
+#clmRast$sp<-getValues(mergedSoil$ths_fao_octop)
+#clmRast$soilDepth<-getValues(mergedSoil$soilDepth)
+#clmRast$soilCond<-10^getValues(mergedSoil$ks_fao_octop)/100
+#clmRast$soilTex<-getValues(mergedSoil$txsrfdo)
+#
+#saveRDS(clmRast,"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\soilDataLocs.RDS")
+#
+#soilLocVals<-readRDS("soilDataLocs.RDS")
 #ggplot() +
-#  geom_raster(data = clmRast , aes(x = x, y = y, fill = as.factor(soil)))+
+#  geom_raster(data = soilLocVals , aes(x = x, y = y, fill = as.factor(soilTex)))+
 #  theme_bw()+
 #  theme(axis.title.x=element_blank(),
 #        axis.text.x=element_blank(),
@@ -60,6 +82,12 @@
 #        axis.ticks.y=element_blank(),
 #        panel.grid.major = element_blank(),
 #        panel.grid.minor = element_blank())+
-#  ggtitle(i)+
+#  ggtitle("soil")+
 #  coord_equal() + 
-#  scale_fill_viridis_d("Chunk",option = "D")
+#  scale_fill_viridis_d("Value",option = "D")
+#
+#
+###match depth data
+#
+#saveRDS(ff,"soilDepthLocs.RDS")
+###############################################################################################################
