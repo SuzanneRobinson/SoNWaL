@@ -35,7 +35,7 @@ soilWC<-function(parms,weather,state,K_s,SWC,soilVol){
   SWC_rz0 = state[["SWC_rz"]]
 
     #rooting depth / volume - Almedia describes this as depth, assumed to be proportional in paper to biomass
-  z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]]) # can't go deeper than non-rooting zone/max root depth
+  z_r = max(min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]]),0.05) # can't go deeper than non-rooting zone/max root depth
 
   V_rz = z_r #Almedia and Sands paper suggests volume of root zone is equivalent to z_r
   
@@ -193,6 +193,8 @@ soilEvap <-
 SWGmod<-function(SWconst,SWpower,MoistRatio){
   f_theta<-(1-(1-MoistRatio)^SWpower)/(1+((1-MoistRatio)/SWconst)^SWpower)
 #  f_theta<-(1-(1-MoistRatio)^SWpower)/(1+(1-2*SWconst^SWpower)*((1-MoistRatio)/SWconst)^SWpower)
+  
+  
   return(f_theta)
 }
 

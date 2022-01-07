@@ -346,7 +346,7 @@ getClimDatX<-function(timeStep="monthly",climDir){
   
   
   clm_df_daily <- PredictWeatherVariables(weather = clm_df_daily)
-  clm_df_daily$FrostHours<-0#ifelse(clm_df_daily$Tmean<=0,1,0)
+  clm_df_daily$FrostHours<-ifelse(clm_df_daily$Tmin<=0,1,0)
   clm_df_daily$rainDays<-ifelse(clm_df_daily$Rain>0,1,0)
   
   clm_df_weekly<-clm_df_daily%>%

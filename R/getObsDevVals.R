@@ -32,7 +32,7 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
     dplyr::summarise(sdAlphaAnn=mean(reco/rs))
   
   
-  observed <- c(sdAlphaAnn$sdAlphaAnn,
+  observed <- c(#sdAlphaAnn$sdAlphaAnn,
                 pull(data%>% 
                        group_by(year,grp) %>%
                        dplyr::summarise(gpp=mean(gpp))%>%
@@ -81,9 +81,9 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
   
   coefVar1=0.1
   coefVar2=0.25
-  coefVar3=0.2
+  coefVar3=0.15
   
-  dev <- c(sapply( 1:length(sdAlphaAnn$sdAlphaAnn), function(i) max( coefVar2* abs(sdAlphaAnn$sdAlphaAnn[i]),0.01) ),
+  dev <- c(#sapply( 1:length(sdAlphaAnn$sdAlphaAnn), function(i) max( coefVar2* abs(sdAlphaAnn$sdAlphaAnn[i]),0.01) ),
            sapply( 1:length(sdMin$sdgpp), function(i) max( coefVar3* abs(sdMin$sdgpp[i]),0.01) ),
            # sapply( 1:length(sdMin$sdnpp), function(i) max( 0.05* abs(sdMin$sdnpp[i]),0.05) ),
            sapply( 1:length(sdMin$sdnee), function(i) max( coefVar3* abs(sdMin$sdnee[i]),0.01) ),
@@ -99,7 +99,7 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018){
            214.76*0.5,
            7.15*0.5,
            sapply( 1:length(sdMin$sdswc), function(i) max( coefVar3* abs(sdMin$sdswc[i]),0.01) ),
-           sapply( 1:length(sdMin$sdrs), function(i) max( coefVar2* abs(sdMin$sdrs[i]),0.01) ))
+           sapply( 1:length(sdMin$sdrs), function(i) max( coefVar3* abs(sdMin$sdrs[i]),0.01) ))
   
   
   

@@ -64,7 +64,7 @@ UpdateASW <-
 
       
       #root depth assumed to be proportional to root biomass (see almedia and sands) .2 is probability of stones
-      z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]])
+      z_r = max(min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]]),0.05)
       
       
       #calc volume of non-root zone
@@ -140,7 +140,9 @@ if (pseudo==F){
       rz_nrz_drain<-excessSW
       state[["ASW"]] <-  max(ASWrain - EvapTransp - excessSW, 0)
       scaleSW <-EvapTransp/(Transp + RainIntcptn)
-      
+      Etransp <- 1
+      nrz_out_drain<-1
+      rz_nrz_drain<-1
     }
     
     GPP <- state[["GPP"]]
@@ -148,8 +150,8 @@ if (pseudo==F){
     state[["GPP"]] <- GPP * scaleSW
     state[["NPP"]] <- NPP * scaleSW
     state[c("RainIntcptn", "netRad", "CanCond", "Etransp", "CanTransp", 
-            "Transp", "EvapTransp", "excessSW", "scaleSW")] <- c(RainIntcptn, 
+            "Transp", "EvapTransp", "excessSW", "scaleSW","rz_nrz_recharge","excessSW_nr")] <- c(RainIntcptn, 
                                                                  netRad, CanCond, Etransp, CanTransp, Transp, EvapTransp, 
-                                                                 rz_nrz_drain+nrz_out_drain, scaleSW)
+                                                                 rz_nrz_drain, scaleSW,rz_nrz_recharge,nrz_out_drain)
     return(state)
   }

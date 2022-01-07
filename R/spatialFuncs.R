@@ -220,7 +220,7 @@ calcRH<-function(Tmean,Tref=273.16,p,q){
 #' @param param_draw parameter draws
 FR3PG_spat_run <- function(site, clm,param_draw,grid_id,soil,soilDepth,wp,fc,sp,cond){
   library(lubridate)
-  
+
   if(soilDepth==1){param_draw$pars <- lapply(param_draw$pars, function(x) {
     x$V_nr<- 0.25
     x$maxRootDepth<- 0.25
@@ -574,4 +574,79 @@ error = function(cond){
 #  
 #}
 #
+#
+#
+#dataDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\chessReg\\"
+#files <- list.files(path = dataDir, pattern = "\\.csv$", full.names = TRUE, 
+#                    recursive = T)
+#siteList<-basename(files)
+#siteList<-unique(gsub("\\-.*","",siteList))
+#
+#
+#regioCom<-function(siteName){
+#  dataDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\chessReg\\"
+#  
+#  fileNames<-list.files(dataDir,pattern = siteName,full.names = T)
+#  reg<-read.csv(fileNames[1])
+#  reg$siteName<-siteName
+#  for(i in c(2:length(fileNames))){
+#  regX<-data.frame(read.csv(fileNames[i]))
+#  regX2<-as.data.frame(regX[,3])
+#  names(regX2)<-names(regX)[3]
+#  reg<-cbind(reg,regX2)
+#  }
+#  return(reg)
+#  
+#}
+#
+#library(spatialrisk)
+#
+#regClm<-do.call(rbind,lapply(siteList,regioCom))
+#regClm$Tmin<-regClm$tas-regClm$dtr
+#regClm$Tmax<-regClm$tas+regClm$dtr
+#bMark<-read.csv("data/bMarkCalibrationData.csv")
+#bMark<-unique(bMark[,c("SiteIdentification","lat","lon")])
+#regClm<-merge(regClm,bMark,by.x="siteName",by.y="SiteIdentification",all=F)
+#regClm$date<-as.Date(regClm$doy, origin = paste0(regClm$year,'-01-01'))
+#regClm$month<-month(regClm$date)
+#
+#regClmSoils<-regClm[!duplicated(regClm[,c('siteName')]),]
+#soilDat<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\soilDataLocs.RDS")
+#
+##find closest soil values
+#ff<-purrr::map2_dfr(regClmSoils$lat, regClmSoils$lon, 
+#                ~spatialrisk::points_in_circle(soilDat, .y, .x, 
+#                                               lon = lon, 
+#                                               lat = lat, 
+#                                               radius = 1e6)[1,])
+#
+#ff$site<-regClmSoils$siteName
+#names(regClm)<-c("siteName","year","doy","tempRange_c","specHumid","precip_mm","psurf_pa","solarRad_MJ","surface_wind","Tmean","Tmin","Tmax","lat","lon","date","month")
+#regClm<-merge(regClm,ff[,c(6:11,13)],by.x="siteName",by.y="site")
+#
+#regClm<-regClm%>%group_by(siteName,year,month)%>%
+#  summarise(precip=sum(precip),Tmean=mean(tas),Tmin=min(Tmin),Tmax=max(Tmax),lat=median(lat))
+#
+#saveRDS(regClm,"regionalClmDat.RDS")
+#
+#
+#library(SPEI)
+#hargFunc<-function(siteName){
+#  regClmSite<-regClm[regClm$siteName==siteName,]
+#  regClmSite$harRes<- hargreaves(regClmSite$Tmin, regClmSite$Tmax,  lat = regClmSite$lat[1])
+#  regClmSite$BAL <- regClmSite$precip-regClmSite$harRes
+#  regClmSiteTS <- ts(regClmSite[,-c(1:3)], end=c(2017,12), frequency=12)
+#  spei12 <- spei(regClmSiteTS[,'BAL'], scale=6)
+#  return(spei12)
+#}
+#
+#ff<-lapply(siteList,hargFunc)
+#
+#par(mfrow=c(3,1))
+#for(i in c(1:length(siteList))){
+#  plot(ff[[i]],main=paste0("Site: ",siteList[i]))
+#}
+#
+#ggplot(data=regClm)+
+#  geom_line(aes(x=doy,y=precip,col=siteName))
 #

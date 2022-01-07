@@ -67,12 +67,12 @@ nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","shared_area","m
 
 
 
-out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_1_T.RDS")
+out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_3_final_T.RDS")
 #clm1<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\spatialChunk_28_22.RDS")
 
 #out<-getSample(out,start=12000,thin=5,numSamples=500)
 #codM<-out$chain[[2]][c(1:5000),]
-codM<-as.data.frame(out$chain[[2]])
+codM<-as.data.frame(out$chain[[1]])
 codM<-mergeChains(out$chain)
 
 codM<-miscTools::colMedians(as.data.frame(codM))
@@ -118,11 +118,9 @@ sitka[nm]<-codM[nm]
 #sitka$pFS20<-0.1
 output<-do.call(fr3PGDN,sitka)
 ff<-filter(output,Year>2014&Year<2100)
-plot(ff$Rs)
+plot(ff$Rs*7.14)
+plot(output$Nav)
 plot(output$LAI)
-
-
-
 
 
 plot(output$N)
@@ -132,14 +130,14 @@ tail(output$GPP)
 plot(ff$fSW)
 plot(ff$volSWC_rz)
 plot(ff$EvapTransp)
-plot(output$totN)
+plot(output$totC)
 plot(ff$GPP*7.14,col="red")
 
 
 #Plot results
 nmc = nrow(out$chain[[1]])
-outSample   <- as.data.frame(getSample(out,start=nmc/1.1,thin=5,numSamps = 50))
-results<-plotResultsNewMonthly(output,ShortTS=T,out=outSample,numSamps = 50)
+outSample   <- as.data.frame(getSample(out,start=nmc/1.1,thin=1,numSamples = 150))
+results<-plotResultsNewMonthly(output,ShortTS=T,out=outSample,numSamps = 150)
 ggarrange(results[[1]],results[[8]],results[[2]],results[[3]],results[[5]],results[[4]],nrow=3,ncol=2)
 ggarrange(results[[15]],results[[9]],results[[10]],results[[11]],results[[13]],results[[14]],nrow=3,ncol=2)
 
@@ -170,7 +168,7 @@ pineDiags<-diagPlotsPine(outP=outP,nm = nm )
 #data_NEEmean_sd <- sapply( 1:length(sdmin_NEE), function(i) max(sdmin_NEE[i],0.5) )
 
 
-codM<-as.data.frame(outP$chain[[2]])
+codM<-as.data.frame(outP$chain[[4]])
 codM<-mergeChains(outP$chain)
 codM<-miscTools::colMedians(as.data.frame(codM))
 codM<-tail(as.data.frame(codM),1)

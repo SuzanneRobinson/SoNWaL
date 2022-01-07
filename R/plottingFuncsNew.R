@@ -318,7 +318,6 @@ plotResultsNewMonthly <- function(df,outSample,ShortTS=F,numSamps=500){
   }
   
   getIntv<-function(paramName,modLst){
-    
     simDat =   do.call(cbind,lapply(modLst, "[",  paramName))
    res<-as.data.frame(rowQuantiles(as.matrix(simDat), probs = c(0.11, 0.5, 0.89)))
   return(res)

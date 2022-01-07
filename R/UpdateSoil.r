@@ -76,13 +76,24 @@ UpdateSoil <-
       
       
       
-     if (Tav < Tmin | Tav > Tmax) {
-       fT <- 0
-     }
-     else {
-       fT <- ((Tav - Tmin)/(Topt - Tmin)) * ((Tmax - Tav)/(Tmax - 
-                                                             Topt))^((Tmax - Topt)/(Topt - Tmin))
-     }
+      Q10= parms[["Q10X"]]#ifelse(Tav<Topt,parms[["Q10X"]],parms[["Q10"]])
+      
+      if(Q10!=0){
+        
+        R1=parms[["Q10"]]
+        T2=Tav*0.7
+        T1<-Topt
+        fT<-min(R1*Q10^((T2-T1)/10),1)
+        
+      } else {
+        if (Tav < Tmin | Tav > Tmax) {
+          fT <- 0
+        }
+        else {
+          fT <- ((Tav - Tmin)/(Topt - Tmin)) * ((Tmax - Tav)/(Tmax - 
+                                                                Topt))^((Tmax - Topt)/(Topt - Tmin))
+        }
+      }
       
    #   Q10= ifelse(Tav<Topt,2,0.1)
 
@@ -145,22 +156,35 @@ UpdateSoil <-
     Nav <- Nav + Navflx - Un
     Nav <- ifelse(is.na(max( Navm, Nav )),0,max( Navm, Nav))  ## A small change to accommodate Bayesian calibration and avoid NAs
  
-      #values in cm
-   # z_r = parms[["V_nr"]]*100#z_r = min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]])*100
-   #   excessSW<-state[["excessSW"]]/10
-   #   fieldCap<-parms[["fieldCap"]]
-   #   NleachX<-(excessSW/(excessSW+fieldCap))^z_r
-   #   Nleach <- ifelse(is.na(NleachX*Nav)==T,0,NleachX*Nav)
-   #   Nav <- Nav-Nleach
-
-    if( Nav > Navx){
-      Nleach <- Nav - Navx
-      Nav <- Navx
-    }else{
-      Nleach <- 0
-    }
+      #values in mm
+     #z_rz = max(min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]])*1000,50)
+     #z_nr = (parms[["V_nr"]]*1000)-z_rz
+     #excessSW_rz<-state[["excessSW"]]
+     # fieldCap<-parms[["fieldCap"]]
+      #SWC_rz<-max(state[["SWC_rz"]],1)
+      #SWC_nr<-max(state[["SWC_nr"]],1)
+      #Nav_nr<-state[["Nav_nr"]]
+      rz_nrz_recharge<-0#state[["rz_nrz_recharge"]]
+      #excessSW_nr<-state[["excessSW_nr"]]
+      
+      Nleach_rz_nr <- 0#(excessSW_rz/(excessSW_rz+SWC_rz*z_rz)) 
+     # Nleach_nr_out <- (excessSW_nr/(excessSW_nr+SWC_nr*z_nr))
+     # Nleach_nr_rz <- (rz_nrz_recharge/(rz_nrz_recharge+SWC_nr*z_nr))
+     # 
+     # Nleach_rz_nr <- ifelse(is.na(Nleach_rz_nr*Nav)==T,0,Nleach_rz_nr*Nav)
+     # Nleach_nr_out <- ifelse(is.na(Nleach_nr_out*Nav_nr)==T,0,Nleach_nr_out*Nav_nr)
+     # Nleach_nr_rz<-ifelse(is.na(Nleach_nr_rz*Nav_nr)==T,0,Nleach_nr_rz*Nav_nr)
+      
+      Nav_nr<-0#Nav_nr-Nleach_nr_out+Nleach_nr_rz+Nleach_rz_nr
+    #  Nav <- Nav-Nleach_rz_nr-Nleach_nr_rz
+# 
+if( Nav > Navx){
+  Nav <- Navx
+}
     ## Now estimate fN
     fN <- (Nav - Navm) / (Navx - Navm)
+    
+    
     
     ## Calculate ecosystem scale fluxes
     ## now that we know soil respiration
@@ -179,24 +203,43 @@ UpdateSoil <-
             "kl","kr","ko","hl","hr","hNl","hNr",
             "YrCflx","YlCflx","OCflx","YrNflx","YlNflx","ONflx","Navflx",
             "totC","totN","Un","Nav","Nleach","fN",
-            "NEE","Reco","Ra","Rs")] <-
+            "NEE","Reco","Ra","Rs","Nav_nr","rz_nrz_recharge")] <-
       c(YrC,YlC,OC,YrN,YlN,ON,
         kl,kr,ko,hl,hr,hNl,hNr,
         YrCflx,YlCflx,OCflx,YrNflx,YlNflx,ONflx,Navflx,
-        totC,totN,Un,Nav,Nleach,fN,
-        NEE,Reco,Ra,Rs)
+        totC,totN,Un,Nav,Nleach_rz_nr,fN,
+        NEE,Reco,Ra,Rs,Nav_nr,rz_nrz_recharge)
     return(state)
   }
 
 
 #R2<-NULL
-#for(i in (1:40)){
-#Q10= ifelse(i<15,2,0.1)
+#for(i in (1:20)){
+#Q10= 1.2242#ifelse(i<15,2,0.1)
 #  
-#R1=1
+#R1=0.8226
 #T2=i
 #T1<-15
-#R2<-rbind(R2,R1*Q10^((T2-T1)/10))
+#R2<-rbind(R2,min(R1*Q10^((T2-T1)/10),1))
+#}
+#
+#plot(R2)
+
+#Q10=(R2/R1)^(10/(T2-T1))
+#
+#plot(Q10)
+#
+#
+#
+#
+#R2<-NULL
+#for(i in (1:40)){
+#  Q10= .2#ifelse(i<15,2,0.1)
+#  
+#  R1=1
+#  T2=i
+#  T1<-15
+#  R2<-rbind(R2,(1/exp(log(Q10)*(T2/10))))
 #}
 #
 #plot(R2)
@@ -204,3 +247,4 @@ UpdateSoil <-
 #Q10=(R2/R1)^(10/(T2-T1))
 #
 #plot(Q10)
+#

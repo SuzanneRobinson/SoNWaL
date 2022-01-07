@@ -130,8 +130,9 @@ getParms<-function(weather=clm_df_full,
                    startN=12,
                    startC=400,
                    pseudo=F #whether to use pseudo time-steps
-                  # ,Q10=0.5,
-                  # Q10X=2
+                   ,Q10=0,
+                   Q10X=0,
+                   Nleach_r=0
                    ){
   
  list(weather=weather,
@@ -263,9 +264,10 @@ getParms<-function(weather=clm_df_full,
       fsMod=fsMod,
       startN=startN,
       startC=startC,
-      pseudo=pseudo#,
-     # Q10=Q10,
-      #Q10X=Q10X
+      pseudo=pseudo,
+      Q10=Q10,
+      Q10X=Q10X,
+      Nleach_r=Nleach_r
   )
 }
 

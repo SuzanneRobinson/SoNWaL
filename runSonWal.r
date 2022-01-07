@@ -1,17 +1,17 @@
 
 
 ## Load necessary packages
-library(fr3PGDN)
-library(tidyverse)
-library(lubridate)
-library(coda)
-library(BayesianTools)
-library(miscTools)
-library(ggpubr)
-library(matrixStats)
-library(future)
-library(furrr)
-library(parallel)
+install.packages("fr3PGDN")
+install.packages("tidyverse")
+install.packages("lubridate")
+install.packages("coda")
+install.packages("BayesianTools")
+install.packages("miscTools")
+install.packages("ggpubr")
+install.packages("matrixStats")
+install.packages("future")
+install.packages("furrr")
+install.packages("parallel")
 ## Years of data to use for calibration
 startYear = 2015
 endYear = 2018

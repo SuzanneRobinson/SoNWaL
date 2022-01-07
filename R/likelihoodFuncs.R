@@ -42,7 +42,7 @@ sampleOutputMonth<-function(df,sY,eY){
       mutate(Reco=Reco*modif)
        
   
-  m<-c(aggregate(df$Reco/df$Rs~ df$Year,FUN=mean)[,2],
+  m<-c(#aggregate(df$Reco/df$Rs~ df$Year,FUN=mean)[,2],
        aggregate(df$GPP~ df$Month+df$Year,FUN=mean)[,3],
        #aggregate(df$NPP~ df$Month+df$Year,FUN=mean)[,3],
        aggregate(df$NEE~ df$Month+df$Year,FUN=mean)[,3],
@@ -393,10 +393,14 @@ sampleOutputPine_noHyd<-function(df,sY,eY){
 ## Likelihood function
 NLL<- function(p){
   sitka[.GlobalEnv$nm]<-p
- 
+  
+  #sitka$Q10X<-0
+  
    NlogLik <- tryCatch(
     {
     #  runMod<-function(parms){
+      
+      
       output<-   do.call(fr3PGDN,sitka)
       #}
       
@@ -439,7 +443,6 @@ flogL <- function(sims,data,data_s)
 ## Likelihood function
 NLL_weekly<- function(p){
   sitka[.GlobalEnv$nm]<-p
-  
   
   
   NlogLik <- tryCatch(
@@ -585,4 +588,166 @@ pineLL_weekly_noHyd <- function(p){
   
   return(NlogLik)
 }
+
+
+
+
+## Likelihood function
+NLL_Reg<- function(p){
+ px<-data.frame(t(p))
+  fail<-rep(-Inf,nrow(px))
+ siteLst<-(unique(sitka$weather$site))
+ siteVec<-rep(siteLst,each=nrow(px))
+ px$chain<-rep(1:nrow(px))
+ 
+ px<-px[rep(seq_len(nrow(px)), length(siteLst)), ]
+ 
+ px$site<-siteVec
+
+
+      runMod<-function(g){
+       res<-tryCatch(
+         { 
+        sitka[.GlobalEnv$nm]<-g[1:16]
+        sitka$weather<-filter(sitka$weather,site==g$site)
+        
+        if(sitka$weather$soilDepth[1]==1){ 
+          sitka$V_nr<- 0.25
+          sitka$maxRootDepth<- 0.25
+        }
+         
+        if(sitka$weather$soilDepth[1]==2){
+          sitka$V_nr<- 0.5
+          sitka$maxRootDepth<- 0.5
+          }
+        if(sitka$weather$soilDepth[1]==3){
+          sitka$V_nr<- 0.8
+          sitka$maxRootDepth<- 0.8
+         }
+        if(sitka$weather$soilDepth[1]==4){
+          sitka$V_nr<- 1
+          sitka$maxRootDepth<- 1
+          }
+        if(sitka$weather$soilDepth[1]==5){
+          sitka$V_nr<- 1.5
+          sitka$maxRootDepth<- 1.5
+       }
+        
+        if(sitka$weather$soilTex[1]!=0){
+          sitka$wiltPoint<-sitka$weather$wp[1]
+          sitka$fieldCap<-sitka$weather$fc[1]
+          sitka$satPoint<-sitka$weather$sp[1]
+          sitka$K_s<-sitka$weather$soilCond[1]
+        sitka$K_drain<-sitka$weather$soilCond[1]
+        }
+        if(sitka$weather$soilTex[1]==1) {
+         sitka$E_S1<-0.05
+         sitka$E_S2<-0.3
+         sitka$SWpower0<-8
+         sitka$SWconst0<-0.65
+       }
+        
+        if(sitka$weather$soilTex[1]==0) {
+         sitka$E_S1<-0.05
+         sitka$E_S2<-0.3
+         sitka$SWpower0<-8
+         sitka$SWconst0<-0.65
+         }
+        
+        if(is.na(sitka$weather$soilTex[1])==T)  {
+         sitka$E_S1<-0.05
+         sitka$E_S2<-0.3
+         sitka$SWpower0<-8
+         sitka$SWconst0<-0.65
+          }
+        
+        if(sitka$weather$soilTex[1]==4)  {
+         sitka$E_S1<-0.1
+         sitka$E_S2<-0.3
+         sitka$SWpower0<-5
+         sitka$SWconst0<-0.5
+         }
+        
+        
+        if(sitka$weather$soilTex[1]==9) {
+          sitka$E_S1<-0.3
+          sitka$E_S2<-0.6
+          sitka$SWpower0<-5
+          sitka$SWconst0<-0.5
+          }
+        
+        
+        
+        observed<-filter(sitka$weather,is.na(mean_dbh_cm)==F)%>%group_by(Year)%>%summarise(dbh=median(mean_dbh_cm),dbhSD=median(dbhSD_cm))
+        observed$dbhSD<-ifelse(observed$dbhSD==0,0.0001,observed$dbhSD)
+        sY=min(observed$Year)
+        eY=max(observed$Year)
+        output<-   do.call(fr3PGDN,sitka)
+        
+        modelled<-output%>%group_by(Year)%>%summarise(dg=mean(dg))%>%filter(Year>=sY&Year<=eY)
+        ifelse(any(is.na(modelled)==T),-Inf,flogL(data=observed$dbh,sims=modelled$dg,data_s=observed$dbhSD))
+         },
+        error=function(cond) {
+          return(-Inf)
+        })
+  return(res)
+      }
+      
+    g <- split(px, seq(nrow(px)))
+     px$ll<-do.call(rbind,mclapply(g, FUN = runMod,mc.cores=16))
+      NlogLik<-as.vector(px%>%group_by(chain)%>%summarise(ll=sum(ll,na.rm=T))%>%pull(ll))
+    
+
+  return(NlogLik)
+}
+
+
+
+
+## Likelihood function
+NLL_Reg_mp<- function(px){
+  px<-as.data.frame(px)
+  #names(px)<-nm
+  #sitka$Q10X<-0
+  #matrix rows = chains, cols = params
+  fail<-rep(-Inf,nrow(px))
+  
+  siteLst<-(unique(sitka$weather$site))
+  siteVec<-rep(siteLst,each=nrow(px))
+  px$chain<-rep(1:nrow(px))
+  
+  px<-px[rep(seq_len(nrow(px)), length(siteLst)), ]
+  
+  px$site<-siteVec
+  #  
+  #  cl <- startMPIcluster(count=47)
+  #  registerDoMPI(cl)
+  #  
+  #
+  #  foreach(i = c(1:nrow(px))) %dopar%{
+  #library(dplyr)
+  #    library(fr3PGDN)
+  #        pt<-px[i,]
+  #        sitkaX<-sitka
+  #        sitkaX[.GlobalEnv$nm]<-as.numeric(pt[.GlobalEnv$nm])
+  #        sitkaX$weather<-dplyr::filter(sitkaX$weather,site==pt$site)
+  #   observed<-dplyr::filter(sitkaX$weather,is.na(mean_dbh_cm)==F)%>%group_by(Year)%>%summarise(dbh=median(mean_dbh_cm),dbhSD=median(dbhSD_cm))
+  #   observed$dbhSD<-ifelse(observed$dbhSD==0,0.0001,observed$dbhSD)
+  #   sY=min(observed$Year)
+  #   eY=max(observed$Year)
+  #   output<-   do.call(fr3PGDN,sitkaX)
+  #   
+  #   modelled<-output%>%dplyr::group_by(Year)%>%dplyr::summarise(dg=mean(dg))%>%dplyr::filter(Year>=sY&Year<=eY)
+  #   ifelse(any(is.na(modelled)==T),-Inf,flogL(data=observed$dbh,sims=modelled$dg,data_s=observed$dbhSD))
+  #    
+  #  }
+
+  p <- split(px, seq(nrow(px)))
+  px$ll<-do.call(rbind,mclapply(p, FUN = runMod,mc.cores = 16))
+  NlogLik<-as.vector(px%>%group_by(chain)%>%summarise(ll=sum(ll,na.rm=T))%>%pull(ll))
+  
+  
+  return(NlogLik)
+}
+
 

@@ -15,7 +15,7 @@ function (stand, site, parms, general.info, weather)
                      "Wdl", "Wds", "Wdr","YrC","YlC","OC","YrN","YlN","ON","kl",
                      "kr","ko","hl","hr","hNl","hNr","YrCflx","YlCflx","OCflx",
                      "YrNflx","YlNflx","ONflx","Navflx","totC","totN","Un","Nav",
-                     "Nleach","SWC_nr","MaxASW_state","E_S","SWC_rz","volSWC_rz","soilRad","totalRad","potentialEvap")
+                     "Nleach","SWC_nr","MaxASW_state","E_S","SWC_rz","volSWC_rz","soilRad","totalRad","potentialEvap","Nav_nr","excessSW_nr","rz_nrz_recharge")
     .length.state.vec <- length(names.state)
     state.vector <- rep(NA, .length.state.vec)
     names(state.vector) <- names.state
@@ -32,6 +32,9 @@ function (stand, site, parms, general.info, weather)
     state.init["soilRad"] <- 100
     state.init["totalRad"] <- 100
     state.init["potentialEvap"] <- 0.01
+    state.init["Nav_nr"] <- 0
+    state.init["excessSW_nr"] <- 0
+    state.init["rz_nrz_recharge"] <- 0
     
     ###use parameter for initial nitrogen and carbon pools
     state.init["totN"]<-parms[["startN"]]
