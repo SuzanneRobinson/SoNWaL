@@ -46,9 +46,9 @@ clm_df_reg<-clm_df_reg%>%group_by(site,Year,week)%>%summarise(Year=median(Year),
 #  filter(Year<2019)
 
 bMarkDat<-read.csv("Data/bMarkCalibrationData.csv")
-bMarkDat2<-bMarkDat[,c(2,5:12)]
+bMarkDat2<-bMarkDat[,c(1,5:11,19)]
 bMarkDat2<-unique(bMarkDat2)
-bMarkDat<-bMarkDat[,c(2,13:17)]
+bMarkDat<-bMarkDat[,c(1,12:18)]
 
 clm_df_reg<-merge(clm_df_reg,bMarkDat2,by.x="site",by.y="SiteIdentification",all=T)
 clm_df_reg<-merge(clm_df_reg,bMarkDat,by.x=c("site","Year"),by.y=c("SiteIdentification","Year"),all=T)
@@ -60,10 +60,20 @@ priorVals<-createPriors_sitka_rg(sitka)
 
   
   runModReg<-function(g,dg=T){
+    paramList<-sitka
+    siteSoil<-group_by(paramList$weather,site)%>%summarise(nutrients=median(SoilNutrientRegime))
     
+
+      
+      
    plotRes<-function(gx,sY,eY,dg){
-        sitka[.GlobalEnv$nm]<-gx[1:length(nm)]
+        sitka[.GlobalEnv$nm[-45]]<-gx[nm[-45]]
         sitka$weather<-filter(sitka$weather,site==gx$site)
+        sitka$weather<-filter(sitka$weather,Year>=sY&Year<=eY)
+        
+        sitka$startC <- sitka$startC * ifelse(gx$nutrients=="Poor",1, gx$poorSoilMod)
+        sitka$startN <- sitka$startN * ifelse(gx$nutrients=="Poor",1, gx$poorSoilMod)
+        
         
         if(sitka$weather$soilDepth[1]==1){ 
           sitka$V_nr<- 0.25
@@ -129,10 +139,10 @@ priorVals<-createPriors_sitka_rg(sitka)
           sitka$SWpower0<-5
           sitka$SWconst0<-0.5
         }
+        sitka$weather<-filter(sitka$weather,Year>=sitka$weather$plantingYear[1])
         
         output<-   do.call(fr3PGDN,sitka)
-        if(dg==T) return(output%>%filter(Year>=sY&Year<=eY)%>%group_by(Year)%>%summarise(dg=mean(dg))) else    
-        return(output%>%filter(Year>=sY&Year<=eY)%>%group_by(Year,Month)%>%summarise(dg=mean(GPP)))
+        if(dg==T) return(output%>%filter(Year>=sY&Year<=eY)%>%group_by(Year)%>%summarise(dg=mean(dg))) else return(output%>%filter(Year>=sY&Year<=eY)%>%group_by(Year,Month)%>%summarise(dg=mean(GPP)))
 
    }
    
@@ -140,6 +150,8 @@ priorVals<-createPriors_sitka_rg(sitka)
    observed$dbhSD<-ifelse(observed$dbhSD==0,0.0001,observed$dbhSD)
    sY=min(observed$Year)
    eY=max(observed$Year)
+   
+   g<-merge(g,siteSoil,by.x="site",by.y="site")
    
    gx<-split(g,seq(nrow(g)))
    ff<-mapply(plotRes,gx,MoreArgs = list(sY=sY,eY=eY,dg=dg),SIMPLIFY = F)
@@ -156,12 +168,14 @@ priorVals<-createPriors_sitka_rg(sitka)
         intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=ff))
         
    if(dg==T){
-   observed$high  <- intvsS[,1]$`89%` + observed$dbhSD
-   observed$low  <- intvsS[,1]$`11%` - observed$dbhSD
+   observed$high  <- intvsS[,1]$`89%`# + observed$dbhSD
+   observed$low  <- intvsS[,1]$`11%`# - observed$dbhSD
    observed$med  <- intvsS[,1]$`50%`# - 2 * 0.3
    
   res<- ggplot(data=observed)+
     geom_point(aes(y=dbh,x=Year))+
+    geom_errorbar(aes(y=dbh,x=Year,ymin=dbh-dbhSD, ymax=dbh+dbhSD), width=.2,
+                  position=position_dodge(0.05))+
      geom_line(aes(y=med,x=Year))+
    geom_ribbon(aes(ymax=high,ymin=low,x=Year),alpha=0.3)
    } else {
@@ -176,7 +190,7 @@ priorVals<-createPriors_sitka_rg(sitka)
   }
   
   
-  out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_2_T.RDS")
+  out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_15_T.RDS")
   nmc<-nrow(out$chain[[1]])
   outSample   <- as.data.frame(getSample(out,start=round(nmc/1.1),thin=1,numSamples = 10))
   sitka<-getParms(
@@ -202,15 +216,18 @@ priorVals<-createPriors_sitka_rg(sitka)
   
   nm<-c("sigma_zR","shared_area",
         "Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","startN","startC")
- # nm<-c("sigma_zR","shared_area",
- #       "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
- #       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
- #       "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","Qa","Qb","MaxIntcptn","k","startN","startC")
+  nm<-c("sigma_zR","shared_area",
+        "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
+        "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
+        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","Qa","Qb","MaxIntcptn","k","startN","startC","poorSoilMod")
+  
   
 
   
   g <- split(outSampleX,outSampleX$site)
 
   
-    g2<-mapply( runModReg,g[c(1:6)],MoreArgs = list(dg=T),SIMPLIFY = F)
+    g2<-mapply( runModReg,g[c(1:13)],MoreArgs = list(dg=F),SIMPLIFY = F)
 
+    ggarrange(g2$`2013`,g2$`2042`,g2$`2191`,g2$`4301`,g2$`461`,g2$`6619`,g2$`7643`,g2$`9004`,g2$`9008`,g2$EXM7,g2$EXM7,g2$FERN,g2$QUA6)
+    

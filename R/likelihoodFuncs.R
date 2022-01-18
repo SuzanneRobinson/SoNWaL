@@ -593,113 +593,187 @@ pineLL_weekly_noHyd <- function(p){
 
 
 ## Likelihood function
-NLL_Reg<- function(p){
- px<-data.frame(t(p))
-  fail<-rep(-Inf,nrow(px))
- siteLst<-(unique(sitka$weather$site))
- siteVec<-rep(siteLst,each=nrow(px))
- px$chain<-rep(1:nrow(px))
- 
- px<-px[rep(seq_len(nrow(px)), length(siteLst)), ]
- 
- px$site<-siteVec
+#function relies on the parameter list (paramList) defined at the submission of the mcmc, this list is what is submitted to the model run function to run SoNWal
+#it contains elements for each parameter to be updated from the MCMC chain proposals
+#additionally it contains the paramList$weather dataframe - this contains the longitudinal climate data and site specific data for each of the 13 regional sites
+#'@param p matrix of parameter proposals for each chain, matrix: ncols = parameter number, nrows = number of internal chains
+#'@return vector of likelihood values equal to number of rows in input p matrix
+NLL_Reg_sitka <- function(p) {
+    #Sometimes number of rows in p matrix is less than number of chains (uncertain if algorithm design or bug)
+  #this means that sometimes it comes in as a single row, basically a vector and needs transposing when converting to dataframe (or it does for the way i've done things)
+  px <- if (is.null(nrow(p)) == F)
+    data.frame(p) else
+    data.frame(t(p))
+  #nm is a vector of the names of parameter values being fitted  e.g.
+  #nm<-c("V_nr","sigma_zR","shared_area","maxRootDepth","K_drain",
+  #      "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR"...)
+  names(px) <- nm
+  paramList<-sitka
+  
+  siteSoil<-group_by(paramList$weather,site)%>%summarise(nutrients=median(SoilNutrientRegime))
+  
+  #paramList$weather dataframe includes climate and site specific info for all regional sites
+  #There are currently two soil nutrient regimes in the data "poor" and "very poor", in SoNWaL we fit starting N and C
+  #To reduce fitting parameters for each site (and thus having lots of extra params to fit), I assume that sites with matching soil nutrient regime share N and C start values
+  #I then fit starting C and N for the "poor" sites and fit a single modifer "poorSoilMod" (val between 0.01-0.95) which reduces start C and N for "very poor" sites - could be better ways of doing this
+  
+  #create vector of -Inf vals to return if the model run function fails
+  fail <- rep(-Inf, nrow(px))
+  #Get list of site names from the paramList$weather dataframe
+  siteLst <- (unique(paramList$weather$site))
+  #Update dataframe with each chains proposed param values repeated for each site
+  siteVec <- rep(siteLst, each = nrow(px))
+  px$chain <-
+    rep(1:nrow(px))  #add chain number for reference and aggregating later
+  px <- px[rep(seq_len(nrow(px)), length(siteLst)),]
+  px$site <- siteVec
+  
+  px<-merge(px,siteSoil,by.x="site",by.y="site")
 
-
-      runMod<-function(g){
-       res<-tryCatch(
-         { 
-        sitka[.GlobalEnv$nm]<-g[1:16]
-        sitka$weather<-filter(sitka$weather,site==g$site)
-        
-        if(sitka$weather$soilDepth[1]==1){ 
-          sitka$V_nr<- 0.25
-          sitka$maxRootDepth<- 0.25
-        }
-         
-        if(sitka$weather$soilDepth[1]==2){
-          sitka$V_nr<- 0.5
-          sitka$maxRootDepth<- 0.5
-          }
-        if(sitka$weather$soilDepth[1]==3){
-          sitka$V_nr<- 0.8
-          sitka$maxRootDepth<- 0.8
-         }
-        if(sitka$weather$soilDepth[1]==4){
-          sitka$V_nr<- 1
-          sitka$maxRootDepth<- 1
-          }
-        if(sitka$weather$soilDepth[1]==5){
-          sitka$V_nr<- 1.5
-          sitka$maxRootDepth<- 1.5
-       }
-        
-        if(sitka$weather$soilTex[1]!=0){
-          sitka$wiltPoint<-sitka$weather$wp[1]
-          sitka$fieldCap<-sitka$weather$fc[1]
-          sitka$satPoint<-sitka$weather$sp[1]
-          sitka$K_s<-sitka$weather$soilCond[1]
-        sitka$K_drain<-sitka$weather$soilCond[1]
-        }
-        if(sitka$weather$soilTex[1]==1) {
-         sitka$E_S1<-0.05
-         sitka$E_S2<-0.3
-         sitka$SWpower0<-8
-         sitka$SWconst0<-0.65
-       }
-        
-        if(sitka$weather$soilTex[1]==0) {
-         sitka$E_S1<-0.05
-         sitka$E_S2<-0.3
-         sitka$SWpower0<-8
-         sitka$SWconst0<-0.65
-         }
-        
-        if(is.na(sitka$weather$soilTex[1])==T)  {
-         sitka$E_S1<-0.05
-         sitka$E_S2<-0.3
-         sitka$SWpower0<-8
-         sitka$SWconst0<-0.65
-          }
-        
-        if(sitka$weather$soilTex[1]==4)  {
-         sitka$E_S1<-0.1
-         sitka$E_S2<-0.3
-         sitka$SWpower0<-5
-         sitka$SWconst0<-0.5
-         }
-        
-        
-        if(sitka$weather$soilTex[1]==9) {
-          sitka$E_S1<-0.3
-          sitka$E_S2<-0.6
-          sitka$SWpower0<-5
-          sitka$SWconst0<-0.5
-          }
-        
-        
-        
-        observed<-filter(sitka$weather,is.na(mean_dbh_cm)==F)%>%group_by(Year)%>%summarise(dbh=median(mean_dbh_cm),dbhSD=median(dbhSD_cm))
-        observed$dbhSD<-ifelse(observed$dbhSD==0,0.0001,observed$dbhSD)
-        sY=min(observed$Year)
-        eY=max(observed$Year)
-        output<-   do.call(fr3PGDN,sitka)
-        
-        modelled<-output%>%group_by(Year)%>%summarise(dg=mean(dg))%>%filter(Year>=sY&Year<=eY)
-        ifelse(any(is.na(modelled)==T),-Inf,flogL(data=observed$dbh,sims=modelled$dg,data_s=observed$dbhSD))
-         },
-        error=function(cond) {
-          return(-Inf)
-        })
-  return(res)
-      }
-      
-    g <- split(px, seq(nrow(px)))
-     px$ll<-do.call(rbind,mclapply(g, FUN = runMod,mc.cores=16))
-      NlogLik<-as.vector(px%>%group_by(chain)%>%summarise(ll=sum(ll,na.rm=T))%>%pull(ll))
-    
-
+  #split px dataframe into list for running in parallel lapply function
+  splitParams <- split(px, seq(nrow(px)))
+#  splitParamsX<<-splitParams
+ # pxX<<-px
+#  paramListX<<-paramList
+  #update px dataframe with likelihood values for each site
+  px$ll <-
+    do.call(rbind, mcmapply(runMod,splitParams,MoreArgs = list(paramList),SIMPLIFY = F, mc.cores = 15))
+  
+  #sum likelihood values by chain and return vector of likelihood values, one for each chain being run
+  NlogLik <-
+    as.vector(px %>% group_by(chain) %>% summarise(ll = sum(ll)) %>%
+                pull(ll))
+  
+  NlogLik[is.na(NlogLik)==T]<--Inf
   return(NlogLik)
+  
 }
+
+
+#runMod function
+#'@param newParams list element containing dataframe of proposed parameter values for single chain for single site
+runMod <- function(newParams,paramListX) {
+  res <- tryCatch({
+    #update parameters (-45, as poorSoilMod is not a model parameter..this will depend on your nm param vector of course)
+    nmX<-c("sigma_zR","shared_area",
+           "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
+           "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
+           "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","Qa","Qb","MaxIntcptn","k","startN","startC")
+    
+    paramListX[nmX] <- newParams[nmX]
+    #filter paramList$weather dataframe by site
+    paramListX$weather <- filter(paramListX$weather, site == newParams$site)
+    #modify start C and start N by soil modifier if soil regime is "very poor"
+    paramListX$startC <- paramListX$startC * ifelse(newParams$nutrients=="Poor",1, newParams$poorSoilMod)
+    paramListX$startN <- paramListX$startN * ifelse(newParams$nutrients=="Poor",1, newParams$poorSoilMod)
+    
+    #update fixed parameter values based on site specific values contained in paramList$weather dataframe
+    if (paramListX$weather$soilDepth[1] == 1) {
+      paramListX$V_nr <- 0.25
+      paramListX$maxRootDepth <- 0.25
+    }
+    
+    if (paramListX$weather$soilDepth[1] == 2) {
+      paramListX$V_nr <- 0.5
+      paramListX$maxRootDepth <- 0.5
+    }
+    if (paramListX$weather$soilDepth[1] == 3) {
+      paramListX$V_nr <- 0.8
+      paramListX$maxRootDepth <- 0.8
+    }
+    if (paramListX$weather$soilDepth[1] == 4) {
+      paramListX$V_nr <- 1
+      paramListX$maxRootDepth <- 1
+    }
+    if (paramListX$weather$soilDepth[1] == 5) {
+      paramListX$V_nr <- 1.5
+      paramListX$maxRootDepth <- 1.5
+    }
+    
+    if (paramListX$weather$soilTex[1] != 0) {
+      paramListX$wiltPoint <- paramListX$weather$wp[1]
+      paramListX$fieldCap <- paramListX$weather$fc[1]
+      paramListX$satPoint <- paramListX$weather$sp[1]
+      paramListX$K_s <- paramListX$weather$soilCond[1]
+      paramListX$K_drain <- paramListX$weather$soilCond[1]
+    }
+    if (paramListX$weather$soilTex[1] == 1) {
+      paramListX$E_S1 <- 0.05
+      paramListX$E_S2 <- 0.3
+      paramListX$SWpower0 <- 8
+      paramListX$SWconst0 <- 0.65
+    }
+    if (paramListX$weather$soilTex[1] == 0) {
+      paramListX$E_S1 <- 0.05
+      paramListX$E_S2 <- 0.3
+      paramListX$SWpower0 <- 8
+      paramListX$SWconst0 <- 0.65
+    }
+    if (is.na(paramListX$weather$soilTex[1]) == T)  {
+      paramListX$E_S1 <- 0.05
+      paramListX$E_S2 <- 0.3
+      paramListX$SWpower0 <- 8
+      paramListX$SWconst0 <- 0.65
+    }
+    
+    if (paramListX$weather$soilTex[1] == 4)  {
+      paramListX$E_S1 <- 0.1
+      paramListX$E_S2 <- 0.3
+      paramListX$SWpower0 <- 5
+      paramListX$SWconst0 <- 0.5
+    }
+    if (paramListX$weather$soilTex[1] == 9) {
+      paramListX$E_S1 <- 0.3
+      paramListX$E_S2 <- 0.6
+      paramListX$SWpower0 <- 5
+      paramListX$SWconst0 <- 0.5
+    }
+    
+    #get observed values (also contained in paramListX$weather dataframe) for site being fitted
+    observed <-
+      filter(paramListX$weather, is.na(mean_dbh_cm) == F) %>% group_by(Year) %>% summarise(dbh =
+                                                                                             median(mean_dbh_cm),
+                                                                                           dbhSD = median(dbhSD_cm))
+    observed$dbhSD <-
+      ifelse(observed$dbhSD == 0, 0.0001, observed$dbhSD)
+    sY = min(observed$Year)
+    eY = max(observed$Year)
+    
+    #filter climate data by planting year so model runs from planting year
+    paramListX$weather <-
+      filter(paramListX$weather, Year >= paramListX$weather$plantingYear[1])
+    
+    #run model
+    output <- do.call(fr3PGDN, paramListX)
+    
+    #filter simulated data to match observed data format
+    modelled <-
+      output %>% group_by(Year) %>% summarise(dg = mean(dg)) %>% filter(Year >=
+                                                                          sY & Year <= eY)
+    
+    #run likelihood function of observed vs simulated and get liklelihood value
+    ifelse(
+      any(is.na(modelled) == T),
+      -Inf,
+      flogL(
+        data = observed$dbh,
+        sims = modelled$dg,
+        data_s = observed$dbhSD
+      )
+    )
+  },
+  error = function(cond) {
+    #return -Inf if something goes wrong with param proposals
+    return(-Inf)
+  })
+  return(res)
+}
+
+
+
+
+
+
 
 
 
@@ -748,6 +822,143 @@ NLL_Reg_mp<- function(px){
   
   
   return(NlogLik)
+}
+
+
+
+
+
+
+##############likelihood for mixed prior regional calibrations####################
+
+
+
+
+
+## Likelihood function
+#function relies on the parameter list (paramList) defined at the submission of the mcmc, this list is what is submitted to the model run function to run SoNWal
+#it contains elements for each parameter to be updated from the MCMC chain proposals
+#additionally it contains the paramList$weather dataframe - this contains the longitudinal climate data and site specific data for each of the 13 regional sites
+#'@param p matrix of parameter proposals for each chain, matrix: ncols = parameter number, nrows = number of internal chains
+#'@return vector of likelihood values equal to number of rows in input p matrix
+NLL_Reg_sitka_mixedP <- function(p) {
+  #Sometimes number of rows in p matrix is less than number of chains (uncertain if algorithm design or bug)
+  #this means that sometimes it comes in as a single row, basically a vector and needs transposing when converting to dataframe (or it does for the way i've done things)
+  px <- if (is.null(nrow(p)) == F)
+    data.frame(p) else
+      data.frame(t(p))
+
+  nm_all<-c(paste0("wiltPoint_Si",unique(sitka$weather$site)),
+             paste0("fieldCap_Si",unique(sitka$weather$site)),
+             paste0("satPoint_Si",unique(sitka$weather$site)),
+             paste0("K_s_Si",unique(sitka$weather$site)),
+             paste0("V_nr_Si",unique(sitka$weather$site)),
+             paste0("E_S1_Si",unique(sitka$weather$site)),
+             paste0("E_S2_Si",unique(sitka$weather$site)),
+             paste0("shared_area_Si",unique(sitka$weather$site)),
+             paste0("maxRootDepth_Si",unique(sitka$weather$site)),
+             paste0("K_drain_Si",unique(sitka$weather$site)),
+             paste0("startN_Si",unique(sitka$weather$site)),
+             paste0("startC_Si",unique(sitka$weather$site)),
+             "pFS2","pFS20","gammaF0","tgammaF","Rttover","mF","mR",
+             "mS","Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0",
+             "SWpower0","sigma_zR"
+             ,"aS","nS","pRx","pRn","gammaFx",
+             "SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
+             "k","Qa","Qb","MaxIntcptn")
+  
+
+  names(px) <- nm_all
+  
+  
+  paramList<-sitka
+  
+  #create vector of -Inf vals to return if the model run function fails
+  fail <- rep(-Inf, nrow(px))
+  #Get list of site names from the paramList$weather dataframe
+  siteLst <- (unique(paramList$weather$site))
+  #Update dataframe with each chains proposed param values repeated for each site
+  siteVec <- rep(siteLst, each = nrow(px))
+  px$chain <-
+    rep(1:nrow(px))  #add chain number for reference and aggregating later
+  px <- px[rep(seq_len(nrow(px)), length(siteLst)),]
+  px$site <- siteVec
+  
+  
+  
+  #split px dataframe into list for running in parallel lapply function
+  splitParams <- split(px, seq(nrow(px)))
+
+  #update px dataframe with likelihood values for each site
+  px$ll <-
+    do.call(rbind, mcmapply(runMod_mixedP,splitParams,MoreArgs = list(paramList,nm_all),SIMPLIFY = F, mc.cores = 15))
+  
+  #sum likelihood values by chain and return vector of likelihood values, one for each chain being run
+  NlogLik <-
+    as.vector(px %>% group_by(chain) %>% summarise(ll = sum(ll)) %>%
+                pull(ll))
+  
+  NlogLik[is.na(NlogLik)==T]<--Inf
+  return(NlogLik)
+  
+}
+
+
+
+
+
+#runMod function
+#'@param newParams list element containing dataframe of proposed parameter values for single chain for single site
+runMod_mixedP <- function(newParams,paramListX,nm_all) {
+  res <- tryCatch({
+    
+    #update parameter list with site specific params proposals
+    siteSpecNm<-c(nm_all[grepl(paste0("\\_Si",newParams$site), nm_all)],
+                  nm_all[!grepl("\\_Si", nm_all)])
+    fitNm<-sub("_Si.*", "",siteSpecNm)
+    
+    
+    paramListX[fitNm] <- newParams[siteSpecNm]
+    #filter paramList$weather dataframe by site
+    paramListX$weather <- filter(paramListX$weather, site == newParams$site)
+    #get observed values (also contained in paramListX$weather dataframe) for site being fitted
+    observed <-
+      filter(paramListX$weather, is.na(mean_dbh_cm) == F) %>% group_by(Year) %>% summarise(dbh =
+                                                                                             median(mean_dbh_cm),
+                                                                                           dbhSD = median(dbhSD_cm))
+    observed$dbhSD <-
+      ifelse(observed$dbhSD == 0, 0.0001, observed$dbhSD)
+    sY = min(observed$Year)
+    eY = max(observed$Year)
+    
+    #filter climate data by planting year so model runs from planting year
+    paramListX$weather <-
+      filter(paramListX$weather, Year >= paramListX$weather$plantingYear[1])
+    
+    #run model
+    output <- do.call(fr3PGDN, paramListX)
+    
+    #filter simulated data to match observed data format
+    modelled <-
+      output %>% group_by(Year) %>% summarise(dg = mean(dg)) %>% filter(Year >=
+                                                                          sY & Year <= eY)
+    
+    #run likelihood function of observed vs simulated and get liklelihood value
+    ifelse(
+      any(is.na(modelled) == T),
+      -Inf,
+      flogL(
+        data = observed$dbh,
+        sims = modelled$dg,
+        data_s = observed$dbhSD
+      )
+    )
+  },
+  error = function(cond) {
+    #return -Inf if something goes wrong with param proposals
+    return(-Inf)
+  })
+  return(res)
 }
 
 

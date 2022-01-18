@@ -535,7 +535,7 @@ createPriors_sitka_rg<-function(sitka,sd=F){
 
 
 
-createPriors_sitka_rg_all<-function(sitka,sd=F,out){
+createPriors_sitka_rg_all_old<-function(sitka,sd=F,out){
   codM<-as.data.frame(mergeChains(out$chain))[,-c(54:56)]
   colnames(codM)<- c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","shared_area","maxRootDepth","K_drain",
                        "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
@@ -546,7 +546,7 @@ createPriors_sitka_rg_all<-function(sitka,sd=F,out){
   nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
         "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
         "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC","Q10","Q10X","Topt","Nleach_r")
+        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC","Q10","Q10X","Topt","Nleach_r","poorSoilMod")
 
   
   
@@ -609,7 +609,9 @@ createPriors_sitka_rg_all<-function(sitka,sd=F,out){
     0.01,
     1.2,
     5,#Topt
-    0.01)
+    0.01,
+    0.1#poorSoilMod
+    )
   
   f.increase <-
     c(
@@ -671,7 +673,8 @@ createPriors_sitka_rg_all<-function(sitka,sd=F,out){
       1,
       6,
       35,
-      1
+      1,
+      0.95
     )
   
   ##Need to check what priors we are using!
@@ -693,7 +696,8 @@ createPriors_sitka_rg_all<-function(sitka,sd=F,out){
   pMaxima[[34]]<-0.3
   pMinima[[34]]<-0.01
   
-  sdVals<-(pMaxima-pMinima)*0.1
+  sdVals<-(pMaxima-pMinima)*0.8
+  
   #some manual adjustments
   sdVals[5]<-2
   sdVals[7]<-15
@@ -756,14 +760,18 @@ createPriors_sitka_rg_all<-function(sitka,sd=F,out){
   pValues<-pValues[-c(1:5,7,8,10,11,48,49,56:59)]
   
   
-  sdVals<-1.2*colSds(as.matrix(codM[c("sigma_zR","shared_area",
-                                  "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
-                                  "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-                                  "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","Qa","Qb","MaxIntcptn","k","startN","startC")]))
+ # sdVals<-1.5*colSds(as.matrix(codM[c("sigma_zR","shared_area",
+ #                                 "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
+#                                  "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
+#                                  "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","Qa","Qb","MaxIntcptn","k","startN","startC")]))
   
-  
+  sdVals[45]<-0.5
+
   pMaxima<-pMaxima[-c(1:5,7,8,10,11,48,49,56:59)]
   pMinima<-pMinima[-c(1:5,7,8,10,11,48,49,56:59)]
+  pMaxima[45]<-0.95
+  pMinima[45]<-0.1
+  pValues[45]<-0.8
   
   priorVals <- createTruncatedNormalPrior(mean = pValues, sd=sdVals,
                                           lower = pMinima, upper = pMaxima)
@@ -773,3 +781,185 @@ createPriors_sitka_rg_all<-function(sitka,sd=F,out){
 }
 
 
+
+createPriors_sitka_rg_all<-function(sitka,sd=F,out){
+  
+  codM<-as.data.frame(mergeChains(out$chain))[,-c(54:56)]
+  
+  
+  colnames(codM)<- c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","shared_area","maxRootDepth","K_drain",
+                     "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
+                     "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
+                     "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC")
+  
+  codM$E_S1<-0.3
+  codM$E_S2<-0.6
+  #tight priors
+  nm_species<-c("sigma_zR"
+                ,"aS","nS","pRx","pRn","gammaFx",
+                "SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
+                "k","Qa","Qb","MaxIntcptn")
+  
+
+  
+  #loose priors
+  nm_site<-c(paste0("wiltPoint_Si",unique(sitka$weather$site)),
+             paste0("fieldCap_Si",unique(sitka$weather$site)),
+             paste0("satPoint_Si",unique(sitka$weather$site)),
+             paste0("K_s_Si",unique(sitka$weather$site)),
+             paste0("V_nr_Si",unique(sitka$weather$site)),
+             paste0("E_S1_Si",unique(sitka$weather$site)),
+             paste0("E_S2_Si",unique(sitka$weather$site)),
+             paste0("shared_area_Si",unique(sitka$weather$site)),
+             paste0("maxRootDepth_Si",unique(sitka$weather$site)),
+             paste0("K_drain_Si",unique(sitka$weather$site)),
+             paste0("startN_Si",unique(sitka$weather$site)),
+             paste0("startC_Si",unique(sitka$weather$site)),
+             "pFS2","pFS20","gammaF0","tgammaF","Rttover","mF","mR",
+             "mS","Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0",
+             "SWpower0")
+  
+  nmAll<-c(nm_site,nm_species)
+  
+  
+  f.decrease_site <- c(
+    rep(0.06,length(unique(sitka$weather$site))), #wiltPoint
+    rep(0.1,length(unique(sitka$weather$site))), #fieldCap
+    rep(0.2,length(unique(sitka$weather$site))),#satPoint
+    rep(0.05,length(unique(sitka$weather$site))), #K_s
+    rep(0.3,length(unique(sitka$weather$site))), #V_nr
+    rep(0.03,length(unique(sitka$weather$site))), #E_S1
+    rep(0.2,length(unique(sitka$weather$site))), #E_S2
+    rep(1,length(unique(sitka$weather$site))), #shared_area
+    rep(0.2,length(unique(sitka$weather$site))), #maxRootDepth
+    rep(0.05,length(unique(sitka$weather$site))), #K_drain
+    rep(3,length(unique(sitka$weather$site))), #startN
+    rep(50,length(unique(sitka$weather$site))), #startC
+    
+    0.4, #pFS2
+    0.2, #pFS20
+    0.0005, #gammaF0
+    40, #tgammaF
+    0.003, #Rttover
+    0.1, #mF
+    0.1, #mR
+    0.1, #mS
+    
+    0.001, #Nf
+    0.001, #Navm
+    4, #Navx
+    0.009, #klmax
+    0.001, #krmax
+    0.0001, #komax
+    0.1, #hc
+    90, #qir
+    10, #qil
+    10, #qh
+    1, #qbc
+    0.1, #el
+    0.1, #er
+    0.1,#SWconst0
+    2#SWpower0
+    
+  )
+  
+  f.increase_site <-
+    c(
+      rep(0.35,length(unique(sitka$weather$site))),#wiltPoint
+      rep(0.4,length(unique(sitka$weather$site))),#fieldCap
+      rep(0.8,length(unique(sitka$weather$site))),#satPoint
+      rep(1,length(unique(sitka$weather$site))),#K_s
+      rep(4,length(unique(sitka$weather$site))),#V_nr
+      rep(1,length(unique(sitka$weather$site))),#E_S1
+      rep(1,length(unique(sitka$weather$site))),#E_S2
+      rep(6,length(unique(sitka$weather$site))), #shared_area
+      rep(2,length(unique(sitka$weather$site))), #maxRootDepth
+      rep(1,length(unique(sitka$weather$site))), #K_drain
+      rep(20,length(unique(sitka$weather$site))), #startN
+      rep(1200,length(unique(sitka$weather$site))), #startC
+      1,#pFS2
+      1,#pFS20
+      0.0025,#gammaF0
+      110,#tgammaF
+      0.16,#Rttover
+      0.5,#mF
+      0.5,#mR
+      0.5,#mS
+      
+      2,#Nf
+      0.5,#Navm
+      15,#Navx
+      0.1,#klmax
+      0.05,#krmax
+      0.01,#komax
+      0.4,#hc
+      600,#qir
+      60,#qil
+      50,#qh
+      20,#qbc
+      0.6,#el
+      0.6, #er
+      0.6,#SWconst0
+      8#SWpower0
+      
+      
+    )
+  
+  
+  #site priors
+  pValues_site<-as.vector(miscTools::colMedians(codM[ sub("_Si.*", "", nm_site)]))
+  pMaxima_site <- as.vector(f.increase_site)
+  pMinima_site<- as.vector(f.decrease_site)
+  sdVals_site<-as.vector((pMaxima_site-pMinima_site)*2.5)
+  #add sd for es1 and es2 as these were not originally fitted vals
+  sdVals_site[66:91]<-0.2
+  
+  #species priors
+  pValues_species<-as.vector(miscTools::colMedians(codM[nm_species]))
+  sdVals_species<-as.vector(0.5*matrixStats::colSds(as.matrix(codM[c("sigma_zR"
+                                                           ,"aS","nS","pRx","pRn","gammaFx",
+                                                           "SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
+                                                           "k","Qa","Qb","MaxIntcptn")])))
+  pMaxima_species <- as.vector(pValues_species*1.5)
+  pMinima_species<- as.vector(pValues_species*0.5)
+  
+  #these need swapping as negative values
+  QaMax<-pMaxima_species[18]
+  QaMin<-pMinima_species[18]
+  pMaxima_species[18]<-QaMin
+  pMinima_species[18]<-QaMax
+  
+  priorVals <- createTruncatedNormalPrior(mean = c(pValues_site,pValues_species), sd=c(sdVals_site,sdVals_species),
+                                          lower = c(pMinima_site,pMinima_species), upper = c(pMaxima_site,pMaxima_species))
+  
+  
+  
+  nmAllred<-unique(sub("_Si.*", "", nmAll))
+  prDatB<-data.frame(names=nmAll,mean = c(pValues_site,pValues_species), sd=c(sdVals_site,sdVals_species),
+                    lower = c(pMinima_site,pMinima_species), upper = c(pMaxima_site,pMaxima_species))
+  prDatB$names<-sub("_Si.*", "", prDatB$names)
+  prDatB<-prDatB[!duplicated(prDatB$names),]
+  
+  priorValsX <- createTruncatedNormalPrior(mean = prDatB$mean, sd=prDatB$sd,
+                                          lower = prDatB$lower, upper =prDatB$upper)
+  
+# priPlotFunc<-function(prDatBS){
+#   pp<-createTruncatedNormalPrior(mean = prDatBS$mean, sd=prDatBS$sd,
+#                              lower = prDatBS$lower, upper =prDatBS$upper)
+#   
+#   ppDat<-data.frame(pp=(pp$sampler(1000)))
+# return(
+#   ggplot(data=ppDat,aes(pp))+
+#     geom_histogram(bins=50,col="black")+
+#     ggtitle(paste0(prDatBS$names,"10k prior samps"))
+# )
+#   
+# }
+# prDatBX<-split(prDatB,seq(nrow(prDatB)))
+# 
+# plots<-lapply(prDatBX,priPlotFunc)
+  
+  
+  ifelse(sd==F,return(priorValsX),return(sdVals))
+  
+}

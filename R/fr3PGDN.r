@@ -34,7 +34,7 @@ function (weather, presc, t = 0, N = 2500, Wl = 0.01, WlDormant = 0, Wr = 0.01, 
                tRho, Qa, Qb, gDM_mol, molPAR_MJ, CoeffCond, fCalpha700, fCg700, fCalphax, fCg0,
                klmax, krmax, komax, hc, qir, qil, qh, qbc, el, er, Nf, Navm, Navx,
                MinCond, Wl.s, Wsbr.s, Wr.s, pWl.sprouts, pWsbr.sprouts, leaf.grow, leaf.fall,K_s,V_nr,sigma_zR, 
-               E_S1,E_S2,waterBalanceSubMods,wiltPoint,fieldCap,timeStp,maxRootDepth,shared_area,K_drain,satPoint,fsMod,startN,startC,pseudo,Q10,Q10X,Nleach_r)
+               E_S1,E_S2,waterBalanceSubMods,wiltPoint,fieldCap,timeStp,maxRootDepth,shared_area,K_drain,satPoint,fsMod,startN,startC,pseudo,Q10,Q10X,Nleach_r,rainMod,tempMod)
 
     names(parms)<-c("pFS2","pFS20","aS","nS","pRx","pRn",
                     "Tmin","Topt","Tmax","kF",
@@ -51,7 +51,7 @@ function (weather, presc, t = 0, N = 2500, Wl = 0.01, WlDormant = 0, Wr = 0.01, 
                     "MinCond","Wl.s","Wsbr.s","Wr.s","pWl.sprouts",
                     "pWsbr.sprouts","leaf.grow","leaf.fall","K_s","V_nr","sigma_zR",
                     "E_S1","E_S2","waterBalanceSubMods","wiltPoint","fieldCap","timeStp",
-                    "maxRootDepth","shared_area","K_drain","satPoint","fsMod","startN","startC","pseudo","Q10","Q10X","Nleach_r")
+                    "maxRootDepth","shared_area","K_drain","satPoint","fsMod","startN","startC","pseudo","Q10","Q10X","Nleach_r","rainMod","tempMod")
 
     vars.ini <- c(t, N, Wl, WlDormant, Wr, Wsbr, Wlitt, YrC, YlC, OC, YrN, YlN, ON, Nf, Nav,
                   rotation, cycle, rm.sprouts, nyears, initial.month)
@@ -80,8 +80,8 @@ function (weather, presc, t = 0, N = 2500, Wl = 0.01, WlDormant = 0, Wr = 0.01, 
                                                   SWpower = c(9, 7, 5, 3, round(parms[["SWpower0"]]), 1)))
 
     ##For spatial increase sensitivity analysis, temp and rainfall mods
-    weather$Rain<-weather$Rain*rainMod
-    weather[,c("Tmean","Tmax","Tmin")]<-weather[,c("Tmean","Tmax","Tmin")]*tempMod
+   # weather$Rain<-weather$Rain*rainMod
+  #  weather[,c("Tmean","Tmax","Tmin")]<-weather[,c("Tmean","Tmax","Tmin")]*tempMod
     
     
     proj <- RunModel(stand.init = vars.ini, weather = weather, 
