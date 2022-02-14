@@ -79,7 +79,7 @@ UpdateASW <-
       #Calculate accumulated soil evaporation for the month using soilEvap function
       throughFall<-Rain -rIntercptEvap
       evapRes <- soilEvap(parms, weather, state, interRad,h, throughFall,pseudo=pseudo)
-      state[["potentialEvap"]]<-evapRes[[2]]
+      state[["potentialEvap"]]<-evapRes[[1]]
       
 if(pseudo==T){
       evapSoil<-min(evapRes[[2]], (state[["SWC_rz"]]))
@@ -150,7 +150,7 @@ if (pseudo==F){
     state[["GPP"]] <- GPP * scaleSW
     state[["NPP"]] <- NPP * scaleSW
     state[c("RainIntcptn", "netRad", "CanCond", "Etransp", "CanTransp", 
-            "Transp", "EvapTransp", "excessSW", "scaleSW","rz_nrz_recharge","excessSW_nr")] <- c(RainIntcptn, 
+            "Transp", "EvapTransp", "excessSW", "scaleSW","rz_nrz_recharge","excessSW_nr")] <- c(rIntercptEvap, 
                                                                  netRad, CanCond, Etransp, CanTransp, Transp, EvapTransp, 
                                                                  rz_nrz_drain, scaleSW,rz_nrz_recharge,nrz_out_drain)
     return(state)

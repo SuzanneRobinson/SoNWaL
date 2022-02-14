@@ -18,12 +18,8 @@ function (state, parms, cod.pred, month) #leafgrow and leaffall from parms, curr
     #Wl <- state[["Wl"]]
  
     
-    ############Defoliation mod ############ 
-   # defol<-if(round(t) %% parms[["tempMod"]]==0) parms[["rainMod"]] else 1
     SLA <- SLA1 + (SLA0 - SLA1) * exp(-log(2) * (t/tSLA)^2)
     LAI <- Wl * SLA * 0.1 
-    #########not permenant!!!!##############
-  #  LAI<-LAI*defol
 
     fracBB <- fracBB1 + (fracBB0 - fracBB1) * exp(-log(2) * (t/tBB))
     Ww <- Wsbr * (1 - fracBB)

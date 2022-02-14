@@ -76,7 +76,7 @@ createPriors_sitka<-function(sitka,sd=F){
       0.6,#satPoint
       1,#K_s
       4,#V_nr
-      3,#sigma_zR
+      1,#sigma_zR
       2,#E_S1
       2,#E_S2
       6, #shared_area
@@ -241,48 +241,48 @@ createPriors_pine<-function(pine,sd=F){
     0.3,#satPoint
     0.05, #K_s
     0.3, #V_nr
-    0.2, #sigma_zR
+    0.1, #sigma_zR
     0.0001, #E_S1
     0.001, #E_S2
-    2, #shared_area
-    0.3, #maxRootDepth
+    1, #shared_area
+    0.2, #maxRootDepth
     0.05, #K_drain
-    0.588503613257886, #pFS2
-    0.752929538228874, #pFS20
-    0.956131627577964, #aS
-    0.050456035523466, #nS
-    0.384021499609213, #pRx
-    0.250229439327847, #pRn
-    0.57408236899746, #gammaFx
-    0.909666760291794, #gammaF0
-    0.853276910139941, #tgammaF
-    0.974961101217424, #Rttover
-    1, #mF
-    0.636422367959785, #mR
-    0.732916669791679, #mS
-    0.443930919848964, #SLA0
-    0.741758519667562, #SLA1
-    0.816463641720414, #tSLA
-    0.221779786451702, #alpha
-    0.303779963365252, #Y
-    1, #m0
-    0.00141038795075, #MaxCond
-    0.730688961031379, #LAIgcx
-    0.899808741360758, #CoeffCond
-    0.024817372196732, #BLcond
-    0.99632339563598, #Nf
-    0.996373181003088, #Navm
-    0.999649942946159, #Navx
-    0.996388219783102, #klmax
-    0.998203040988276, #krmax
-    0.998245174258832, #komax
-    0.97983098579238, #hc
-    0.913069476259938, #qir
-    0.961283723717706, #qil
-    0.950056672692535, #qh
-    0.893875965852296, #qbc
-    0.991080780202615, #el
-    0.990457295759556, #er
+    0.4, #pFS2
+    0.2, #pFS20
+    0.01, #aS
+    2, #nS
+    0.4, #pRx
+    0.2, #pRn
+    0.02, #gammaFx
+    0.0005, #gammaF0
+    40, #tgammaF
+    0.003, #Rttover
+    0.1, #mF
+    0.1, #mR
+    0.1, #mS
+    4, #SLA0
+    3, #SLA1
+    4, #tSLA
+    0.03, #alpha
+    0.43, #Y
+    0.001, #m0
+    0.02, #MaxCond
+    2.5, #LAIgcx
+    0.01, #CoeffCond
+    0.1, #BLcond
+    0.001, #Nf
+    0.001, #Navm
+    4, #Navx
+    0.009, #klmax
+    0.001, #krmax
+    0.0001, #komax
+    0.1, #hc
+    90, #qir
+    10, #qil
+    10, #qh
+    1, #qbc
+    0.1, #el
+    0.1, #er
     0.1,
     2,
     -95,
@@ -300,48 +300,48 @@ createPriors_pine<-function(pine,sd=F){
       0.6,#satPoint
       1,#K_s
       4,#V_nr
-      3,#sigma_zR
+      1,#sigma_zR
       2,#E_S1
       2,#E_S2
       6, #shared_area
-      4, #maxRootDepth
+      1.5, #maxRootDepth
       1, #K_drain
-      0.573973679288588,#pFS2
-      0.235352308855631,#pFS20
-      1.86098081013281,#aS
-      0.374136113325978,#nS
-      0.231957000781575,#pRx
-      0.56202200140032,#pRn
-      3.45793787115991,#gammaFx
-      1.30349761255926,#gammaF0
-      0.600615525746093,#tgammaF
-      0.251944939128821,#Rttover
-      0.768680943537667,#mF
-      0.817888160201076,#mR
-      0.335416651041606,#mS
-      0.668207240453109,#SLA0
-      0.549448881994627,#SLA1
-      0.835363582795864,#tSLA
-      0.03762695139773,#alpha
-      0.218385064110809,#Y
-      0.917925202458998,#m0
-      2.5949226033773,#MaxCond
-      1.15448831174897,#LAIgcx
-      0.001912586392424,#CoeffCond
-      5.82627839462287,#BLcond
-      6.35320872803933,#Nf
-      2.62681899691161,#Navm
-      2.50057053840858,#Navx
-      2.61178021689853,#klmax
-      0.796959011723578,#krmax
-      0.754825741168422,#komax
-      1.01690142076198,#hc
-      0.738610474801243,#qir
-      0.935813814114711,#qil
-      0.498299819223935,#qh
-      1.12248068295408,#qbc
-      0.783843959477034,#el
-      0.90854084808886, #er
+      1,#pFS2
+      1,#pFS20
+      0.25,#aS
+      3,#nS
+      1,#pRx
+      0.4,#pRn
+      0.03,#gammaFx
+      0.0025,#gammaF0
+      110,#tgammaF
+      0.16,#Rttover
+      0.5,#mF
+      0.5,#mR
+      0.5,#mS
+      9,#SLA0
+      6,#SLA1
+      8,#tSLA
+      0.06,#alpha
+      0.49,#Y
+      1,#m0
+      0.03,#MaxCond
+      4,#LAIgcx
+      0.2,#CoeffCond
+      0.4,#BLcond
+      2,#Nf
+      0.5,#Navm
+      15,#Navx
+      0.1,#klmax
+      0.05,#krmax
+      0.01,#komax
+      0.4,#hc
+      600,#qir
+      60,#qil
+      50,#qh
+      20,#qbc
+      0.6,#el
+      0.6, #er
       0.6,
       6,
       -5,
@@ -352,13 +352,10 @@ createPriors_pine<-function(pine,sd=F){
       500
     )
   
-  ##Need to check what priors we are using!
-  pMaxima <- as.vector(unlist(pine[nm])*(1+(f.increase)))
-  pMinima <- as.vector(unlist(pine[nm])*(1-(f.decrease)))
-  pValues <- as.vector(unlist(pine[nm]))
+  pValues <- as.vector(unlist(sitka[nm]))
   
-  pMaxima[1:11] <- f.increase[1:11]
-  pMinima[1:11] <- f.decrease[1:11]
+  pMaxima <- f.increase*1.5
+  pMinima<- f.decrease*0.5
   
   pMaxima[[30]]<-0.5
   pMinima[[31]]<-0.01
@@ -372,10 +369,9 @@ createPriors_pine<-function(pine,sd=F){
   pMaxima[[34]]<-0.3
   pMinima[[34]]<-0.01
   
-  sdVals<-(pMaxima-pMinima)*0.6
-  #ES1 and 2 on very different scales so set manually
+  sdVals<-(pMaxima-pMinima)*0.8
+  #some manual adjustments
   sdVals[5]<-2
-  
   sdVals[7]<-15
   sdVals[8]<-15
   pValues[7]<-10
@@ -403,16 +399,6 @@ createPriors_pine<-function(pine,sd=F){
   sdVals[[21]]<-0.02
   
   sdVals[[53]]<-0.03
-  
-  pMaxima[[54]]<-350
-  pMinima[[54]]<-1
-  sdVals[[54]]<-100
-  pValues[[52]]<-50
-  
-  pMaxima[[55]]<-5000
-  pMinima[[55]]<-10
-  sdVals[[55]]<-2000
-  pValues[[55]]<-2000
   
   
   pMaxima[[21]]<-0.2
@@ -782,60 +768,65 @@ createPriors_sitka_rg_all_old<-function(sitka,sd=F,out){
 
 
 
-createPriors_sitka_rg_all<-function(sitka,sd=F,out){
+createPriors_sitka_rg_all<-function(paramList,sd=F,originalFit,makePlots=F){
   
-  codM<-as.data.frame(mergeChains(out$chain))[,-c(54:56)]
-  
-  
+  #firstly get the posterior values from the original harwood calibrations ("originalFit" is the harwood calibration)
+  codM<-as.data.frame(mergeChains(originalFit$chain))[,-c(54:56)] #remove the likelihood values
+  #add param names to dataframe
   colnames(codM)<- c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","shared_area","maxRootDepth","K_drain",
                      "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
                      "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
                      "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC")
+
   
-  codM$E_S1<-0.3
-  codM$E_S2<-0.6
-  #tight priors
+  #name the "tight" species specific priors - these will be based on the posteriors of the original harwood calibration
   nm_species<-c("sigma_zR"
                 ,"aS","nS","pRx","pRn","gammaFx",
                 "SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
                 "k","Qa","Qb","MaxIntcptn")
   
-
   
-  #loose priors
-  nm_site<-c(paste0("wiltPoint_Si",unique(sitka$weather$site)),
-             paste0("fieldCap_Si",unique(sitka$weather$site)),
-             paste0("satPoint_Si",unique(sitka$weather$site)),
-             paste0("K_s_Si",unique(sitka$weather$site)),
-             paste0("V_nr_Si",unique(sitka$weather$site)),
-             paste0("E_S1_Si",unique(sitka$weather$site)),
-             paste0("E_S2_Si",unique(sitka$weather$site)),
-             paste0("shared_area_Si",unique(sitka$weather$site)),
-             paste0("maxRootDepth_Si",unique(sitka$weather$site)),
-             paste0("K_drain_Si",unique(sitka$weather$site)),
-             paste0("startN_Si",unique(sitka$weather$site)),
-             paste0("startC_Si",unique(sitka$weather$site)),
+  #name priors that will be site specific or have wider distributions
+  #first set (ones with paste0) as site specific, essentially these are repeated and site names applied (i.e. there will be 13 wiltPoints_Si[siteName])
+  nm_site<-c(paste0("wiltPoint_Si",unique(paramList$weather$site)),
+             paste0("fieldCap_Si",unique(paramList$weather$site)),
+             paste0("satPoint_Si",unique(paramList$weather$site)),
+             paste0("K_s_Si",unique(paramList$weather$site)),
+             paste0("V_nr_Si",unique(paramList$weather$site)),
+             paste0("E_S1_Si",unique(paramList$weather$site)),
+             paste0("E_S2_Si",unique(paramList$weather$site)),
+             paste0("shared_area_Si",unique(paramList$weather$site)),
+             paste0("maxRootDepth_Si",unique(paramList$weather$site)),
+             paste0("K_drain_Si",unique(paramList$weather$site)),
+             paste0("startN_Si",unique(paramList$weather$site)),
+             paste0("startC_Si",unique(paramList$weather$site)),
+             #the next set are not site specific priors but are considered not to be species specific, so a single value is fit for all sites but with a 
+             #wide prior distribution
              "pFS2","pFS20","gammaF0","tgammaF","Rttover","mF","mR",
              "mS","Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0",
              "SWpower0")
   
+  #get a vector with the names for all priors
   nmAll<-c(nm_site,nm_species)
   
   
+  #define lower limit of priors for truncated gaussian distributions
   f.decrease_site <- c(
-    rep(0.06,length(unique(sitka$weather$site))), #wiltPoint
-    rep(0.1,length(unique(sitka$weather$site))), #fieldCap
-    rep(0.2,length(unique(sitka$weather$site))),#satPoint
-    rep(0.05,length(unique(sitka$weather$site))), #K_s
-    rep(0.3,length(unique(sitka$weather$site))), #V_nr
-    rep(0.03,length(unique(sitka$weather$site))), #E_S1
-    rep(0.2,length(unique(sitka$weather$site))), #E_S2
-    rep(1,length(unique(sitka$weather$site))), #shared_area
-    rep(0.2,length(unique(sitka$weather$site))), #maxRootDepth
-    rep(0.05,length(unique(sitka$weather$site))), #K_drain
-    rep(3,length(unique(sitka$weather$site))), #startN
-    rep(50,length(unique(sitka$weather$site))), #startC
+    #site specific priors
+    rep(0.06,length(unique(paramList$weather$site))), #wiltPoint
+    rep(0.1,length(unique(paramList$weather$site))), #fieldCap
+    rep(0.2,length(unique(paramList$weather$site))),#satPoint
+    rep(0.05,length(unique(paramList$weather$site))), #K_s
+    rep(0.3,length(unique(paramList$weather$site))), #V_nr
+    rep(0.03,length(unique(paramList$weather$site))), #E_S1
+    rep(0.2,length(unique(paramList$weather$site))), #E_S2
+    rep(1,length(unique(paramList$weather$site))), #shared_area
+    rep(0.2,length(unique(paramList$weather$site))), #maxRootDepth
+    rep(0.05,length(unique(paramList$weather$site))), #K_drain
+    rep(3,length(unique(paramList$weather$site))), #startN
+    rep(50,length(unique(paramList$weather$site))), #startC
     
+    #wide distribution priors
     0.4, #pFS2
     0.2, #pFS20
     0.0005, #gammaF0
@@ -845,6 +836,7 @@ createPriors_sitka_rg_all<-function(sitka,sd=F,out){
     0.1, #mR
     0.1, #mS
     
+    #species specific priors
     0.001, #Nf
     0.001, #Navm
     4, #Navx
@@ -863,20 +855,24 @@ createPriors_sitka_rg_all<-function(sitka,sd=F,out){
     
   )
   
+  #define upper limit of priors for truncated gaussian distributions
   f.increase_site <-
     c(
-      rep(0.35,length(unique(sitka$weather$site))),#wiltPoint
-      rep(0.4,length(unique(sitka$weather$site))),#fieldCap
-      rep(0.8,length(unique(sitka$weather$site))),#satPoint
-      rep(1,length(unique(sitka$weather$site))),#K_s
-      rep(4,length(unique(sitka$weather$site))),#V_nr
-      rep(1,length(unique(sitka$weather$site))),#E_S1
-      rep(1,length(unique(sitka$weather$site))),#E_S2
-      rep(6,length(unique(sitka$weather$site))), #shared_area
-      rep(2,length(unique(sitka$weather$site))), #maxRootDepth
-      rep(1,length(unique(sitka$weather$site))), #K_drain
-      rep(20,length(unique(sitka$weather$site))), #startN
-      rep(1200,length(unique(sitka$weather$site))), #startC
+      #site specific priors
+      rep(0.35,length(unique(paramList$weather$site))),#wiltPoint
+      rep(0.4,length(unique(paramList$weather$site))),#fieldCap
+      rep(0.8,length(unique(paramList$weather$site))),#satPoint
+      rep(1,length(unique(paramList$weather$site))),#K_s
+      rep(4,length(unique(paramList$weather$site))),#V_nr
+      rep(1,length(unique(paramList$weather$site))),#E_S1
+      rep(1,length(unique(paramList$weather$site))),#E_S2
+      rep(6,length(unique(paramList$weather$site))), #shared_area
+      rep(2,length(unique(paramList$weather$site))), #maxRootDepth
+      rep(1,length(unique(paramList$weather$site))), #K_drain
+      rep(20,length(unique(paramList$weather$site))), #startN
+      rep(1200,length(unique(paramList$weather$site))), #startC
+      
+      #wide distribution priors
       1,#pFS2
       1,#pFS20
       0.0025,#gammaF0
@@ -886,6 +882,7 @@ createPriors_sitka_rg_all<-function(sitka,sd=F,out){
       0.5,#mR
       0.5,#mS
       
+      #species specific priors
       2,#Nf
       0.5,#Navm
       15,#Navx
@@ -906,60 +903,78 @@ createPriors_sitka_rg_all<-function(sitka,sd=F,out){
     )
   
   
-  #site priors
-  pValues_site<-as.vector(miscTools::colMedians(codM[ sub("_Si.*", "", nm_site)]))
+  codM$E_S1<-0.3
+  codM$E_S2<-0.6
+  
+  #get the mode from the original harwood fit to define the mode of the new site specific and wide dist. priors
+  pValues_site<-as.vector(sapply(codM[sub("_Si.*", "", nm_site)],DescTools::Mode))
+  #set upper and lower limits
   pMaxima_site <- as.vector(f.increase_site)
   pMinima_site<- as.vector(f.decrease_site)
+  #set SD - currently using difference between upper and lower limits of the prior *2.5, 
+  #this gives a prior specific SD value that leads to wide gaussian dist. - essentially they are almost uniform priors
   sdVals_site<-as.vector((pMaxima_site-pMinima_site)*2.5)
-  #add sd for es1 and es2 as these were not originally fitted vals
+  #add sd for es1 and es2 as these were not originally fixed params
   sdVals_site[66:91]<-0.2
   
   #species priors
-  pValues_species<-as.vector(miscTools::colMedians(codM[nm_species]))
-  sdVals_species<-as.vector(0.5*matrixStats::colSds(as.matrix(codM[c("sigma_zR"
+  #get mode from original cals
+  pValues_species<-as.vector(sapply(codM[nm_species],DescTools::Mode))
+  #use SD from original marginal posteriors
+  sdVals_species<-as.vector(matrixStats::colSds(as.matrix(codM[c("sigma_zR"
                                                            ,"aS","nS","pRx","pRn","gammaFx",
                                                            "SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
                                                            "k","Qa","Qb","MaxIntcptn")])))
+  
+  #set upper and lower limits of the truncated pior as +/-50% (this is generally much higher than the tails of the posterior distribution, 
+  #so distributions should be as in the calibration)
+  #but makes life easier if all values can be put into the same trunctated normal dist creation function which requires upper and lower limits
   pMaxima_species <- as.vector(pValues_species*1.5)
   pMinima_species<- as.vector(pValues_species*0.5)
   
-  #these need swapping as negative values
+  #the values for this prior need swapping as negative values
   QaMax<-pMaxima_species[18]
   QaMin<-pMinima_species[18]
   pMaxima_species[18]<-QaMin
   pMinima_species[18]<-QaMax
   
+  #create priors
   priorVals <- createTruncatedNormalPrior(mean = c(pValues_site,pValues_species), sd=c(sdVals_site,sdVals_species),
                                           lower = c(pMinima_site,pMinima_species), upper = c(pMaxima_site,pMaxima_species))
   
   
   
-  nmAllred<-unique(sub("_Si.*", "", nmAll))
-  prDatB<-data.frame(names=nmAll,mean = c(pValues_site,pValues_species), sd=c(sdVals_site,sdVals_species),
-                    lower = c(pMinima_site,pMinima_species), upper = c(pMaxima_site,pMaxima_species))
-  prDatB$names<-sub("_Si.*", "", prDatB$names)
-  prDatB<-prDatB[!duplicated(prDatB$names),]
+##Ignore this part - just for quickly plotting all the priors
+  if(makePlots==T){
+ nmAllred<-unique(sub("_Si.*", "", nmAll))
+ prDatB<-data.frame(names=nmAll,mean = c(pValues_site,pValues_species), sd=c(sdVals_site,sdVals_species),
+                   lower = c(pMinima_site,pMinima_species), upper = c(pMaxima_site,pMaxima_species))
+ prDatB$names<-sub("_Si.*", "", prDatB$names)
+ prDatB<-prDatB[!duplicated(prDatB$names),]
+ 
+ priorValsX <- createTruncatedNormalPrior(mean = prDatB$mean, sd=prDatB$sd,
+                                        lower = prDatB$lower, upper =prDatB$upper)
+
+priPlotFunc<-function(prDatBS){
+  pp<-createTruncatedNormalPrior(mean = prDatBS$mean, sd=prDatBS$sd,
+                             lower = prDatBS$lower, upper =prDatBS$upper)
   
-  priorValsX <- createTruncatedNormalPrior(mean = prDatB$mean, sd=prDatB$sd,
-                                          lower = prDatB$lower, upper =prDatB$upper)
+  ppDat<-data.frame(pp=(pp$sampler(10000)))
+return(
+  ggplot(data=ppDat,aes(pp))+
+    geom_histogram(bins=50,col="black")+
+    ggtitle(paste0(prDatBS$names,"10k prior samps"))
+)
   
-# priPlotFunc<-function(prDatBS){
-#   pp<-createTruncatedNormalPrior(mean = prDatBS$mean, sd=prDatBS$sd,
-#                              lower = prDatBS$lower, upper =prDatBS$upper)
-#   
-#   ppDat<-data.frame(pp=(pp$sampler(1000)))
-# return(
-#   ggplot(data=ppDat,aes(pp))+
-#     geom_histogram(bins=50,col="black")+
-#     ggtitle(paste0(prDatBS$names,"10k prior samps"))
-# )
-#   
-# }
-# prDatBX<-split(prDatB,seq(nrow(prDatB)))
-# 
-# plots<-lapply(prDatBX,priPlotFunc)
+}
+prDatBX<-split(prDatB,seq(nrow(prDatB)))
+
+plots<-lapply(prDatBX,priPlotFunc)
+
+ggarrange(plotlist=plots)
+}
   
-  
-  ifelse(sd==F,return(priorValsX),return(sdVals))
+  #return prior vals (or for report markdown script tables the sd vals)
+  ifelse(sd==F,return(priorVals),return(c(sdVals_site,sdVals_species)))
   
 }

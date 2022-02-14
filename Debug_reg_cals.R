@@ -45,116 +45,86 @@ clm_df_reg<-clm_df_reg%>%group_by(site,Year,week)%>%summarise(Year=median(Year),
 #clm_df_full<-data.frame(getClimDatX(timeStep,climDir))%>%
 #  filter(Year<2019)
 
-bMarkDat<-read.csv("Data/bMarkCalibrationData.csv")
-bMarkDat2<-bMarkDat[,c(1,5:11,19)]
+
+bMarkDat<-read.csv("data/bMarkCalibrationData.csv")
+bMarkDat2<-bMarkDat[,c("SiteIdentification", "YieldClass","elevation","StemsPerHa","Height","Thinning",          
+                      "SoilMoistureRegime", "SoilNutrientRegime" ,"plantingYear" )]
 bMarkDat2<-unique(bMarkDat2)
-bMarkDat<-bMarkDat[,c(1,12:18)]
+bMarkDat<-bMarkDat[,c("SiteIdentification", "Year","mean_dbh_cm","dbhSD_cm","lon","lat")]
 
 clm_df_reg<-merge(clm_df_reg,bMarkDat2,by.x="site",by.y="SiteIdentification",all=T)
 clm_df_reg<-merge(clm_df_reg,bMarkDat,by.x=c("site","Year"),by.y=c("SiteIdentification","Year"),all=T)
 
 clm_df_full<-clm_df_reg
 
+paramList<-getParms(
+  waterBalanceSubMods=ifelse(args[4]=="T",TRUE,FALSE), timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
+paramList$weather<-clm_df_reg
 
-priorVals<-createPriors_sitka_rg(sitka)
+priorVals<-createPriors_sitka_rg(paramList)
 
   
   runModReg<-function(g,dg=T){
-    paramList<-sitka
-    siteSoil<-group_by(paramList$weather,site)%>%summarise(nutrients=median(SoilNutrientRegime))
-    
 
+    nm_all<-c(paste0("wiltPoint_Si",unique(paramList$weather$site)),
+              paste0("fieldCap_Si",unique(paramList$weather$site)),
+              paste0("satPoint_Si",unique(paramList$weather$site)),
+              paste0("K_s_Si",unique(paramList$weather$site)),
+              paste0("V_nr_Si",unique(paramList$weather$site)),
+              paste0("E_S1_Si",unique(paramList$weather$site)),
+              paste0("E_S2_Si",unique(paramList$weather$site)),
+              paste0("shared_area_Si",unique(paramList$weather$site)),
+              paste0("maxRootDepth_Si",unique(paramList$weather$site)),
+              paste0("K_drain_Si",unique(paramList$weather$site)),
+              paste0("startN_Si",unique(paramList$weather$site)),
+              paste0("startC_Si",unique(paramList$weather$site)),
+              "pFS2","pFS20","gammaF0","tgammaF","Rttover","mF","mR",
+              "mS","Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0",
+              "SWpower0","sigma_zR"
+              ,"aS","nS","pRx","pRn","gammaFx",
+              "SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
+              "k","Qa","Qb","MaxIntcptn")
       
       
-   plotRes<-function(gx,sY,eY,dg){
-        sitka[.GlobalEnv$nm[-45]]<-gx[nm[-45]]
-        sitka$weather<-filter(sitka$weather,site==gx$site)
-        sitka$weather<-filter(sitka$weather,Year>=sY&Year<=eY)
-        
-        sitka$startC <- sitka$startC * ifelse(gx$nutrients=="Poor",1, gx$poorSoilMod)
-        sitka$startN <- sitka$startN * ifelse(gx$nutrients=="Poor",1, gx$poorSoilMod)
-        
-        
-        if(sitka$weather$soilDepth[1]==1){ 
-          sitka$V_nr<- 0.25
-          sitka$maxRootDepth<- 0.25
-        }
-        
-        if(sitka$weather$soilDepth[1]==2){
-          sitka$V_nr<- 0.5
-          sitka$maxRootDepth<- 0.5
-        }
-        if(sitka$weather$soilDepth[1]==3){
-          sitka$V_nr<- 0.8
-          sitka$maxRootDepth<- 0.8
-        }
-        if(sitka$weather$soilDepth[1]==4){
-          sitka$V_nr<- 1
-          sitka$maxRootDepth<- 1
-        }
-        if(sitka$weather$soilDepth[1]==5){
-          sitka$V_nr<- 1.5
-          sitka$maxRootDepth<- 1.5
-        }
-        
-        if(sitka$weather$soilTex[1]!=0){
-          sitka$wiltPoint<-sitka$weather$wp[1]
-          sitka$fieldCap<-sitka$weather$fc[1]
-          sitka$satPoint<-sitka$weather$sp[1]
-          sitka$K_s<-sitka$weather$soilCond[1]
-          sitka$K_drain<-sitka$weather$soilCond[1]
-        }
-        if(sitka$weather$soilTex[1]==1) {
-          sitka$E_S1<-0.05
-          sitka$E_S2<-0.3
-          sitka$SWpower0<-8
-          sitka$SWconst0<-0.65
-        }
-        
-        if(sitka$weather$soilTex[1]==0) {
-          sitka$E_S1<-0.05
-          sitka$E_S2<-0.3
-          sitka$SWpower0<-8
-          sitka$SWconst0<-0.65
-        }
-        
-        if(is.na(sitka$weather$soilTex[1])==T)  {
-          sitka$E_S1<-0.05
-          sitka$E_S2<-0.3
-          sitka$SWpower0<-8
-          sitka$SWconst0<-0.65
-        }
-        
-        if(sitka$weather$soilTex[1]==4)  {
-          sitka$E_S1<-0.1
-          sitka$E_S2<-0.3
-          sitka$SWpower0<-5
-          sitka$SWconst0<-0.5
-        }
-        
-        
-        if(sitka$weather$soilTex[1]==9) {
-          sitka$E_S1<-0.3
-          sitka$E_S2<-0.6
-          sitka$SWpower0<-5
-          sitka$SWconst0<-0.5
-        }
-        sitka$weather<-filter(sitka$weather,Year>=sitka$weather$plantingYear[1])
-        
-        output<-   do.call(fr3PGDN,sitka)
+   plotRes<-function(newParams,sY,eY,dg,nm_all,paramListX){
+     
+     #update parameter list with site specific params proposals
+     siteSpecNm<-c(nm_all[grepl(paste0("\\_Si",newParams$site), nm_all)],
+                   nm_all[!grepl("\\_Si", nm_all)])
+     fitNm<-sub("_Si.*", "",siteSpecNm)
+     
+     
+     paramListX[fitNm] <- newParams[siteSpecNm]
+     #filter paramList$weather dataframe by site
+     paramListX$weather <- filter(paramListX$weather, site == newParams$site)
+     #get observed values (also contained in paramListX$weather dataframe) for site being fitted
+     observed <-
+       filter(paramListX$weather, is.na(mean_dbh_cm) == F) %>% group_by(Year) %>% summarise(dbh =
+                                                                                              median(mean_dbh_cm),
+                                                                                            dbhSD = median(dbhSD_cm))
+     observed$dbhSD <-
+       ifelse(observed$dbhSD == 0, 0.0001, observed$dbhSD)
+     sY = min(observed$Year)
+     eY = max(observed$Year)
+     
+     #filter climate data by planting year so model runs from planting year
+     paramListX$weather <-
+       filter(paramListX$weather, Year >= paramListX$weather$plantingYear[1])
+     
+     #run model
+     output <- do.call(fr3PGDN, paramListX)
         if(dg==T) return(output%>%filter(Year>=sY&Year<=eY)%>%group_by(Year)%>%summarise(dg=mean(dg))) else return(output%>%filter(Year>=sY&Year<=eY)%>%group_by(Year,Month)%>%summarise(dg=mean(GPP)))
 
    }
    
-   observed<-sitka$weather%>%filter(site==g$site[1])%>%filter(is.na(mean_dbh_cm)==F)%>%group_by(Year)%>%summarise(dbh=median(mean_dbh_cm),dbhSD=median(dbhSD_cm))
+   observed<-paramList$weather%>%filter(site==g$site[1])%>%filter(is.na(mean_dbh_cm)==F)%>%group_by(Year)%>%summarise(dbh=median(mean_dbh_cm),dbhSD=median(dbhSD_cm))
    observed$dbhSD<-ifelse(observed$dbhSD==0,0.0001,observed$dbhSD)
    sY=min(observed$Year)
    eY=max(observed$Year)
-   
-   g<-merge(g,siteSoil,by.x="site",by.y="site")
+  
    
    gx<-split(g,seq(nrow(g)))
-   ff<-mapply(plotRes,gx,MoreArgs = list(sY=sY,eY=eY,dg=dg),SIMPLIFY = F)
+   ff<-mapply(plotRes,gx,MoreArgs = list(sY=sY,eY=eY,dg=dg,nm_all=nm_all,paramListX=paramList),SIMPLIFY = F)
    
    getIntv<-function(paramName,modLst){
      simDat =   do.call(cbind,lapply(modLst, "[",  paramName))
@@ -172,6 +142,7 @@ priorVals<-createPriors_sitka_rg(sitka)
    observed$low  <- intvsS[,1]$`11%`# - observed$dbhSD
    observed$med  <- intvsS[,1]$`50%`# - 2 * 0.3
    
+
   res<- ggplot(data=observed)+
     geom_point(aes(y=dbh,x=Year))+
     geom_errorbar(aes(y=dbh,x=Year,ymin=dbh-dbhSD, ymax=dbh+dbhSD), width=.2,
@@ -184,19 +155,19 @@ priorVals<-createPriors_sitka_rg(sitka)
      res<-ggplot(data=simul)+
        geom_line(aes(y=med,x=Date))+
        geom_ribbon(aes(ymax=high,ymin=low,x=Date),alpha=0.3)+
-       ylab("GPP")
+       ylab("LAI")
    }
         return(res)
   }
   
   
-  out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_15_T.RDS")
+  out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_24_T.RDS")
   nmc<-nrow(out$chain[[1]])
   outSample   <- as.data.frame(getSample(out,start=round(nmc/1.1),thin=1,numSamples = 10))
-  sitka<-getParms(
+  paramList<-getParms(
     waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
-  sitka$weather<-clm_df_reg
-  siteLst<-(unique(sitka$weather$site))
+  paramList$weather<-clm_df_reg
+  siteLst<-(unique(paramList$weather$site))
   outSampleX<-outSample[rep(seq_len(nrow(outSample)), length(siteLst)), ]
   outSampleX$site<-rep(siteLst,each=nrow(outSample))
   
@@ -209,10 +180,10 @@ priorVals<-createPriors_sitka_rg(sitka)
         "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC")
   names(codM)<-nm
   #get parameter values and observed data
-  sitka<-getParms(
+  paramList<-getParms(
     waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
-  sitka$weather<-clm_df_reg
-  sitka[nm]<-codM[nm]
+  paramList$weather<-clm_df_reg
+  paramList[nm]<-codM[nm]
   
   nm<-c("sigma_zR","shared_area",
         "Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","startN","startC")
@@ -226,8 +197,53 @@ priorVals<-createPriors_sitka_rg(sitka)
   
   g <- split(outSampleX,outSampleX$site)
 
+  library(future.apply)
+  plan(multisession)
   
-    g2<-mapply( runModReg,g[c(1:13)],MoreArgs = list(dg=F),SIMPLIFY = F)
+    g2<-future_mapply( runModReg,g[c(1:3)],MoreArgs = list(dg=T),SIMPLIFY = F)
 
     ggarrange(g2$`2013`,g2$`2042`,g2$`2191`,g2$`4301`,g2$`461`,g2$`6619`,g2$`7643`,g2$`9004`,g2$`9008`,g2$EXM7,g2$EXM7,g2$FERN,g2$QUA6)
+    
+    
+
+      #concatonate chains
+    nm_all<-c(paste0("wiltPoint_Si",unique(paramList$weather$site)),
+              paste0("fieldCap_Si",unique(paramList$weather$site)),
+              paste0("satPoint_Si",unique(paramList$weather$site)),
+              paste0("K_s_Si",unique(paramList$weather$site)),
+              paste0("V_nr_Si",unique(paramList$weather$site)),
+              paste0("E_S1_Si",unique(paramList$weather$site)),
+              paste0("E_S2_Si",unique(paramList$weather$site)),
+              paste0("shared_area_Si",unique(paramList$weather$site)),
+              paste0("maxRootDepth_Si",unique(paramList$weather$site)),
+              paste0("K_drain_Si",unique(paramList$weather$site)),
+              paste0("startN_Si",unique(paramList$weather$site)),
+              paste0("startC_Si",unique(paramList$weather$site)),
+              "pFS2","pFS20","gammaF0","tgammaF","Rttover","mF","mR",
+              "mS","Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0",
+              "SWpower0","sigma_zR"
+              ,"aS","nS","pRx","pRn","gammaFx",
+              "SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
+              "k","Qa","Qb","MaxIntcptn","llp","ll","pp")
+    
+    mChains<- as.data.frame((out$chain[[1]]))
+     names(mChains)<-nm_all
+    concChains<-mChains %>% 
+       pivot_longer(cols = starts_with(c("wiltPoint","fieldCap","satPoint","K_s","V_nr","E_S1",
+                                         "E_S2","shared_area","maxRootDepth",
+                                         "K_drain","startN","startC")), 
+                    names_to = c(".value", "wpKey"), names_sep = "_Si") %>% 
+       select(-wpKey)
+    
+    gpL<-list()  
+for(i in c(1:ncol(concChains))){
+  
+concTmp<-data.frame(cc=concChains[i])
+names(concTmp)<-"cc"
+gpL[[i]]<-ggplot(data=concTmp,aes(cc))+
+    geom_histogram(bins=100,col="black")+
+  xlab(names(concChains[i]))
+
+}    
+    ggarrange(plotlist=gpL)
     

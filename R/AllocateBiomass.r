@@ -146,7 +146,14 @@ function (state, site, parms, weather) #requires weather too for current month, 
       t <- state[["t"]]
       Littfall <- gammaFx * gammaF0/(gammaF0 + (gammaFx - gammaF0) * 
                                        exp(-12 * log(1 + gammaFx/gammaF0) * t/tgammaF))
-      difLitter <- Littfall * Wl
+      
+      ########defoliation mod###########
+      #defol<-if(round(t) %% parms[["tempMod"]]==0) parms[["rainMod"]] else 0
+#      defol<-ifelse(defol==1,0,defol)
+   #   losst<-(defol/52)
+      
+     ##################################
+      difLitter <- (Littfall * Wl)
       state[["Wlitt"]] <- state[["Wlitt"]] + difLitter
       #For root turnover:
       Wr <- state[["Wr"]]

@@ -2,7 +2,7 @@
 library(rlang)
 
 runModel<- function(p){
-  pine[.GlobalEnv$nm]<-p
+  pine[.GlobalEnv$nm]<-p[nm]
   pull(do.call(fr3PGDN,pine)%>%
     filter(Year>=1996)%>%
      group_by(Year,Month) %>%
@@ -15,7 +15,7 @@ plotResultsPine <- function(outP,ShortTS=F){
   library(matrixStats)
   nmc = nrow(outP$chain[[1]])
   outSample   <- getSample(outP,start=nmc/1.2,thin=1)
-  numSamples = 25# min(1000, nrow(outSample))
+  numSamples = 100# min(1000, nrow(outSample))
   codM<-miscTools::colMedians(as.data.frame(outSample))
   pine[.GlobalEnv$nm]<-codM[.GlobalEnv$nm]
   df<-do.call(fr3PGDN,pine)
@@ -51,7 +51,7 @@ plotResultsPine <- function(outP,ShortTS=F){
     pine<-getParmsPine(waterBalanceSubMods=T, timeStp = 52)
     presc<-data.frame(cycle=c(1,1,1),t=c(15,25,35),pNr=c(0.4,0.3,0.075),thinWl=c(0.4,0.3,0.075),
                       thinWsbr=c(0.4,0.3,0.075),thinWr=c(0.4,0.3,0.075),t.nsprouts=c(1,1,1))
-    pine[.GlobalEnv$nm]<-p
+    pine[.GlobalEnv$nm]<-p[nm]
     pine$presc<-presc
     res<- do.call(fr3PGDN,pine)%>%
       filter(Year>=1996)%>%
@@ -69,7 +69,7 @@ plotResultsPine <- function(outP,ShortTS=F){
   }
   
   
-  outSample<-getSample(outP,start=nmc/1.2,thin=1,numSamples = 100)
+  outSample<-getSample(outP,start=round(nmc/1.2),numSamples = 50)
   outSample<-as.data.frame(outSample)
   outSample <- split(outSample, seq(nrow(outSample)))
   outRes<-lapply(outSample, runModel)

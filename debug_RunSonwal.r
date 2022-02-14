@@ -21,7 +21,6 @@ timeStep<-"weekly"
 #Directory where climate data is stored (default is "data" in SonWal folder)
 climDir<-("Data/")
 
-
 ## read in and format climate data
 clm_df_full<-data.frame(getClimDatX(timeStep,climDir))%>%
   filter(Year<2019)
@@ -199,3 +198,20 @@ hazprecip <- quantile(annualPrecip$annual_precip,0.1)
 #' # Expected loss of GPP 
 inpt   <- tibble(strtyr=c(1985,1995,2005,2015),endyr=c(1988,1998,2008,2018))
 riskdf <- purrr::map2_df(inpt$strtyr,inpt$endyr,calc_risk,df=annualPrecip,hazval=hazprecip)
+
+ff$date<-seq(ymd('2014-12-24'),ymd('2019-01-14'), by = 'weeks')
+eV<-ff%>%
+  mutate(soilEvap=potentialEvap/(Transp+potentialEvap+RainIntcptn),
+         interceptedRain=RainIntcptn/(Transp+potentialEvap+RainIntcptn),
+         transpiration=Transp/(Transp+potentialEvap+RainIntcptn))%>%
+  select(soilEvap,interceptedRain,transpiration,t,date)%>%
+  pivot_longer(cols=c(soilEvap,interceptedRain,transpiration))
+
+
+library(ggdark)
+ggplot(data=eV)+
+  geom_line(aes(x=date,y=value,col=name),size=1,alpha=0.7)+
+  dark_theme_dark()+
+  ylab("fraction lost")+
+  labs(col="Water Loss")+
+  scale_color_viridis_d(option="F")

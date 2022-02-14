@@ -833,8 +833,6 @@ NLL_Reg_mp<- function(px){
 
 
 
-
-
 ## Likelihood function
 #function relies on the parameter list (paramList) defined at the submission of the mcmc, this list is what is submitted to the model run function to run SoNWal
 #it contains elements for each parameter to be updated from the MCMC chain proposals
@@ -848,18 +846,18 @@ NLL_Reg_sitka_mixedP <- function(p) {
     data.frame(p) else
       data.frame(t(p))
 
-  nm_all<-c(paste0("wiltPoint_Si",unique(sitka$weather$site)),
-             paste0("fieldCap_Si",unique(sitka$weather$site)),
-             paste0("satPoint_Si",unique(sitka$weather$site)),
-             paste0("K_s_Si",unique(sitka$weather$site)),
-             paste0("V_nr_Si",unique(sitka$weather$site)),
-             paste0("E_S1_Si",unique(sitka$weather$site)),
-             paste0("E_S2_Si",unique(sitka$weather$site)),
-             paste0("shared_area_Si",unique(sitka$weather$site)),
-             paste0("maxRootDepth_Si",unique(sitka$weather$site)),
-             paste0("K_drain_Si",unique(sitka$weather$site)),
-             paste0("startN_Si",unique(sitka$weather$site)),
-             paste0("startC_Si",unique(sitka$weather$site)),
+  nm_all<-c(paste0("wiltPoint_Si",unique(paramList$weather$site)),
+             paste0("fieldCap_Si",unique(paramList$weather$site)),
+             paste0("satPoint_Si",unique(paramList$weather$site)),
+             paste0("K_s_Si",unique(paramList$weather$site)),
+             paste0("V_nr_Si",unique(paramList$weather$site)),
+             paste0("E_S1_Si",unique(paramList$weather$site)),
+             paste0("E_S2_Si",unique(paramList$weather$site)),
+             paste0("shared_area_Si",unique(paramList$weather$site)),
+             paste0("maxRootDepth_Si",unique(paramList$weather$site)),
+             paste0("K_drain_Si",unique(paramList$weather$site)),
+             paste0("startN_Si",unique(paramList$weather$site)),
+             paste0("startC_Si",unique(paramList$weather$site)),
              "pFS2","pFS20","gammaF0","tgammaF","Rttover","mF","mR",
              "mS","Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0",
              "SWpower0","sigma_zR"
@@ -869,12 +867,9 @@ NLL_Reg_sitka_mixedP <- function(p) {
   
 
   names(px) <- nm_all
-  
-  
-  paramList<-sitka
-  
+
   #create vector of -Inf vals to return if the model run function fails
-  fail <- rep(-Inf, nrow(px))
+ # fail <- rep(-Inf, nrow(px))
   #Get list of site names from the paramList$weather dataframe
   siteLst <- (unique(paramList$weather$site))
   #Update dataframe with each chains proposed param values repeated for each site
@@ -890,13 +885,20 @@ NLL_Reg_sitka_mixedP <- function(p) {
   splitParams <- split(px, seq(nrow(px)))
 
   #update px dataframe with likelihood values for each site
-  px$ll <-
+  if(Sys.info()[1]!="Windows")
+    { px$ll <-
     do.call(rbind, mcmapply(runMod_mixedP,splitParams,MoreArgs = list(paramList,nm_all),SIMPLIFY = F, mc.cores = 15))
-  
+  }else{
+    px$ll <-
+      do.call(rbind, mapply(runMod_mixedP,splitParams,MoreArgs = list(paramList,nm_all),SIMPLIFY = F))
+  }
   #sum likelihood values by chain and return vector of likelihood values, one for each chain being run
-  NlogLik <-
+
+   NlogLik <-
     as.vector(px %>% group_by(chain) %>% summarise(ll = sum(ll)) %>%
                 pull(ll))
+
+  
   
   NlogLik[is.na(NlogLik)==T]<--Inf
   return(NlogLik)
@@ -926,6 +928,8 @@ runMod_mixedP <- function(newParams,paramListX,nm_all) {
       filter(paramListX$weather, is.na(mean_dbh_cm) == F) %>% group_by(Year) %>% summarise(dbh =
                                                                                              median(mean_dbh_cm),
                                                                                            dbhSD = median(dbhSD_cm))
+    observed_N <-paramListX$weather$StemsPerHa[1]
+    
     observed$dbhSD <-
       ifelse(observed$dbhSD == 0, 0.0001, observed$dbhSD)
     sY = min(observed$Year)
@@ -942,15 +946,17 @@ runMod_mixedP <- function(newParams,paramListX,nm_all) {
     modelled <-
       output %>% group_by(Year) %>% summarise(dg = mean(dg)) %>% filter(Year >=
                                                                           sY & Year <= eY)
+    modelled_N <-tail(output$N,1)
+      
     
     #run likelihood function of observed vs simulated and get liklelihood value
     ifelse(
       any(is.na(modelled) == T),
       -Inf,
       flogL(
-        data = observed$dbh,
-        sims = modelled$dg,
-        data_s = observed$dbhSD
+        data = c(observed$dbh,observed_N),
+        sims = c(modelled$dg,modelled_N),
+        data_s = c(observed$dbhSD,modelled_N*0.1)
       )
     )
   },
@@ -958,6 +964,8 @@ runMod_mixedP <- function(newParams,paramListX,nm_all) {
     #return -Inf if something goes wrong with param proposals
     return(-Inf)
   })
+  
+  res<-ifelse(max(output$LAI)>10,-Inf,res)
   return(res)
 }
 

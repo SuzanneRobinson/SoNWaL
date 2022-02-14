@@ -17,25 +17,26 @@ library("miscTools")
 library("parallel")
 library("sf")
 library("rgdal")
+library(raster)
 
 
-dataDir="/gws/nopw/j04/hydro_jules/data/uk/driving_data/chess/chess-met/daily"#Location of input data
-outputDir="/home/users/aaronm7/"#output file for bricked rasters
-saveFile="/home/users/aaronm7/spatialChunks/"#save file for spatial chunks of data
+data_dir="/gws/nopw/j04/hydro_jules/data/uk/driving_data/chess/chess-met/daily"#Location of input data
+output_dir="/home/users/aaronm7/"#output file for bricked rasters
+save_file="/home/users/aaronm7/spatialChunks/"#save file for spatial chunks of data
 
-outputDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\Prafor"
-dataDir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\Prafor\\models\\spatial_met_data\\CHESS\\daily"#Location of input data
-saveFile="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\Prafor\\spatialChunks\\"#save file for spatial chunks of data
-
-
+output_dir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\"
+data_dir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\Prafor\\models\\spatial_met_data\\CHESSscape\\daily"#Location of input data
+save_file="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\Prafor\\spatialChunks\\"#save file for spatial chunks of data
 
 
-spatSplitX(dataDir=dataDir,outputDir=outputDir,saveFile=saveFile,dates=1971:2018,numChunks=91)
+
+
+spatSplitXScape(data_dir=data_dir,output_dir=output_dir,save_file=save_file,dates=1960:2100,numChunks=c(1:31))
 #create chunks of approx 10,000 grid cells in parallel, saves to file
 #1:35 is approx scotland
-plan(multisession, workers = coreNum - 1)
+plan(multisession, workers = 8)
 
-future_map(c(1:2), ~spatDatUKnc(chunk=.x,outputDir,saveFile),.progress = T)
+future_map(c(31), ~spat_dat_UKnc(chunk=.x,output_dir,save_file),.progress = T)
 
 
 
