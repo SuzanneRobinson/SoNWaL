@@ -30,16 +30,16 @@ timeStep<-"weekly"
 climDir<-("Data/")
 
 clm_df_reg<-readRDS("Data/regionalClmDat.RDS")
-clm_df_reg$RH<-calcRH(Tmean=clm_df_reg$Tmean,Tref=273.16,p=clm_df_reg$psurf_pa,q=clm_df_reg$specHumid)
+clm_df_reg$RH<-relative_humidity_calc(Tmean=clm_df_reg$Tmean,Tref=273.16,p=clm_df_reg$psurf_pa,q=clm_df_reg$specHumid)
 clm_df_reg$VPD <-((( (0.61078 * exp(17.269 * (clm_df_reg$Tmean)/(237.3 + clm_df_reg$Tmean)))*(1-(clm_df_reg$RH)/100))))
 clm_df_reg<-data.frame(site=clm_df_reg$siteName, Year=clm_df_reg$year,week=week(clm_df_reg$date),Month=clm_df_reg$month,Tmax=clm_df_reg$Tmax,Tmin=clm_df_reg$Tmin,
                        Tmean=clm_df_reg$Tmean,Rain=clm_df_reg$precip_mm,SolarRad=clm_df_reg$solarRad_MJ,FrostDays=ifelse(clm_df_reg$Tmin<=0,1,0),MonthIrrig=0,VPD=clm_df_reg$VPD,RH=clm_df_reg$RH,rainDays=ifelse(clm_df_reg$precip_mm>=1,1,0),
-                       wp=clm_df_reg$wp,fc=clm_df_reg$fc,wp=clm_df_reg$wp,soilDepth=clm_df_reg$soilDepth,soilCond=clm_df_reg$soilCond,soilTex=clm_df_reg$soilTex)
+                       wp=clm_df_reg$wp,fc=clm_df_reg$fc,wp=clm_df_reg$wp,soil_depth=clm_df_reg$soil_depth,soilCond=clm_df_reg$soilCond,soilTex=clm_df_reg$soilTex)
 
 clm_df_reg<-clm_df_reg%>%group_by(site,Year,week)%>%summarise(Year=median(Year),week=median(week),Month=median(Month),
                                                               Tmax=max(Tmax),Tmin=min(Tmin),Tmean=mean(Tmean),Rain=sum(Rain),SolarRad=mean(SolarRad),
                                                               FrostDays=sum(FrostDays),MonthIrrig=0,VPD=mean(VPD),RH=mean(RH),rainDays=sum(rainDays),
-                                                              wp=median(wp),fc=median(fc),wp=median(wp),soilDepth=median(soilDepth),soilCond=median(soilCond),soilTex=median(soilTex))
+                                                              wp=median(wp),fc=median(fc),wp=median(wp),soil_depth=median(soil_depth),soilCond=median(soilCond),soilTex=median(soilTex))
 
 ## read in and format climate data
 #clm_df_full<-data.frame(getClimDatX(timeStep,climDir))%>%
