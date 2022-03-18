@@ -4,7 +4,7 @@ createPriors_sitka<-function(sitka,sd=F){
   nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
         "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
         "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC","Q10","Q10X","Topt","Nleach_r")
+        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC","kF")
   
   
   
@@ -22,40 +22,40 @@ createPriors_sitka<-function(sitka,sd=F){
     0.05, #K_drain
     0.4, #pFS2
     0.2, #pFS20
-    0.01, #aS
+    0.001, #aS
     2, #nS
     0.4, #pRx
     0.2, #pRn
-    0.02, #gammaFx
-    0.0005, #gammaF0
-    40, #tgammaF
-    0.003, #Rttover
-    0.1, #mF
+    0.008, #gammaFx
+    0.00005, #gammaF0
+    20, #tgammaF
+    0.001, #Rttover
+    0.001, #mF
     0.1, #mR
     0.1, #mS
     4, #SLA0
-    3, #SLA1
-    4, #tSLA
+    2, #SLA1
+    2, #tSLA
     0.03, #alpha
     0.43, #Y
     0.001, #m0
     0.02, #MaxCond
-    2.5, #LAIgcx
+    0.6, #LAIgcx
     0.01, #CoeffCond
-    0.1, #BLcond
-    0.001, #Nf
-    0.001, #Navm
-    4, #Navx
-    0.009, #klmax
-    0.001, #krmax
-    0.0001, #komax
-    0.1, #hc
+    0.05, #BLcond
+    0.0001, #Nf
+    0.0001, #Navm
+    0.5, #Navx
+    0.0002, #klmax
+    0.0002, #krmax
+    0.00002, #komax
+    0.01, #hc
     90, #qir
-    10, #qil
-    10, #qh
-    1, #qbc
-    0.1, #el
-    0.1, #er
+    1, #qil
+    3, #qh
+    0.6, #qbc
+    0.01, #el
+    0.01, #er
     0.1,
     2,
     -95,
@@ -64,10 +64,7 @@ createPriors_sitka<-function(sitka,sd=F){
     0.4,
     1,
     10,
-  0.01,
-  1.2,
-  5,#Topt
-  0.01)
+    0) #kF
   
   f.increase <-
     c(
@@ -75,12 +72,12 @@ createPriors_sitka<-function(sitka,sd=F){
       0.33,#fieldCap
       0.6,#satPoint
       1,#K_s
-      4,#V_nr
-      1,#sigma_zR
+      1.5,#V_nr
+      2,#sigma_zR
       2,#E_S1
       2,#E_S2
       6, #shared_area
-      1.5, #maxRootDepth
+      2, #maxRootDepth
       1, #K_drain
       1,#pFS2
       1,#pFS20
@@ -88,36 +85,36 @@ createPriors_sitka<-function(sitka,sd=F){
       3,#nS
       1,#pRx
       0.4,#pRn
-      0.03,#gammaFx
+      0.07,#gammaFx
       0.0025,#gammaF0
       110,#tgammaF
       0.16,#Rttover
-      0.5,#mF
-      0.5,#mR
+      0.8,#mF
+      0.8,#mR
       0.5,#mS
       9,#SLA0
       6,#SLA1
       8,#tSLA
       0.06,#alpha
-      0.49,#Y
+      0.6,#Y
       1,#m0
-      0.03,#MaxCond
+      0.05,#MaxCond
       4,#LAIgcx
       0.2,#CoeffCond
       0.4,#BLcond
-      2,#Nf
+      0.1,#Nf
       0.5,#Navm
-      15,#Navx
-      0.1,#klmax
+      20,#Navx
+      0.2,#klmax
       0.05,#krmax
       0.01,#komax
-      0.4,#hc
+      0.8,#hc
       600,#qir
       60,#qil
       50,#qh
       20,#qbc
-      0.6,#el
-      0.6, #er
+      0.9,#el
+      0.9, #er
       0.6,
       6,
       -5,
@@ -125,10 +122,7 @@ createPriors_sitka<-function(sitka,sd=F){
       0.2,
       0.6,
       15,
-      500,
-      1,
-      6,
-      35,
+      1200,
       1
     )
   
@@ -138,88 +132,27 @@ createPriors_sitka<-function(sitka,sd=F){
   
   pMaxima <- f.increase*1.5
   pMinima<- f.decrease*0.5
-  
-  pMaxima[[30]]<-0.5
-  pMinima[[31]]<-0.01
-  
-  pMaxima[[48]]<-0.65
-  pMinima[[48]]<-0.2
-  
-  pMaxima[[49]]<-7
-  pMinima[[49]]<-2
-  
-  pMaxima[[34]]<-0.3
-  pMinima[[34]]<-0.01
-  
   sdVals<-(pMaxima-pMinima)*0.8
-  #some manual adjustments
-  sdVals[5]<-2
-  sdVals[7]<-15
-  sdVals[8]<-15
-  pValues[7]<-10
-  pValues[8]<-10
   
-  sdVals[[48]]<-0.3
-  sdVals[[49]]<-2
+  pMinima[50]<--95 #needs manual adjusting as negative value
   
-  sdVals[[50]]<-20
-  sdVals[[51]]<-0.05
-  pMaxima[[50]]<--5
-  pMinima[[50]]<--95
+  pMaxima[56]<-1
+  pMinima[56]<-0.001
   
-  pMaxima[[51]]<-0.9
-  pMinima[[51]]<-0.7
-  
-  pMaxima[[52]]<-0.2
-  pMinima[[52]]<-0.05
-
-  sdVals[[52]]<-0.01
-
-  pMaxima[[33]]<-0.3
-  pMinima[[33]]<-0.01
-  
-  sdVals[[21]]<-0.02
-  
-  sdVals[[53]]<-0.03
-  
-  pMaxima[[54]]<-25
-  pMinima[[54]]<-1
-  sdVals[[54]]<-10
-  
-  pMaxima[[55]]<-1500
-  pMinima[[55]]<-50
-  sdVals[[55]]<-800
-  
-  pMaxima[[56]]<-1
-  pMinima[[56]]<-0.01
-  sdVals[[56]]<-0.5
-  
-  pMaxima[[57]]<-5
-  pMinima[[57]]<-1.2
-  sdVals[[57]]<-3
-  
-  sdVals[[58]]<-10
-  pMaxima[[58]]<-45
-  pMinima[[58]]<-1
-  
-  sdVals[[59]]<-1
-  pMaxima[[59]]<-1
-  pMinima[[59]]<-0.01
-  
-
-  pMaxima[[21]]<-0.2
-  pMinima[[21]]<-0.001
-  sdVals[[21]]<-.2
- 
   pValues<-pValues[-c(7,8)]
   sdVals<-sdVals[-c(7,8)]
   pMaxima<-pMaxima[-c(7,8)]
   pMinima<-pMinima[-c(7,8)]
   
-  priorVals <- createTruncatedNormalPrior(mean = pValues, sd=sdVals,
-                                          lower = pMinima, upper = pMaxima)
   
-  ifelse(sd==F,return(priorVals),return(sdVals))
+  sc<-rowMeans( abs( cbind(pMinima,pMaxima) ) )
+  
+  priorVals <- createTruncatedNormalPrior(mean = pValues/sc, sd=sdVals/sc,
+                                          lower = pMinima/sc, upper = pMaxima/sc)
+  
+
+  
+  ifelse(sd==F,return(list(priorVals,sc)),return(sdVals))
   
 }
 
@@ -231,7 +164,7 @@ createPriors_pine<-function(pine,sd=F){
   nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
         "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
         "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC")
+        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC","kF")
   
   
   
@@ -249,62 +182,62 @@ createPriors_pine<-function(pine,sd=F){
     0.05, #K_drain
     0.4, #pFS2
     0.2, #pFS20
-    0.01, #aS
+    0.001, #aS
     2, #nS
     0.4, #pRx
     0.2, #pRn
-    0.02, #gammaFx
-    0.0005, #gammaF0
-    40, #tgammaF
-    0.003, #Rttover
-    0.1, #mF
+    0.008, #gammaFx
+    0.00005, #gammaF0
+    20, #tgammaF
+    0.001, #Rttover
+    0.001, #mF
     0.1, #mR
     0.1, #mS
     4, #SLA0
-    3, #SLA1
-    4, #tSLA
+    2, #SLA1
+    2, #tSLA
     0.03, #alpha
     0.43, #Y
     0.001, #m0
     0.02, #MaxCond
-    2.5, #LAIgcx
+    0.6, #LAIgcx
     0.01, #CoeffCond
-    0.1, #BLcond
-    0.001, #Nf
-    0.001, #Navm
-    4, #Navx
-    0.009, #klmax
-    0.001, #krmax
-    0.0001, #komax
-    0.1, #hc
+    0.05, #BLcond
+    0.0001, #Nf
+    0.0001, #Navm
+    0.5, #Navx
+    0.0002, #klmax
+    0.0002, #krmax
+    0.00002, #komax
+    0.01, #hc
     90, #qir
-    10, #qil
-    10, #qh
-    1, #qbc
-    0.1, #el
-    0.1, #er
+    1, #qil
+    3, #qh
+    0.6, #qbc
+    0.01, #el
+    0.01, #er
     0.1,
     2,
     -95,
     0.7,
     0.05,
-    0.6,
+    0.4,
     1,
-    10
-  )
+    10,
+    0)#kF
   
   f.increase <-
     c(
-      0.26,#wiltPoint
-      0.33,#fieldCap
+      0.45,#wiltPoint
+      0.55,#fieldCap
       0.6,#satPoint
       1,#K_s
-      4,#V_nr
-      1,#sigma_zR
+      1.5,#V_nr
+      2,#sigma_zR
       2,#E_S1
       2,#E_S2
       6, #shared_area
-      1.5, #maxRootDepth
+      2, #maxRootDepth
       1, #K_drain
       1,#pFS2
       1,#pFS20
@@ -312,98 +245,58 @@ createPriors_pine<-function(pine,sd=F){
       3,#nS
       1,#pRx
       0.4,#pRn
-      0.03,#gammaFx
+      0.07,#gammaFx
       0.0025,#gammaF0
       110,#tgammaF
       0.16,#Rttover
-      0.5,#mF
-      0.5,#mR
+      0.8,#mF
+      0.8,#mR
       0.5,#mS
       9,#SLA0
       6,#SLA1
       8,#tSLA
       0.06,#alpha
-      0.49,#Y
-      1,#m0
-      0.03,#MaxCond
+      0.6,#Y
+      0.4,#m0
+      0.05,#MaxCond
       4,#LAIgcx
       0.2,#CoeffCond
       0.4,#BLcond
-      2,#Nf
-      0.5,#Navm
-      15,#Navx
-      0.1,#klmax
+      0.1,#Nf
+      0.1,#Navm
+      20,#Navx
+      0.2,#klmax
       0.05,#krmax
       0.01,#komax
-      0.4,#hc
-      600,#qir
-      60,#qil
+      0.8,#hc
+      300,#qir
+      40,#qil
       50,#qh
       20,#qbc
-      0.6,#el
-      0.6, #er
+      0.9,#el
+      0.9, #er
       0.6,
       6,
       -5,
       0.9,
       0.2,
-      0.4,
+      0.6,
       15,
-      500
+      1200,
+      1#kF
     )
+  
+  ##Need to check what priors we are using!
   
   pValues <- as.vector(unlist(sitka[nm]))
   
   pMaxima <- f.increase*1.5
   pMinima<- f.decrease*0.5
-  
-  pMaxima[[30]]<-0.5
-  pMinima[[31]]<-0.01
-  
-  pMaxima[[48]]<-0.65
-  pMinima[[48]]<-0.2
-  
-  pMaxima[[49]]<-7
-  pMinima[[49]]<-2
-  
-  pMaxima[[34]]<-0.3
-  pMinima[[34]]<-0.01
-  
   sdVals<-(pMaxima-pMinima)*0.8
-  #some manual adjustments
-  sdVals[5]<-2
-  sdVals[7]<-15
-  sdVals[8]<-15
-  pValues[7]<-10
-  pValues[8]<-10
   
-  sdVals[[48]]<-0.3
-  sdVals[[49]]<-2
-  
-  sdVals[[50]]<-20
-  sdVals[[51]]<-0.05
-  pMaxima[[50]]<--5
-  pMinima[[50]]<--95
-  
-  pMaxima[[51]]<-0.9
-  pMinima[[51]]<-0.7
-  
-  pMaxima[[52]]<-0.2
-  pMinima[[52]]<-0.05
-  
-  sdVals[[52]]<-0.01
-  
-  pMaxima[[33]]<-0.3
-  pMinima[[33]]<-0.01
-  
-  sdVals[[21]]<-0.02
-  
-  sdVals[[53]]<-0.03
-  
-  
-  pMaxima[[21]]<-0.2
-  pMinima[[21]]<-0.001
-  sdVals[[21]]<-.2
+  pMinima[50]<--95 #needs manual adjusting as negative value
+  pMaxima[56]<-1
+  pMinima[56]<-0.001
   
   pValues<-pValues[-c(7,8)]
   sdVals<-sdVals[-c(7,8)]
@@ -422,46 +315,26 @@ createPriors_pine<-function(pine,sd=F){
 
 
 
-createPriors_Cont<-function(out){
-  
-  nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
-        "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover")
-  
-  library(matrixStats)
-  nmc = nrow(out$chain[[1]])
-  outSample   <- getSample(out,start=nmc/1.2,thin=5)
-  
-  sdVals<-t(as.data.frame(colSds(outSample)))
-  names(sdVals)<-names(as.data.frame(outSample))
-  sdVals<-sdVals[nm]
-  
-  codM<-miscTools::colMedians(as.data.frame(outSample))
-  codM<-codM[nm]
-  
 
-  ##Need to check what priors we are using!
-  pMaxima <- as.vector(codM+5*sdVals)
-  pMinima <- as.vector(codM-5*sdVals)
 
-  priorVals <- createTruncatedNormalPrior(mean = codM, sd=sdVals,
-                                          lower = pMinima, upper = pMaxima)
-  
-  return(priorVals)
-  
-}
+
+
+
+
+
 
 
 
 createPriors_sitka_rg<-function(sitka,sd=F){
   
-
+  
   nm<-c("sigma_zR","shared_area",
         "Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","startN","startC")
   
   
   
   f.decrease <- c(
-
+    
     0.1, #sigma_zR
     1, #shared_area
     0.001, #Navm
@@ -505,259 +378,10 @@ createPriors_sitka_rg<-function(sitka,sd=F){
   
   pMaxima <- f.increase*1.5
   pMinima<- f.decrease*0.5
-
+  
   
   sdVals<-(pMaxima-pMinima)*0.3
- 
   
-  priorVals <- createTruncatedNormalPrior(mean = pValues, sd=sdVals,
-                                          lower = pMinima, upper = pMaxima)
-  
-  ifelse(sd==F,return(priorVals),return(sdVals))
-  
-}
-
-
-
-
-
-createPriors_sitka_rg_all_old<-function(sitka,sd=F,out){
-  codM<-as.data.frame(mergeChains(out$chain))[,-c(54:56)]
-  colnames(codM)<- c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","shared_area","maxRootDepth","K_drain",
-                       "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
-                       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-                       "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC")
-  
-  
-  nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
-        "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
-        "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC","Q10","Q10X","Topt","Nleach_r","poorSoilMod")
-
-  
-  
-  f.decrease <- c(
-    0.06, #wiltPoint
-    0.15, #fieldCap
-    0.3,#satPoint
-    0.05, #K_s
-    0.3, #V_nr
-    0.1, #sigma_zR
-    0.0001, #E_S1
-    0.001, #E_S2
-    1, #shared_area
-    0.2, #maxRootDepth
-    0.05, #K_drain
-    0.4, #pFS2
-    0.2, #pFS20
-    0.01, #aS
-    2, #nS
-    0.4, #pRx
-    0.2, #pRn
-    0.02, #gammaFx
-    0.0005, #gammaF0
-    40, #tgammaF
-    0.003, #Rttover
-    0.1, #mF
-    0.1, #mR
-    0.1, #mS
-    4, #SLA0
-    3, #SLA1
-    4, #tSLA
-    0.03, #alpha
-    0.43, #Y
-    0.001, #m0
-    0.02, #MaxCond
-    2.5, #LAIgcx
-    0.01, #CoeffCond
-    0.1, #BLcond
-    0.001, #Nf
-    0.001, #Navm
-    4, #Navx
-    0.009, #klmax
-    0.001, #krmax
-    0.0001, #komax
-    0.1, #hc
-    90, #qir
-    10, #qil
-    10, #qh
-    1, #qbc
-    0.1, #el
-    0.1, #er
-    0.1,
-    2,
-    -95,
-    0.7,
-    0.05,
-    0.4,
-    1,
-    10,
-    0.01,
-    1.2,
-    5,#Topt
-    0.01,
-    0.1#poorSoilMod
-    )
-  
-  f.increase <-
-    c(
-      0.26,#wiltPoint
-      0.33,#fieldCap
-      0.6,#satPoint
-      1,#K_s
-      4,#V_nr
-      3,#sigma_zR
-      2,#E_S1
-      2,#E_S2
-      6, #shared_area
-      1.5, #maxRootDepth
-      1, #K_drain
-      1,#pFS2
-      1,#pFS20
-      0.25,#aS
-      3,#nS
-      1,#pRx
-      0.4,#pRn
-      0.03,#gammaFx
-      0.0025,#gammaF0
-      110,#tgammaF
-      0.16,#Rttover
-      0.5,#mF
-      0.5,#mR
-      0.5,#mS
-      9,#SLA0
-      6,#SLA1
-      8,#tSLA
-      0.06,#alpha
-      0.49,#Y
-      1,#m0
-      0.03,#MaxCond
-      4,#LAIgcx
-      0.2,#CoeffCond
-      0.4,#BLcond
-      2,#Nf
-      0.5,#Navm
-      15,#Navx
-      0.1,#klmax
-      0.05,#krmax
-      0.01,#komax
-      0.4,#hc
-      600,#qir
-      60,#qil
-      50,#qh
-      20,#qbc
-      0.6,#el
-      0.6, #er
-      0.6,
-      6,
-      -5,
-      0.9,
-      0.2,
-      0.6,
-      15,
-      500,
-      1,
-      6,
-      35,
-      1,
-      0.95
-    )
-  
-  ##Need to check what priors we are using!
-  
-  pValues <- as.vector(unlist(sitka[nm]))
-  
-  pMaxima <- f.increase*1.5
-  pMinima<- f.decrease*0.5
-  
-  pMaxima[[30]]<-0.5
-  pMinima[[31]]<-0.01
-  
-  pMaxima[[48]]<-0.65
-  pMinima[[48]]<-0.2
-  
-  pMaxima[[49]]<-7
-  pMinima[[49]]<-2
-  
-  pMaxima[[34]]<-0.3
-  pMinima[[34]]<-0.01
-  
-  sdVals<-(pMaxima-pMinima)*0.8
-  
-  #some manual adjustments
-  sdVals[5]<-2
-  sdVals[7]<-15
-  sdVals[8]<-15
-  pValues[7]<-10
-  pValues[8]<-10
-  
-  sdVals[[48]]<-0.3
-  sdVals[[49]]<-2
-  
-  sdVals[[50]]<-20
-  sdVals[[51]]<-0.05
-  pMaxima[[50]]<--5
-  pMinima[[50]]<--95
-  
-  pMaxima[[51]]<-0.9
-  pMinima[[51]]<-0.7
-  
-  pMaxima[[52]]<-0.2
-  pMinima[[52]]<-0.05
-  
-  sdVals[[52]]<-0.01
-  
-  pMaxima[[33]]<-0.3
-  pMinima[[33]]<-0.01
-  
-  sdVals[[21]]<-0.02
-  
-  sdVals[[53]]<-0.03
-  
-  pMaxima[[54]]<-25
-  pMinima[[54]]<-1
-  sdVals[[54]]<-10
-  
-  pMaxima[[55]]<-1500
-  pMinima[[55]]<-50
-  sdVals[[55]]<-800
-  
-  pMaxima[[56]]<-1
-  pMinima[[56]]<-0.01
-  sdVals[[56]]<-0.5
-  
-  pMaxima[[57]]<-5
-  pMinima[[57]]<-1.2
-  sdVals[[57]]<-3
-  
-  sdVals[[58]]<-10
-  pMaxima[[58]]<-45
-  pMinima[[58]]<-1
-  
-  sdVals[[59]]<-1
-  pMaxima[[59]]<-1
-  pMinima[[59]]<-0.01
-  
-  
-  pMaxima[[21]]<-0.2
-  pMinima[[21]]<-0.001
-  sdVals[[21]]<-.2
-  
-  pValues<-pValues[-c(1:5,7,8,10,11,48,49,56:59)]
-  
-  
- # sdVals<-1.5*colSds(as.matrix(codM[c("sigma_zR","shared_area",
- #                                 "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
-#                                  "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-#                                  "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","Qa","Qb","MaxIntcptn","k","startN","startC")]))
-  
-  sdVals[45]<-0.5
-
-  pMaxima<-pMaxima[-c(1:5,7,8,10,11,48,49,56:59)]
-  pMinima<-pMinima[-c(1:5,7,8,10,11,48,49,56:59)]
-  pMaxima[45]<-0.95
-  pMinima[45]<-0.1
-  pValues[45]<-0.8
   
   priorVals <- createTruncatedNormalPrior(mean = pValues, sd=sdVals,
                                           lower = pMinima, upper = pMaxima)

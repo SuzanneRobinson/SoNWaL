@@ -189,6 +189,52 @@ chess_xy_latlon<-function(x,y){
 }
 
 
+# use regression models to predict some unkown soil texture parameters from known parameters
+#' @param simDat current known parameters/variables
+#' @param mcmcReg output from MCMC for fitting regional models
+#' @return simDat but with predicted soil texture params, es1,es2,swconst,swpower
+soil_regr<-function(simDat,concChains){
+# data from landsberg & sands book
+  texT<-data.frame(sand=c(30 ,33,42, 82, 92, 52, 60, 65, 7, 7, 10, 20),
+                 clay =c(50, 34 ,18, 6, 5, 42, 28 ,10, 6, 47, 34, 20),
+                 silt=c(20, 33 ,40, 12, 3, 6, 12, 25, 87, 46, 56, 60),
+                 no=c(3,5,6,8,9,4,5.5,7,7.5,3.5,4.5,6.5),
+                 co=c(0.4,0.5,0.55,0.65,0.7,0.45,0.525,0.6,0.625,0.425,0.475,0.575)
+)
+
+
+# models for predicting approximate drainage values 
+ mod_K_drain<-lm(K_drain~wiltPoint+fieldCap+V_nr,data=concChains)
+ mod_K_s<-lm(K_s~satPoint+wiltPoint+fieldCap+V_nr,data=concChains)
+
+# models for predicting constant and power fertility modifiers from soil texture (driven by clay content)
+modCo<-lm(co~clay,data=texT)
+modNo<-lm(no~clay,data=texT)
+
+# predict drainage values from mapped soil data
+ simDat$K_drain<-as.vector(predict(mod_K_drain,data.frame(wiltPoint=simDat$WP/(simDat$depth*10),fieldCap=simDat$FC/(simDat$depth*10),V_nr=simDat$depth/100)))
+ simDat$K_s<-as.vector(predict(mod_K_s,data.frame(satPoint=simDat$sp,wiltPoint=simDat$wp/(simDat$soil_depth*10),fieldCap=simDat$fc/(simDat$soil_depth*10),V_nr=simDat$soil_depth/100)))
+
+# predict fertility modifiers from mapped soil data
+simDat$co <- as.vector(predict(modCo, data.frame(sand = simDat$Tsand, clay=simDat$Tclay, silt=simDat$Tsilt)))
+simDat$no <- as.vector(predict(modNo, data.frame(sand = simDat$Tsand, clay=simDat$Tclay, silt=simDat$Tsilt)))
+
+# derive wp fc etc from values in mm and soil depth in cm
+simDat$wp<-simDat$wp/(simDat$soil_depth*10)
+simDat$fc<-simDat$fc/(simDat$soil_depth*10)
+simDat$wp[simDat$wp>=1]<-1
+simDat$fc[simDat$fc>=1]<-1
+
+simDat$wp[is.na(simDat$wp)==T]<-0
+simDat$fc[is.na(simDat$fc)==T]<-0
+simDat$sp[is.na(simDat$sp)==T]<-0
+simDat$soil_cond[is.na(simDat$soil_cond)==T]<-0
+simDat$soil_depth[is.na(simDat$soil_depth)==T]<-0
+return(simDat)
+}
+
+
+
 # add soil data from Astley (BGS data)
 #' @param spat_chunk spatial chunk to add soil data to
 #' @param soil_dat location of BGS soil data files
@@ -220,7 +266,7 @@ add_BGS_dat<-function(spat_chunk, soil_dat){
      
     } else 
     {
-      eu_soil_dat<- readxl::read_xlsx(data_location)
+      eu_soil_dat<- readRDS(data_location)
     }
     
     eu_soil_dat<-eu_soil_dat%>%
@@ -232,31 +278,58 @@ add_BGS_dat<-function(spat_chunk, soil_dat){
                                                                          lat = lat, 
                                                                          radius = 1e5))[1,])
 
+    closest_vals[is.na(closest_vals$distance_m) ==T,]<-0
     if(rast ==T) closest_vals[,1][closest_vals$distance_m>max_distance]<-NA
     if(rast ==T) names(closest_vals)[1]<-val_name
     if(rast ==F) closest_vals[closest_vals$distance_m > max_distance, !names(closest_vals) %in% c("lon","lat")]<-NA
-
+    closest_vals[closest_vals$lat==0,]<-NA
+    
     return(closest_vals)
   }
   
   # extract eu map soil data
-  closest_vals<-ext_eu_soil(soil_dat[1],
-                                 spat_chunk,"NA", 1000, F)
-  closest_vals_cond<-ext_eu_soil(soil_dat[2],
+  closest_vals_wp<-ext_eu_soil(soil_dat[1],
+                                 spat_chunk,"wp_map", 1000)
+  
+  closest_vals_fc<-ext_eu_soil(soil_dat[2],
+                            spat_chunk,"fc_map", 1000)
+  print("soilDat_read in")
+  closest_vals_cond<-ext_eu_soil(soil_dat[3],
                                  spat_chunk,"soil_cond", 1000) %>%
     mutate(soil_cond=10^soil_cond/10)#convert from log10 cm/day
-
-  closest_vals_sat<-ext_eu_soil(soil_dat[3],
+  print("sat point read in")
+  
+  closest_vals_sat<-ext_eu_soil(soil_dat[4],
                                  spat_chunk,"sp", 1000)
-
+  
+  closest_vals<-ext_eu_soil(soil_dat[5],
+                            spat_chunk,"NA", 1000, F)
+  print("cond read in")
+  
 # use closest value known if center of grid square is in the sea or data is missing, over 1km however may be too far?
   
   spat_chunk<-spat_chunk%>%
     tibble::add_column(dplyr::select(closest_vals,-lat,-lon))%>%
   tibble::add_column(dplyr::select(closest_vals_cond,-lat,-lon,-distance_m))%>%
-  tibble::add_column(dplyr::select(closest_vals_sat,-lat,-lon,-distance_m))
+  tibble::add_column(dplyr::select(closest_vals_sat,-lat,-lon,-distance_m)) %>%
+    tibble::add_column(dplyr::select(closest_vals_wp,-lat,-lon,-distance_m)) %>%
+  tibble::add_column(dplyr::select(closest_vals_fc,-lat,-lon,-distance_m))
+  
   
 
   
   return(spat_chunk)
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -21,7 +21,7 @@ library(raster)
 
 
 data_dir="/gws/nopw/j04/hydro_jules/data/uk/driving_data/chess/chess-met/daily"#Location of input data
-output_dir="/home/users/aaronm7/"#output file for bricked rasters
+output_dir="/home/users/aaronm7/"#output file for bricked rastears
 save_file="/home/users/aaronm7/spatialChunks/"#save file for spatial chunks of data
 
 output_dir="C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\"

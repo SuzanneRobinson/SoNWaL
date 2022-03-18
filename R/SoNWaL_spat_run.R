@@ -13,37 +13,49 @@ SoNWaL_spat_run <-
            clm,
            param_draw,
            grid_id,
-           soil,
            soil_depth,
            wp,
            fc,
            sp,
-           cond) {
+           carbon,
+           cond,
+           N0,
+           C0,
+           plant_year) {
+    
+   clmY<- clm%>%
+      tibble::rownames_to_column()
+    
+    clmY<-clmY[,1]
+    clm$pyear<-stringr::str_sub(clmY,start=2, end =5)
+    clm<-filter(clm,pyear>=plant_year)
+    
+
     library(lubridate)
 
-    ## add carbon
-    
-    ##guess nitrogen
-    
-    ##
-    
+    # update parameters with fixed values from soil data etc.
       param_draw$pars <- lapply(param_draw$pars, function(x) {
-        x$V_nr <- soil_depth
-        x$maxRootDepth <- soil_depth
-        return(x)
-      })
-
-      param_draw$pars <- lapply(param_draw$pars, function(x) {
+        x$V_nr <- soil_depth/100
+        x$maxRootDepth <- soil_depth/100
+        x$startC <- carbon
+        x$startN <- carbon/10
         x$wiltPoint <- wp
         x$fieldCap <- fc
         x$satPoint <- sp
+        # currently K_s and drainage use same value from maps, could be improved?
         x$K_s <- cond
-        
+        x$K_drain <- cond
+        x$K_drain_nrz <- cond
+        #######################
+        x$SWpower0<-N0
+        x$SWconst0<-C0
         return(x)
       })
       
+      
     # return empty cell output if there is no climate data (no land mass)
-    if (is.na(clm[1, 3]) == T) {
+    if (is.na(clm[1, 2]) == T) {
+      print("no climate data")
       return (tibble::as_tibble(
         data.frame(
           Year = NA,
@@ -89,12 +101,12 @@ SoNWaL_spat_run <-
       )) 
       } else {
 
-      #select stem and branch biomass or other outputs, take mean and 95% credible intervals
-      #value to use? Wsbr or GPP etc?
+
       site_out <-
         tryCatch({
+
           param_draw %>%
-            dplyr::mutate(sim = map(pars, SoNWaL_spat_model_run)) %>%
+            dplyr::mutate(sim = mapply(SoNWaL_spat_model_run, pars, MoreArgs = list(clm),SIMPLIFY = F)) %>%
             dplyr::select(mcmc_id, sim) %>%
             tidyr::unnest_legacy() %>%
             group_by(Year, mcmc_id) %>%
@@ -176,6 +188,8 @@ SoNWaL_spat_run <-
         },
         #add na values where there is no data, in the sea etc.
         error = function(cond) {
+          message(cond)
+          
           site_out <-
             tibble::as_tibble(
               data.frame(
@@ -237,112 +251,54 @@ SoNWaL_spat_run <-
 
 
 # execute run of SoNWaL for spatial grid cell with single parameter set
-SoNWaL_spat_model_run <- function(params) {
+#' @param params vector of parameter set to run model with
+#' @param clm climate data to run model with
+#' @return dataframe with model outputs, columns are output variables, rows are time-steps
+SoNWaL_spat_model_run <- function(params,clm) {
   #get default parameters
   baseParms <- getParms(timeStp = 52, waterBalanceSubMods = T)
   
+  #parameter names to update
+  nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","shared_area","maxRootDepth","K_drain",
+        "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
+        "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
+        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0",
+        "SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC")
+  
   #Update parameters with proposals
-  nm <-
-    c(
-      "wiltPoint",
-      "fieldCap",
-      "satPoint",
-      "K_s",
-      "V_nr",
-      "sigma_zR",
-      "shared_area",
-      "maxRootDepth",
-      "K_drain",
-      "pFS2",
-      "pFS20",
-      "aS",
-      "nS",
-      "pRx",
-      "pRn",
-      "gammaFx",
-      "gammaF0",
-      "tgammaF",
-      "Rttover",
-      "mF",
-      "mR",
-      "mS",
-      "SLA0",
-      "SLA1",
-      "tSLA",
-      "alpha",
-      "Y",
-      "m0",
-      "MaxCond",
-      "LAIgcx",
-      "CoeffCond",
-      "BLcond",
-      "Nf",
-      "Navm",
-      "Navx",
-      "klmax",
-      "krmax",
-      "komax",
-      "hc",
-      "qir",
-      "qil",
-      "qh",
-      "qbc",
-      "el",
-      "er",
-      "SWconst0",
-      "SWpower0",
-      "Qa",
-      "Qb",
-      "MaxIntcptn",
-      "k",
-      "startN",
-      "startC"
-    )
-  
+  params<-as.data.frame(params)
   baseParms[nm] <- as.data.frame(params[nm])
-  
   
   
   names(clm) <-
     c(
-      "dailyTmpRange",
+      "RH",
       "specHumid",
       "Rain",
-      "surfPressure",
       "SolarRadLW",
       "SolarRad",
       "wind",
-      "Tmean"
+      "Tmean",
+      "Tmax",
+      "Tmin",
+      "pyear"
     )
-  clm$Tmean <- clm$Tmean - 273.15 #convert to celsius from kelvin
-  clm <- clm[1:(nrow(clm) - 396), ]
-  #get min and max temp
-  clm <- clm %>%
-    mutate(Tmin = Tmean - (dailyTmpRange / 2),
-           Tmax = Tmean + (dailyTmpRange / 2))
-  #climate
-  clm$RH <-
-    calcRH(
-      Tmean = clm$Tmean,
-      Tref = 273.16,
-      p = clm$surfPressure,
-      q = clm$specHumid
-    )
-  clm <- rownames_to_column(clm, var = "Date")
-  clm$Date <- str_sub(clm$Date,-10)
-  clm$Date <- as.Date(clm$Date, "%Y.%m.%d")
-  clm$Month <- month(clm$Date)
-  clm$week <- week(clm$Date)
-  clm$Year <- year(clm$Date)
   
+  #convert to celsius from kelvin add date, weeks and months
+  clm%>%
+    mutate(Tmean = Tmean-273.15, Tmax = Tmax - 273.15, Tmin = Tmin - 273.15) %>% 
+    tibble::rownames_to_column(var = "Date") %>%
+    mutate(Date = as.Date(str_sub(Date,end = -10, start = 2),"%Y.%m.%d")) %>%
+    mutate(Month = month(Date), week = week(Date), Year = year(Date))
+  
+  
+  #calc vpd
   clm$VPD <-
-    ((((
-      0.61078 * exp(17.269 * (clm$Tmean) / (237.3 + clm$Tmean))
-    ) * (1 - (
-      clm$RH
-    ) / 100))))
+    ((((0.61078 * exp(17.269 * (clm$Tmean) / 
+                        (237.3 + clm$Tmean))) * (1 - (clm$RH) / 100))))
   
   
+  #get climate data into correct units
   clm <- clm %>%
     dplyr::group_by(Year, week) %>%
     dplyr::summarise(
@@ -357,17 +313,14 @@ SoNWaL_spat_model_run <- function(params) {
       VPD = mean(VPD)
     )
   
+  # add climate data
   baseParms$weather <- as.data.frame(clm)
   
-  #run model and output data
-  out <- do.call(fr3PGDN, baseParms)
-  out$age <- rev(as.numeric(max(out$Year, na.rm = T) - out$Year))
-  out$MAI <- (out$Vu) / out$age
-  out$CAI <- c(rep(0, 52), diff(out$Vu, lag = 52))
-  
-  out$yc <- YCfunc(out)
-  
-  
+  #run model and calculate MAI and CAI for yield class
+ out<-  do.call(fr3PGDN, baseParms) %>% 
+    mutate(age = rev(as.numeric(max(Year, na.rm = T) - Year))) %>%
+    mutate(MAI = (Vu / age), CAI = c(rep(0, 52), diff(Vu, lag = 52))) %>%
+    mutate(yc=yield_class_calc(.))
   
   return(out)
 }

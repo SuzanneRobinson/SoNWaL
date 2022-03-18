@@ -16,6 +16,7 @@ yield_class_calc <- function(out) {
 
   CAI$y <- (predict(loess(CAI$y ~ CAI$x, span = 1)))
   MAI[1, 2] <- 0
+  MAI[MAI$y==Inf,]<-0
   MAI$y <- (predict(loess(MAI$y ~ MAI$x)))
 
   #identify point where MAI and CAI intersect to get YC

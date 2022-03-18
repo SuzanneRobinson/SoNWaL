@@ -59,7 +59,7 @@ UpdateASW <-
     if (parms[["waterBalanceSubMods"]] == T) {
 
       
-      #root depth assumed to be proportional to root biomass (see almedia and sands) .2 is probability of stones
+      #root depth/vol assumed to be proportional to root biomass (see almedia and sands) .2 is probability of stones
       z_r = max(min((0.1 * parms[["sigma_zR"]] * state[["Wr"]]),parms[["maxRootDepth"]]),0.05)
       
       
@@ -91,7 +91,7 @@ if (pseudo==F){
       #Calculate drainage from root zone to non-root zone and out of non-root zone, where SWC of root zone exceeds field capacity of the soil zone (eq A.11)
       #Drainage parameter based on soil texture *24 to get from hourly to daily rates - use daily rates in these functions as they calc drainage of t days. 
       K_drain_rz=parms[["K_drain"]]#max((4.56*((state[["SWC_rz"]]/(z_r*1000))/parms[["satPoint"]])^18.4)*24,0.00001)
-      K_drain_nrz=0.8#max((114*((state[["SWC_nr"]]/(z_r*1000))/parms[["satPoint"]])^15)*24,0.00001)
+      K_drain_nrz=parms[["K_drain_nrz"]]#max((114*((state[["SWC_nr"]]/(z_r*1000))/parms[["satPoint"]])^15)*24,0.00001)
 
  
       rz_nrz_drain <- max(drainageFunc(parms, weather, 
@@ -147,6 +147,7 @@ if (pseudo==F){
       Etransp <- 1
       nrz_out_drain<-1
       rz_nrz_drain<-1
+      rz_nrz_recharge<-1
     }
     
     GPP <- state[["GPP"]]

@@ -237,7 +237,7 @@ plotResultsPine <- function(outP,ShortTS=F){
 #  
   
   
-  gpp1<-ggarrange(gpp,nee,swc,LAI,dbhplot,Nplot)
+  gpp1<-ggpubr::ggarrange(gpp,nee,swc,LAI,dbhplot,Nplot)
   
   return(list(gpp1))
 }
@@ -1023,13 +1023,13 @@ quickPlot<-function(flxdata_daily,output,grouping="month"){
   
   
   
-  ggarrange(gpp1,gpp2,gpp3,gpp4,gpp5)
+  ggpubr::ggarrange(gpp1,gpp2,gpp3,gpp4,gpp5)
   
 }
 
 
 
-diagPlots<-function(out,flxdata_daily,nm){
+diagPlots<-function(out,flxdata_daily,nm,param_scaler){
   lm_eqn <- function(m){
     
     eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
@@ -1053,7 +1053,7 @@ diagPlots<-function(out,flxdata_daily,nm){
   names(codM)<-nm
   
   sitka<-getParms(waterBalanceSubMods=T, timeStp =  52)
-  sitka[nm]<-codM[nm]
+  sitka[nm]<-codM[nm]*param_scaler
   
   output<-do.call(fr3PGDN,sitka)
   ff<-output%>%
@@ -1130,7 +1130,7 @@ diagPlots<-function(out,flxdata_daily,nm){
   g3 <- g3 + geom_text(x = 0.288, y = 0.225, label = lm_eqn(mod3), parse = TRUE,size=3)
   g4 <- g4 + geom_text(x = -0.25, y = -5.5, label = lm_eqn(mod4), parse = TRUE,size=3)
   
-  ggarrange(g1,g2,g3,g4)
+  ggpubr::ggarrange(g1,g2,g3,g4)
   
 }
 
@@ -1242,7 +1242,7 @@ diagPlotsPine<-function(outP,nm){
   g3 <- g3 + geom_text(x = 0.4, y = 0.2, label = lm_eqn(mod3), parse = TRUE,size=3)
   g4 <- g4 + geom_text(x = -0.25, y = -5.3, label = lm_eqn(mod4), parse = TRUE,size=3)
   
-  ggarrange(g1,g3,g4)
+  ggpubr::ggarrange(g1,g3,g4)
   
 }
 

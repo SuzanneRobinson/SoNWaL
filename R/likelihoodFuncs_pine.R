@@ -1,148 +1,8 @@
-
-# Extract simulated data for use in likelihood function for shorter time-steps
-# monthly data is in tons per hectare per month which matches 3pg output so no need to convert
-sampleOutputMonth<-function(df,sY,eY){
-  #convert to average grams per m2 per day depending on timestep of model
-  modif<- if(nrow(df)<600) 1.6 else 7.142857
-  nDays<- if(nrow(df)<600) 30 else 7
-  
-     df<-df%>%
-      filter(Year>=sY&Year<=eY)%>%
-      mutate(GPP=GPP*modif)%>%
-      mutate(NEE=NEE*modif)%>%
-      mutate(Rs=Rs*modif)%>%
-      mutate(Reco=Reco*modif)
-       
-  
-  m<-c(#aggregate(df$Reco/df$Rs~ df$Year,FUN=mean)[,2],
-       aggregate(df$GPP~ df$Month+df$Year,FUN=mean)[,3],
-       #aggregate(df$NPP~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$NEE~ df$Month+df$Year,FUN=mean)[,3],
-      # aggregate(df$Reco~ df$Month+df$Year,FUN=mean)[,3],
-       #aggregate(df$Rs~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$EvapTransp/nDays~ df$Month+df$Year,FUN=mean)[,3],
-       filter(df,Year==2015&Month==8)$LAI[1],
-       filter(df,Year==2018&Month==8)$LAI[1],
-       filter(df,Year==2018&Month==8)$N[1],
-       filter(df,Year==2018&Month==8)$dg[1],
-       #  filter(df,Year==2015&Month==7)$Wr[1],
-       #  filter(df,Year==2015&Month==7)$difRoots[1],
-       filter(df,Year==2015&Month==7)$totC[1],
-       filter(df,Year==2015&Month==7)$totN[1],
-       aggregate(df$volSWC_rz~ df$Month+df$Year,FUN=mean)[,3],
-      aggregate(df$Rs~ df$Month+df$Year,FUN=mean)[,3]
-      
-  )
-  m
-  return(m)
-}
-
-
-
-## Extract simulated data for use in likelihood function for shorter time-steps
-#IF USING WEEKLY/daily, YOU USE DAILY DATA WHICH IS IN gCm-2d-1, so need to convert prafor output from tons per hectare per week (timestep)
-sampleOutputWeekly<-function(df,sY,eY){
-  modif<- 7.142857
-  
-  df<- filter(df,Year>=sY&Year<=eY)
-  df$week<-c(1:53)
-  
-  df<-df%>%
-    mutate(GPP=GPP*modif)%>%
-    mutate(NPP=NPP*modif)%>%
-    mutate(NEE=NEE*modif)%>%
-    mutate(Rs=Rs*modif)%>%
-    mutate(Reco=Reco*modif)
-  
-  
-  m<-c(aggregate(df$Reco/df$Rs~ df$Year,FUN=mean)[,2],
-       aggregate(df$GPP~ df$week+df$Year,FUN=mean)[,3],
-       #aggregate(df$NPP~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$NEE~ df$week+df$Year,FUN=mean)[,3],
-       # aggregate(df$Reco~ df$Month+df$Year,FUN=mean)[,3],
-       #aggregate(df$Rs~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$EvapTransp~ df$week+df$Year,FUN=mean)[,3]/7,
-       filter(df,Year==2015&Month==8)$LAI[1],
-       filter(df,Year==2018&Month==8)$LAI[1],
-       filter(df,Year==2018&Month==8)$N[1],
-       filter(df,Year==2018&Month==8)$dg[1],
-       #  filter(df,Year==2015&Month==7)$Wr[1],
-       #  filter(df,Year==2015&Month==7)$difRoots[1],
-       filter(df,Year==2015&Month==7)$totC[1],
-       filter(df,Year==2015&Month==7)$totN[1],
-       aggregate(df$volSWC_rz~ df$week+df$Year,FUN=mean)[,3]
-  )
-  m
-  return(m)
-}
-
-
-
-
-
-
-## Extract simulated data for use in likelihood function for shorter time-steps
-sampleOutputTS_noHyd<-function(df,sY,eY){
-  modif<- if(nrow(df)<600) 1.6
-  modif<- if(nrow(df)>600) 7.142857
-  df<-df%>%
-    mutate(GPP=GPP*modif)%>%
-    mutate(NPP=NPP*modif)%>%
-    mutate(NEE=NEE*modif)%>%
-    mutate(Rs=Rs*modif)%>%
-    mutate(Reco=Reco*modif)
-  
-  df<- filter(df,Year>=sY&Year<=eY)
-  
-  m<-c(aggregate(df$GPP~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$NPP~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$NEE~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$Reco~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$Rs~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$Etransp~ df$Month+df$Year,FUN=sum)[,3],
-       filter(df,Year==2015&Month==8)$LAI[1],
-       filter(df,Year==2018&Month==8)$LAI[1],
-       filter(df,Year==2018&Month==8)$N[1],
-       filter(df,Year==2018&Month==8)$dg[1],
-       #  filter(df,Year==2015&Month==7)$Wr[1],
-       #  filter(df,Year==2015&Month==7)$difRoots[1],
-       filter(df,Year==2015&Month==7)$totC[1],
-       filter(df,Year==2015&Month==7)$totN[1]  )
-  m
-  return(m)
-}
-
-
-## Extract simulated data for use in likelihood function for shorter time-steps
-sampleOutputTS_noHyd_weekly<-function(df,sY,eY){
-  df<- filter(df,Year>=sY&Year<=eY)
-  df$week<-c(1:53)
-  
-  m<-c(aggregate(df$GPP~ df$week+df$Year,FUN=mean)[,3]*100/7,
-       aggregate(df$NPP~ df$week+df$Year,FUN=mean)[,3]*100/7,
-       aggregate(df$NEE~ df$week+df$Year,FUN=mean)[,3]*100/7,
-       aggregate(df$Reco~ df$week+df$Year,FUN=mean)[,3]*100/7,
-       aggregate(df$Rs~ df$week+df$Year,FUN=mean)[,3]*100/7,
-       aggregate(df$Etransp~ df$week+df$Year,FUN=sum)[,3],
-       filter(df,Year==2015&Month==8)$LAI[1],
-       filter(df,Year==2018&Month==8)$LAI[1],
-       filter(df,Year==2018&Month==8)$N[1],
-       filter(df,Year==2018&Month==8)$dg[1],
-       #  filter(df,Year==2015&Month==7)$Wr[1],
-       #  filter(df,Year==2015&Month==7)$difRoots[1],
-       filter(df,Year==2015&Month==7)$totC[1],
-       filter(df,Year==2015&Month==7)$totN[1]  )
-  m
-  return(m)
-}
-
-
-
 ## Extract simulated data for use in likelihood function
 #2007 is removed as a year due to some odd observed data values, basically there's no GPP or NEE etc.
 sampleOutputPineWeek<-function(df,sY,eY){
   df<-df[-1,]
-df$week<-c(1:52)
+  df$week<-c(1:52)
   
   m<-c(
     pull(filter(df,Year>=sY&Year<=eY&Year!=2007)%>%
@@ -195,7 +55,7 @@ df$week<-c(1:52)
 
 sampleOutputPine<-function(df,sY,eY){
   #convert to match hytialla data format
-
+  
   modif<- if(nrow(df)<600) 1.6
   modif<- if(nrow(df)>600) 7.142857
   df<-df%>%
@@ -204,7 +64,7 @@ sampleOutputPine<-function(df,sY,eY){
     mutate(NEE=NEE*modif)%>%
     mutate(Rs=Rs*modif)%>%
     mutate(Reco=Reco*modif)
-    
+  
   m<-c(
     pull(filter(df,Year>=sY&Year<=eY&Year!=2007)%>%
            group_by(Year,Month)%>%
@@ -362,110 +222,6 @@ sampleOutputPine_noHyd<-function(df,sY,eY){
 }
 
 
-## Likelihood function
-NLL<- function(p){
-  sitka[.GlobalEnv$nm]<-p
-  
-  #sitka$Q10X<-0
-  
-   NlogLik <- tryCatch(
-    {
-
-      output<-   do.call(fr3PGDN,sitka)
-      modelled <-sampleOutputMonth(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
-     #NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,sum(dnorm(modelled,mean=.GlobalEnv$observed,sd=.GlobalEnv$dev,log=T),na.rm = T))
-      NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,flogL(data=.GlobalEnv$observed,sims=modelled,data_s=.GlobalEnv$dev))
-      NlogLik<-ifelse(max(output$LAI)>8,-Inf,NlogLik)
-      NlogLik<-ifelse(min(output$totN)<1,-Inf,NlogLik)
-      NlogLik<-ifelse(sitka$fieldCap<sitka$wiltPoint,-Inf,NlogLik)
-      NlogLik<-ifelse(sitka$satPoint<sitka$fieldCap,-Inf,NlogLik)
-    },
-    error=function(cond) {
-      return(-Inf)
-    })
-  return(NlogLik)
-}
-
-# sivia likelihood calculation
-flogL <- function(sims,data,data_s)
-{ 
-  Ri         <- (sims - data) / data_s
-  i0         <- which( abs(Ri)<1.e-08 )
-  
-  logLi      <- log(1-exp(-0.5*Ri^2)) - log(Ri^2) - 0.5*log(2*pi) - log(data_s)
-  logLi[i0]  <- -0.5*log(2*pi) - log(2*data_s[i0])
-  
-  sum(logLi)
-}
-
-
-## Likelihood function
-NLL_weekly<- function(p){
-  sitka[.GlobalEnv$nm]<-p
-  
-  
-  NlogLik <- tryCatch(
-    {
-      output<-do.call(fr3PGDN,sitka)
-      #use sampleOutputTS if using smaller time-steps
-      modelled <-sampleOutputWeekly(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
-      
-      NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,sum(dnorm(modelled,.GlobalEnv$observed,GlobalEnv$dev,log=T)))
-      
-NlogLik<-ifelse(max(output$LAI)>8,-Inf,NlogLik)
-#        NlogLik<-ifelse(mean(tail(output$LAI,500))<1,-Inf,NlogLik)
-      NlogLik<-ifelse(min(output$totN)<1,-Inf,NlogLik)
-      
-      
-    },
-    error=function(cond) {
-      return(-Inf)
-    })
-  return(NlogLik)
-}
-
-
-## Likelihood function
-NLL_noHYD<- function(p){
-  sitka[.GlobalEnv$nm]<-p
-  
-  NlogLik <- tryCatch(
-    {
-      output<-do.call(fr3PGDN,sitka)
-      #use sampleOutputTS if using smaller time-steps
-      modelled <-sampleOutputTS_noHyd(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
-      
-      NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,sum(dnorm(.GlobalEnv$observed,mean=modelled,sd=.GlobalEnv$dev,log=T),na.rm = T))
-      
-      
-    },
-    error=function(cond) {
-      return(-Inf)
-    })
-  return(NlogLik)
-}
-
-
-## Likelihood function
-NLL_noHYDWeekly<- function(p){
-  sitka[.GlobalEnv$nm]<-p
-  
-  NlogLik <- tryCatch(
-    {
-      output<-do.call(fr3PGDN,sitka)
-      #use sampleOutputTS if using smaller time-steps
-      modelled <-sampleOutputTS_noHyd_weekly(output,.GlobalEnv$startYear,.GlobalEnv$endYear)
-      
-      NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,sum(dnorm(.GlobalEnv$observed,mean=modelled,sd=.GlobalEnv$dev,log=T),na.rm = T))
-      
-      
-    },
-    error=function(cond) {
-      return(-Inf)
-    })
-  return(NlogLik)
-}
-
 
 ## Likelihood function
 pineLL <- function(p){
@@ -477,6 +233,9 @@ pineLL <- function(p){
       output<-do.call(fr3PGDN,pine)
       modelled <-suppressWarnings(suppressMessages(sampleOutputPine(output,.GlobalEnv$startYear,.GlobalEnv$endYear)))
       NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,(flogL(data=.GlobalEnv$observedPine,sims=modelled,data_s=.GlobalEnv$devPine)))
+      NlogLik<-ifelse(pine$fieldCap<pine$wiltPoint,-Inf,NlogLik)
+      NlogLik<-ifelse(pine$satPoint<pine$fieldCap,-Inf,NlogLik)
+      NlogLik<-ifelse(pine$fieldCap<pine$wiltPoint,-Inf,NlogLik)
       
     },
     error=function(cond) {
@@ -547,13 +306,4 @@ pineLL_weekly_noHyd <- function(p){
   
   return(NlogLik)
 }
-
-
-
-
-
-
-
-
-
 

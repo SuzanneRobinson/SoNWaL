@@ -30,11 +30,11 @@ timeStep<-"weekly"
 climDir<-("Data/")
 
 clm_df_reg<-readRDS("Data/regionalClmDat.RDS")
-clm_df_reg$RH<-relative_humidity_calc(Tmean=clm_df_reg$Tmean,Tref=273.16,p=clm_df_reg$psurf_pa,q=clm_df_reg$specHumid)
+clm_df_reg$RH<-relative_humidity_calc(Tmean=clm_df_reg$Tmean,Tref=273.16,pp=clm_df_reg$psurf_pa,spec_hum=clm_df_reg$specHumid)
 clm_df_reg$VPD <-((( (0.61078 * exp(17.269 * (clm_df_reg$Tmean)/(237.3 + clm_df_reg$Tmean)))*(1-(clm_df_reg$RH)/100))))
 clm_df_reg<-data.frame(site=clm_df_reg$siteName, Year=clm_df_reg$year,week=week(clm_df_reg$date),Month=clm_df_reg$month,Tmax=clm_df_reg$Tmax,Tmin=clm_df_reg$Tmin,
                        Tmean=clm_df_reg$Tmean,Rain=clm_df_reg$precip_mm,SolarRad=clm_df_reg$solarRad_MJ,FrostDays=ifelse(clm_df_reg$Tmin<=0,1,0),MonthIrrig=0,VPD=clm_df_reg$VPD,RH=clm_df_reg$RH,rainDays=ifelse(clm_df_reg$precip_mm>=1,1,0),
-                       wp=clm_df_reg$wp,fc=clm_df_reg$fc,wp=clm_df_reg$wp,soil_depth=clm_df_reg$soil_depth,soilCond=clm_df_reg$soilCond,soilTex=clm_df_reg$soilTex)
+                       wp=clm_df_reg$wp,fc=clm_df_reg$fc,wp=clm_df_reg$wp,soil_depth=clm_df_reg$soilDepth,soilCond=clm_df_reg$soilCond,soilTex=clm_df_reg$soilTex)
 
 clm_df_reg<-clm_df_reg%>%group_by(site,Year,week)%>%summarise(Year=median(Year),week=median(week),Month=median(Month),
                                                               Tmax=max(Tmax),Tmin=min(Tmin),Tmean=mean(Tmean),Rain=sum(Rain),SolarRad=mean(SolarRad),
@@ -161,7 +161,7 @@ priorVals<-createPriors_sitka_rg(paramList)
   }
   
   
-  out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\weekly_24_T.RDS")
+  out<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\reg_cals\\weekly_24_T.RDS")
   nmc<-nrow(out$chain[[1]])
   outSample   <- as.data.frame(getSample(out,start=round(nmc/1.1),thin=1,numSamples = 10))
   paramList<-getParms(
@@ -200,50 +200,7 @@ priorVals<-createPriors_sitka_rg(paramList)
   library(future.apply)
   plan(multisession)
   
-    g2<-future_mapply( runModReg,g[c(1:3)],MoreArgs = list(dg=T),SIMPLIFY = F)
+    g2<-future_mapply( runModReg,g[c(1:13)],MoreArgs = list(dg=T),SIMPLIFY = F)
 
-    ggarrange(g2$`2013`,g2$`2042`,g2$`2191`,g2$`4301`,g2$`461`,g2$`6619`,g2$`7643`,g2$`9004`,g2$`9008`,g2$EXM7,g2$EXM7,g2$FERN,g2$QUA6)
-    
-    
-
-      #concatonate chains
-    nm_all<-c(paste0("wiltPoint_Si",unique(paramList$weather$site)),
-              paste0("fieldCap_Si",unique(paramList$weather$site)),
-              paste0("satPoint_Si",unique(paramList$weather$site)),
-              paste0("K_s_Si",unique(paramList$weather$site)),
-              paste0("V_nr_Si",unique(paramList$weather$site)),
-              paste0("E_S1_Si",unique(paramList$weather$site)),
-              paste0("E_S2_Si",unique(paramList$weather$site)),
-              paste0("shared_area_Si",unique(paramList$weather$site)),
-              paste0("maxRootDepth_Si",unique(paramList$weather$site)),
-              paste0("K_drain_Si",unique(paramList$weather$site)),
-              paste0("startN_Si",unique(paramList$weather$site)),
-              paste0("startC_Si",unique(paramList$weather$site)),
-              "pFS2","pFS20","gammaF0","tgammaF","Rttover","mF","mR",
-              "mS","Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0",
-              "SWpower0","sigma_zR"
-              ,"aS","nS","pRx","pRn","gammaFx",
-              "SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-              "k","Qa","Qb","MaxIntcptn","llp","ll","pp")
-    
-    mChains<- as.data.frame((out$chain[[1]]))
-     names(mChains)<-nm_all
-    concChains<-mChains %>% 
-       pivot_longer(cols = starts_with(c("wiltPoint","fieldCap","satPoint","K_s","V_nr","E_S1",
-                                         "E_S2","shared_area","maxRootDepth",
-                                         "K_drain","startN","startC")), 
-                    names_to = c(".value", "wpKey"), names_sep = "_Si") %>% 
-       select(-wpKey)
-    
-    gpL<-list()  
-for(i in c(1:ncol(concChains))){
-  
-concTmp<-data.frame(cc=concChains[i])
-names(concTmp)<-"cc"
-gpL[[i]]<-ggplot(data=concTmp,aes(cc))+
-    geom_histogram(bins=100,col="black")+
-  xlab(names(concChains[i]))
-
-}    
-    ggarrange(plotlist=gpL)
+    ggarrange(plotlist = g2)
     

@@ -182,7 +182,7 @@ if( Nav > Navx){
   Nav <- Navx
 }
     ## Now estimate fN
-    fN <- (Nav - Navm) / (Navx - Navm)
+    fN <- max((Nav - Navm) / (Navx - Navm),0)
     
     
     

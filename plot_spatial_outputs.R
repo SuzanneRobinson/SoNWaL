@@ -19,6 +19,7 @@ ans = rbindlist(lapply(filenames, readComb),fill=T)
 saveRDS(ans,"/home/users/aaronm7/BASFOR_spatOut_28_10.RDS")
 
 library(data.table)
+library(stringr)
 #SoNWal combine function
 fileLocs<-"/work/scratch-nopw/alm/spatOutput"
 filenames<-list.files(path = fileLocs, pattern = "\\.RDS$", full.names = F, 
@@ -31,33 +32,36 @@ readComb<-function(file){
   return(ff)
 }
 ans = rbindlist(lapply(filenames, readComb),fill=T)
-saveRDS(ans,"/home/users/aaronm7/SoNWal_spatOut_16_11.RDS")
+saveRDS(ans,"/home/users/aaronm7/SoNWal_spatOut_16_03_22.RDS")
 
 
 ###plot SoNWaL spatial outputs###
 
-outSpat<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\SoNWal_spatOut_26_10.RDS")
+outSpat<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\spatial\\SoNWal_spatOut_16_03_22.RDS")
 #soilDataLocs<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\soilDataLocs.RDS")
 #outSpat<-merge(lkList,outSpat,by.x="fName",by.y="fName")
 library(grid)
 outSpat<-outSpat[is.na(outSpat$Year)==F,]
 #saveRDS(lkListSon,"lkListSon.RDS")
-lkListSon<-readRDS("lkListSon.RDS")
-outSpat$id<-lkListSon$fName
-outSpat$GPPcsum <- ave(outSpat$GPP_value*365, outSpat$id, FUN=cumsum)
-years<-c(1971:2016)
+#lkListSon<-readRDS("lkListSon.RDS")
+#outSpat$id<-lkListSon$fName
+outSpat$GPPcsum <- ave(outSpat$GPP_value*365, outSpat$grid_id, FUN=cumsum)
+outSpat$suit<-ifelse(outSpat$yc_value>summary(outSpatY$yc_value)[5],"Highly Suitable", "Suitable")
+outSpat$suit<-ifelse(outSpat$yc_value<summary(outSpatY$yc_value)[4], "Unsuitable",outSpat$suit)
+
+years<-c(2015:2079)
 ggList = as.list(years)
 fg<-NULL
 for(i in c(1:length(years))){
-  
-  outSpatY<-as.data.frame(outSpat%>%filter(Year==years[i]|is.na(Year)==T))
+  outSpat<-as.data.frame(outSpat)
+  outSpatY<-as.data.frame(outSpat%>%dplyr::filter(Year==years[i]|is.na(Year)==T))
   outSpatY<-outSpatY[!(is.na(outSpatY$Year) == T & is.na(outSpatY$Wsbr_q05) == F ), ]
   fg2<-data.frame(Year=years[i],Total_GPP=sum(outSpatY$GPP_value*7.14,na.rm=T),Total_NPP=sum(outSpatY$NPP_value*7.14,na.rm=T),Total_NEE=sum(outSpatY$NEE_value*7.14,na.rm=T),AVG_LAI=mean(outSpatY$LAI_value,na.rm=T))
   #basOut3<-filter(basOut3,y>8e+05)
   #basOut3<-filter(basOut3,y<8.5e+05)
   
   g1<-ggplot() +
-    geom_raster(data = outSpatY , aes(x = x, y = y, fill = ((GPP_value*7.14))))+
+    geom_raster(data = outSpatY , aes(x = x, y = y, fill = ((yc_value))))+
     theme_bw()+
     theme(
       axis.title.x=element_blank(),
@@ -71,7 +75,7 @@ for(i in c(1:length(years))){
       panel.background = element_rect(fill="white", color = NA),
       panel.grid.minor = element_blank())+
     coord_equal() + 
-    scale_fill_viridis_c(limits=c(0,12),expression(paste("GPP      ",sep="")),option = "turbo",na.value="white")+ 
+    scale_fill_viridis_c(limits=c(0,35),expression(paste("Yield Class      ",sep="")),option = "turbo",na.value="white")+ 
     theme(legend.background = element_rect(fill = "white"),legend.text=element_text(color="black"),
           plot.title = element_text(color = "black"),
           legend.title = element_text(color="black"))
@@ -91,7 +95,7 @@ for(i in c(1:length(years))){
           legend.key = element_rect(fill = "white"),
           panel.grid.minor = element_blank())+
     coord_equal() + 
-    scale_fill_viridis_c(limits=c(0,10),expression(paste("LAI",sep="")),option = "turbo",na.value="white")+
+    scale_fill_viridis_c(limits=c(0,12),expression(paste("LAI",sep="")),option = "turbo",na.value="white")+
     theme(legend.background = element_rect(fill = "white"),legend.text=element_text(color="black"),
           plot.title = element_text(color = "black"),
           legend.title = element_text(color="black"))
@@ -111,7 +115,7 @@ for(i in c(1:length(years))){
           panel.background = element_rect(fill="white", color = NA),
           panel.grid.minor = element_blank())+
     coord_equal() + 
-    scale_fill_viridis_c(limits=c(0,6),expression(paste("NPP   ",sep="")),option = "turbo",na.value="white")+
+    scale_fill_viridis_c(limits=c(0,15),expression(paste("NPP   ",sep="")),option = "turbo",na.value="white")+
     theme(legend.background = element_rect(fill = "white"),legend.text=element_text(color="black"),
           plot.title = element_text(color = "black"),
           legend.title = element_text(color="black"))
@@ -130,7 +134,7 @@ for(i in c(1:length(years))){
           panel.background = element_rect(fill="white", color = NA),
           panel.grid.minor = element_blank())+
     coord_equal() + 
-    scale_fill_viridis_c(limits=c(-4,4),expression(paste("NEE",sep="")),option = "turbo",na.value="white")+
+    scale_fill_viridis_c(limits=c(-8,8),expression(paste("NEE",sep="")),option = "turbo",na.value="white")+
     theme(legend.background = element_rect(fill = "white"),legend.text=element_text(color="black"),
           plot.title = element_text(color = "black"),
           legend.title = element_text(color="black"))
