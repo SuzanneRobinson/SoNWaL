@@ -212,8 +212,8 @@ modCo<-lm(co~clay,data=texT)
 modNo<-lm(no~clay,data=texT)
 
 # predict drainage values from mapped soil data
- simDat$K_drain<-as.vector(predict(mod_K_drain,data.frame(wiltPoint=simDat$WP/(simDat$depth*10),fieldCap=simDat$FC/(simDat$depth*10),V_nr=simDat$depth/100)))
- simDat$K_s<-as.vector(predict(mod_K_s,data.frame(satPoint=simDat$sp,wiltPoint=simDat$wp/(simDat$soil_depth*10),fieldCap=simDat$fc/(simDat$soil_depth*10),V_nr=simDat$soil_depth/100)))
+ #simDat$K_drain<-as.vector(predict(mod_K_drain,data.frame(wiltPoint=simDat$wp/(simDat$depth*10),fieldCap=simDat$fc/(simDat$depth*10),V_nr=simDat$depth/100)))
+ #simDat$K_s<-as.vector(predict(mod_K_s,data.frame(satPoint=simDat$sp,wiltPoint=simDat$wp/(simDat$soil_depth*10),fieldCap=simDat$fc/(simDat$soil_depth*10),V_nr=simDat$soil_depth/100)))
 
 # predict fertility modifiers from mapped soil data
 simDat$co <- as.vector(predict(modCo, data.frame(sand = simDat$Tsand, clay=simDat$Tclay, silt=simDat$Tsilt)))

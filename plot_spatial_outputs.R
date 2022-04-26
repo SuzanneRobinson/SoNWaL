@@ -16,7 +16,7 @@ readComb<-function(file){
   return(ff)
 }
 ans = rbindlist(lapply(filenames, readComb),fill=T)
-saveRDS(ans,"/home/users/aaronm7/BASFOR_spatOut_28_10.RDS")
+saveRDS(ans,"/home/users/aaronm7/BASFOR_spatOut_04_04.RDS")
 
 library(data.table)
 library(stringr)
@@ -32,12 +32,12 @@ readComb<-function(file){
   return(ff)
 }
 ans = rbindlist(lapply(filenames, readComb),fill=T)
-saveRDS(ans,"/home/users/aaronm7/SoNWal_spatOut_16_03_22.RDS")
+saveRDS(ans,"/home/users/aaronm7/SoNWal_spatOut_25_04_22.RDS")
 
 
 ###plot SoNWaL spatial outputs###
 
-outSpat<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\spatial\\SoNWal_spatOut_16_03_22.RDS")
+outSpat<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\spatial\\historical\\SoNWal_spatOut_25_04_22.RDS")
 #soilDataLocs<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\soilDataLocs.RDS")
 #outSpat<-merge(lkList,outSpat,by.x="fName",by.y="fName")
 library(grid)
@@ -46,10 +46,17 @@ outSpat<-outSpat[is.na(outSpat$Year)==F,]
 #lkListSon<-readRDS("lkListSon.RDS")
 #outSpat$id<-lkListSon$fName
 outSpat$GPPcsum <- ave(outSpat$GPP_value*365, outSpat$grid_id, FUN=cumsum)
-outSpat$suit<-ifelse(outSpat$yc_value>summary(outSpatY$yc_value)[5],"Highly Suitable", "Suitable")
-outSpat$suit<-ifelse(outSpat$yc_value<summary(outSpatY$yc_value)[4], "Unsuitable",outSpat$suit)
+outSpat$suit<-ifelse(outSpat$yc_value>summary(outSpat$yc_value)[5],"Highly Suitable", "Suitable")
+outSpat$suit<-ifelse(outSpat$yc_value<summary(outSpat$yc_value)[4], "Unsuitable",outSpat$suit)
+outSpat$suitU<-ifelse(outSpat$yc_q95>summary(outSpat$yc_value)[5],"Highly Suitable", "Suitable")
+outSpat$suitU<-ifelse(outSpat$yc_q95<summary(outSpat$yc_value)[4], "Unsuitable",outSpat$suit)
+outSpat$suitL<-ifelse(outSpat$yc_q05>summary(outSpat$yc_value)[5],"Highly Suitable", "Suitable")
+outSpat$suitL<-ifelse(outSpat$yc_q05<summary(outSpat$yc_value)[4], "Unsuitable",outSpat$suit)
 
-years<-c(2015:2079)
+outSpat$YCrange<-outSpat$yc_q95-outSpat$yc_q05
+
+
+years<-c(1961:2079)
 ggList = as.list(years)
 fg<-NULL
 for(i in c(1:length(years))){
@@ -60,9 +67,10 @@ for(i in c(1:length(years))){
   #basOut3<-filter(basOut3,y>8e+05)
   #basOut3<-filter(basOut3,y<8.5e+05)
   
-  g1<-ggplot() +
-    geom_raster(data = outSpatY , aes(x = x, y = y, fill = ((yc_value))))+
+  g2<-ggplot() +
+    geom_raster(data = outSpatY , aes(x = x, y = y, fill = ((GPP_value))))+
     theme_bw()+
+    ggtitle("YC range")+
     theme(
       axis.title.x=element_blank(),
       axis.text.x=element_blank(),
@@ -75,10 +83,10 @@ for(i in c(1:length(years))){
       panel.background = element_rect(fill="white", color = NA),
       panel.grid.minor = element_blank())+
     coord_equal() + 
-    scale_fill_viridis_c(limits=c(0,35),expression(paste("Yield Class      ",sep="")),option = "turbo",na.value="white")+ 
-    theme(legend.background = element_rect(fill = "white"),legend.text=element_text(color="black"),
-          plot.title = element_text(color = "black"),
-          legend.title = element_text(color="black"))
+    scale_fill_viridis_c(limit=c(0,35), expression(paste("Yield Class   ",sep="")),option = "turbo",na.value="white")+ 
+    theme(legend.background = element_rect(fill = "white"),legend.text=element_text(color="black",size=15),
+          plot.title = element_text(color = "black",size=20),
+          legend.title = element_text(color="black",size=20))
   
   g2<-ggplot() +
     geom_raster(data = outSpatY , aes(x = x, y = y, fill = ((LAI_value))))+
@@ -102,7 +110,7 @@ for(i in c(1:length(years))){
   
   
   g3<-ggplot() +
-    geom_raster(data = outSpatY , aes(x = x, y = y, fill = ((NPP_value*7.14))))+
+    geom_raster(data = outSpatY , aes(x = x, y = y, fill = ((NPP_q05*7.14))))+
     theme_bw()+
     theme(axis.title.x=element_blank(),
           axis.text.x=element_blank(),
@@ -151,7 +159,7 @@ ggarrange(ggList[[1]],ggList[[2]],ggList[[3]],ggList[[4]],ggList[[5]],ggList[[6]
 
 
 
-imgs <- list.files("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\markdownScrpts\\animations\\", full.names = TRUE)
+imgs <- list.files("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\markdownScrpts\\animations\\rcp65_01", full.names = TRUE)
 img_list <- lapply(imgs, image_read)
 img_joined <- image_join(img_list)
 img_animated <- image_animate(img_joined, fps = 2)

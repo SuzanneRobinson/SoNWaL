@@ -24,8 +24,8 @@ function (state, site, parms, weather) #requires weather too for current month, 
     difWl <- NPP * pF
     difWr <- NPP * pR
     difWsbr <- NPP * pS
-    gammaFx <- parms[["gammaFx"]]*12/parms[["timeStp"]] #adjust to get time step rates from monthly rates?
-    gammaF0 <- parms[["gammaF0"]]*12/parms[["timeStp"]]
+    gammaFx <- parms[["gammaFx"]]#*12/parms[["timeStp"]] #adjust to get time step rates from monthly rates?
+    gammaF0 <- parms[["gammaF0"]]#*12/parms[["timeStp"]]
     tgammaF <- parms[["tgammaF"]]
     
     
@@ -53,7 +53,6 @@ function (state, site, parms, weather) #requires weather too for current month, 
       state[["Wsbr"]] <- state[["Wsbr"]] ##no changes in stem W
       difLitter <- ifelse(Littfall == 0, state[["Wlitt"]] * Littfall, Littfall)
       TotalLitter <- state[["Wlitt"]] + difLitter #In a dormant month, difLitter is calculated as above and added to the existing litter W
-      #browser()
     }
     
     #2nd case: The previous month was dormant but the current one is not (so we might have W increments IF we have available NPP after re-growing leaves)
@@ -69,8 +68,8 @@ function (state, site, parms, weather) #requires weather too for current month, 
       #For litterfall:
       t <- state[["t"]]
       #For info on the litterfall eq. See A.3 in Sands and Landsberg (2002). Parameterisation of 3-PG forplantation grown Eucalyptus globules.
-      Littfall <- gammaFx * gammaF0/(gammaF0 + (gammaFx - gammaF0) * 
-                                       exp(-12* log(1 + gammaFx/gammaF0) * t/tgammaF))
+      Littfall <- (gammaFx * gammaF0/(gammaF0 + (gammaFx - gammaF0) * 
+                                       exp(-12* log(1 + gammaFx/gammaF0) * t/tgammaF)))*12/parms[["timeStp"]]
 
       difLitter <- Littfall * Wl
       #For root turnover:
@@ -101,8 +100,8 @@ function (state, site, parms, weather) #requires weather too for current month, 
       #For litterfall:
       Wl <- state[["Wl"]]
       t <- state[["t"]]
-      Littfall <- gammaFx * gammaF0/(gammaF0 + (gammaFx - gammaF0) * 
-                                       exp(-parms[["timeStp"]] * log(1 + gammaFx/gammaF0) * t/tgammaF))
+      Littfall <- (gammaFx * gammaF0/(gammaF0 + (gammaFx - gammaF0) * 
+                                        exp(-12* log(1 + gammaFx/gammaF0) * t/tgammaF)))*12/parms[["timeStp"]]
       difLitter <- Littfall * Wl
       #For root turnover:
       Wr <- state[["Wr"]]
@@ -144,8 +143,8 @@ function (state, site, parms, weather) #requires weather too for current month, 
       #For litterfall:
       Wl <- state[["Wl"]]
       t <- state[["t"]]
-      Littfall <- gammaFx * gammaF0/(gammaF0 + (gammaFx - gammaF0) * 
-                                       exp(-12 * log(1 + gammaFx/gammaF0) * t/tgammaF))
+      Littfall <- (gammaFx * gammaF0/(gammaF0 + (gammaFx - gammaF0) * 
+                                        exp(-12* log(1 + gammaFx/gammaF0) * t/tgammaF)))*12/parms[["timeStp"]]
       
       ########defoliation mod###########
       #defol<-if(round(t) %% parms[["tempMod"]]==0) parms[["rainMod"]] else 0

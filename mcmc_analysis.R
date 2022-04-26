@@ -1,5 +1,5 @@
 ##Analysis of MCMC
-library(fr3PGDN,quietly=TRUE)
+library(SoNWaL,quietly=TRUE)
 library(tidyverse,quietly=TRUE)
 library(lubridate)
 library(coda)
@@ -66,7 +66,7 @@ sitkaBICcomp(data,startY=2015,endY=2018,pNum=36,sitka)
 
 
 
-output<-do.call(fr3PGDN,sitka)
+output<-do.call(SoNWaL,sitka)
 tail(output$GPP)
 results<-plotResults(output,ShortTS=F)
 ggarrange(results[[2]],results[[6]],results[[5]],results[[12]])

@@ -5,7 +5,7 @@
 ######################
 
 ## Load necessary packages
-library(fr3PGDN,quietly=TRUE)
+library(SoNWaL,quietly=TRUE)
 library("tidyverse")
 library("lubridate")
 library("coda")
@@ -96,11 +96,11 @@ sitka[nm]<-codM[nm]
 #for(i in c(1:length(codM))){
 #sitka[nm]<-codM[nm]
 #sitka[nm[i]]<-codM2[nm[i]]
-#output<-do.call(fr3PGDN,sitka)
+#output<-do.call(SoNWaL,sitka)
 #plot(output$LAI,main=nm[i])
 #}
 #sitka$pFS20<-0.1
-output<-do.call(fr3PGDN,sitka)
+output<-do.call(SoNWaL,sitka)
 ff<-filter(output,Year>2014)
 plot(output$LAI)
 
@@ -128,7 +128,7 @@ sum((ff$YlN[4000]),(ff$ON[4000]),(ff$YrN[4000]))
 sum((ff$YlC[4000]),(ff$OC[4000]),(ff$YrC[4000]))
 
 
-output<-do.call(fr3PGDN,sitka)%>%
+output<-do.call(SoNWaL,sitka)%>%
   filter(Year>=2015)%>%
   group_by(Year,Month)%>%
   dplyr::summarise(mean=mean(GPP*7.14,na.rm=TRUE))

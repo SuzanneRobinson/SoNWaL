@@ -102,7 +102,7 @@ sampleOutputSitka<-function(df,sY,eY){
   return(m)
 }
 
-output<-do.call(fr3PGDN,params)
+output<-do.call(SoNWaL,params)
 modelled <-sampleOutputSitka(output,startY,endY)
 ll<-ifelse(any(is.na(modelled)==T),-Inf,sum(dnorm(x=obsSitka,sd =devSitka, mean=modelled,log=T),na.rm = T))
 print(paste0("Log likelihood = ",ll))
@@ -180,7 +180,7 @@ pineBICcomp<-function(obsData=data,startY=2018,endY=2018,pNum=47,params=sitka){
     return(m)
   }
   
-  output<-do.call(fr3PGDN,params)
+  output<-do.call(SoNWaL,params)
   modelled <-sampleOutputPine(output,startY,endY)
   ll<-ifelse(any(is.na(modelled)==T),-Inf,sum(dnorm(x=obsSitka,sd =devSitka, mean=modelled,log=T),na.rm = T))
   print(paste0("Log likelihood = ",ll))

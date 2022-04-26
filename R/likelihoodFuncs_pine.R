@@ -230,7 +230,7 @@ pineLL <- function(p){
   
   NlogLik <- tryCatch(
     {
-      output<-do.call(fr3PGDN,pine)
+      output<-do.call(SoNWaL,pine)
       modelled <-suppressWarnings(suppressMessages(sampleOutputPine(output,.GlobalEnv$startYear,.GlobalEnv$endYear)))
       NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,(flogL(data=.GlobalEnv$observedPine,sims=modelled,data_s=.GlobalEnv$devPine)))
       NlogLik<-ifelse(pine$fieldCap<pine$wiltPoint,-Inf,NlogLik)
@@ -253,7 +253,7 @@ pineLL_weekly <- function(p){
   
   NlogLik <- tryCatch(
     {
-      output<-do.call(fr3PGDN,pine)
+      output<-do.call(SoNWaL,pine)
       modelled <-suppressWarnings(suppressMessages(sampleOutputPineWeek(output,.GlobalEnv$startYear,.GlobalEnv$endYear)))
       ifelse(any(is.na(modelled)==TRUE),-Inf,sum(dnorm(x=.GlobalEnv$observedPine,sd =.GlobalEnv$devPine, mean=modelled,log=T),na.rm = T))
       
@@ -275,7 +275,7 @@ pineLL_noHyd <- function(p){
   
   NlogLik <- tryCatch(
     {
-      output<-do.call(fr3PGDN,pine)
+      output<-do.call(SoNWaL,pine)
       modelled <-suppressWarnings(suppressMessages(sampleOutputPine_noHyd(output,.GlobalEnv$startYear,.GlobalEnv$endYear)))
       ifelse(any(is.na(modelled)==TRUE),-Inf,sum(dnorm(x=.GlobalEnv$observedPine,sd =.GlobalEnv$devPine, mean=modelled,log=T),na.rm = T))
       
@@ -295,7 +295,7 @@ pineLL_weekly_noHyd <- function(p){
   
   NlogLik <- tryCatch(
     {
-      output<-do.call(fr3PGDN,pine)
+      output<-do.call(SoNWaL,pine)
       modelled <-suppressWarnings(suppressMessages(sampleOutputPineWeek_noHyd(output,.GlobalEnv$startYear,.GlobalEnv$endYear)))
       ifelse(any(is.na(modelled)==TRUE),-Inf,sum(dnorm(x=.GlobalEnv$observedPine,sd =.GlobalEnv$devPine, mean=modelled,log=T),na.rm = T))
       

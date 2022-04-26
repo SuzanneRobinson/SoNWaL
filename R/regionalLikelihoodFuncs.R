@@ -113,7 +113,7 @@ runMod_mixedP <- function(newParams,paramListX,nm_all) {
       filter(paramListX$weather, Year >= paramListX$weather$plantingYear[1])
     
     #run model
-    output <- do.call(fr3PGDN, paramListX)
+    output <- do.call(SoNWaL, paramListX)
     
     #filter simulated data to match observed data format
     modelled <-

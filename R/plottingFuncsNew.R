@@ -3,7 +3,7 @@ library(rlang)
 
 runModel<- function(p){
   pine[.GlobalEnv$nm]<-p[nm]
-  pull(do.call(fr3PGDN,pine)%>%
+  pull(do.call(SoNWaL,pine)%>%
     filter(Year>=1996)%>%
      group_by(Year,Month) %>%
    dplyr::summarise(GPP=mean(!!sym(prm))))
@@ -18,7 +18,7 @@ plotResultsPine <- function(outP,ShortTS=F){
   numSamples = 100# min(1000, nrow(outSample))
   codM<-miscTools::colMedians(as.data.frame(outSample))
   pine[.GlobalEnv$nm]<-codM[.GlobalEnv$nm]
-  df<-do.call(fr3PGDN,pine)
+  df<-do.call(SoNWaL,pine)
   
   ##if plyr is loaded before dplyr can cause problems with groupby
   dt=12
@@ -53,7 +53,7 @@ plotResultsPine <- function(outP,ShortTS=F){
                       thinWsbr=c(0.4,0.3,0.075),thinWr=c(0.4,0.3,0.075),t.nsprouts=c(1,1,1))
     pine[.GlobalEnv$nm]<-p[nm]
     pine$presc<-presc
-    res<- do.call(fr3PGDN,pine)%>%
+    res<- do.call(SoNWaL,pine)%>%
       filter(Year>=1996)%>%
       group_by(Year,Month)%>%
       dplyr::summarise(GPP=mean(GPP),NEE=mean(NEE),volSWC_rz=mean(volSWC_rz),EvapTransp=mean(EvapTransp)/nDays,Reco=mean(Reco),Rs=mean(Rs),N=mean(N),LAI=mean(LAI),dg=mean(dg),totC=mean(totC),totN=mean(totN),NPP=mean(NPP),alphaAn=mean(Reco/Rs))
@@ -263,7 +263,7 @@ plotResultsNewMonthly <- function(df,outSample,ShortTS=F,numSamps=500){
   outSample<-sample_n(outSample,numSamps)
   codM<-miscTools::colMedians(as.data.frame(outSample))
   sitka[.GlobalEnv$nm]<-codM[.GlobalEnv$nm]
-  df<-do.call(fr3PGDN,sitka)
+  df<-do.call(SoNWaL,sitka)
   
   ##if plyr is loaded before dplyr can cause problems with groupby
   dt=12
@@ -308,11 +308,10 @@ plotResultsNewMonthly <- function(df,outSample,ShortTS=F,numSamps=500){
   
   runModel<- function(p){
     require("dplyr")
-    sitka[.GlobalEnv$nm]<-p
-
-      res<- do.call(fr3PGDN,sitka)%>%
+    sitka[nm]<-p
+      res<- do.call(SoNWaL,sitka)%>%
                    group_by(Year,Month)%>%
-        dplyr::summarise(GPPsum=sum(GPP*7),NPPsum=sum(NPP*7),GPP=mean(GPP),NEE=mean(NEE),volSWC_rz=mean(volSWC_rz),EvapTransp=mean(EvapTransp)/nDays,Reco=mean(Reco),Rs=mean(Rs),N=mean(N),LAI=mean(LAI),dg=mean(dg),totC=mean(totC),totN=mean(totN),NPP=mean(NPP),alphaAn=mean(Reco/Rs))
+        dplyr::summarise(GPPsum=sum(GPP*nDays),NPPsum=sum(NPP*nDays),GPP=mean(GPP),NEE=mean(NEE),volSWC_rz=mean(volSWC_rz),EvapTransp=mean(EvapTransp)/nDays,Reco=mean(Reco),Rs=mean(Rs),N=mean(N),LAI=mean(LAI),dg=mean(dg),totC=mean(totC),totN=mean(totN),NPP=mean(NPP),alphaAn=mean(Reco/Rs))
    
     return(res)
   }
@@ -364,13 +363,19 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
   
   dataX$simCGppPos<-predPosSum
   dataX$simCGppNeg<-predNegSum
+  dataX$simCGpp<-predmSum
+  
   dataX$simCGppNeg<-dplyr::pull(dataX%>%dplyr::mutate(GPPCneg=cumsum(simCGppNeg))%>%dplyr::select(GPPCneg))
   dataX$simCGppPos<-dplyr::pull(dataX%>%dplyr::mutate(GPPCpos=cumsum(simCGppPos))%>%dplyr::select(GPPCpos))
+  dataX$simCGpp<-dplyr::pull(dataX%>%dplyr::mutate(GPPCpos=cumsum(simCGpp))%>%dplyr::select(GPPCpos))
   
   dataX$simCNppPos<-predNPPPosSum
   dataX$simCNppNeg<-predNPPNegSum
+  dataX$predmNPPSum<-predmNPPSum
+  
   dataX$simCNppNeg<-dplyr::pull(dataX%>%dplyr::mutate(NPPCneg=cumsum(simCNppNeg))%>%dplyr::select(NPPCneg))
   dataX$simCNppPos<-dplyr::pull(dataX%>%dplyr::mutate(NPPCpos=cumsum(simCNppPos))%>%dplyr::select(NPPCpos))
+  dataX$simCNpp<-dplyr::pull(dataX%>%dplyr::mutate(NPPC=cumsum(predmNPPSum))%>%dplyr::select(NPPC))
   
   
   
@@ -654,7 +659,7 @@ plotResultsNew <- function(df,out,ShortTS=F){
   numSamples = 25# min(1000, nrow(outSample))
   codM<-miscTools::colMedians(as.data.frame(outSample))
   sitka[.GlobalEnv$nm]<-codM[.GlobalEnv$nm]
-  df<-do.call(fr3PGDN,sitka)
+  df<-do.call(SoNWaL,sitka)
   
   
   
@@ -704,7 +709,7 @@ df <- df[c(2:nrow(df)),]
  runModel<- function(p){
    sitka[.GlobalEnv$nm]<-p
    if(prm!="EvapTransp"){
-  res1<-do.call(fr3PGDN,sitka)%>%
+  res1<-do.call(SoNWaL,sitka)%>%
           filter(Year>=2015)
 res1$week<-c(1:53)
 res<-pull(res1%>%
@@ -713,7 +718,7 @@ res<-pull(res1%>%
           select(mean)
         )
    } else {
-     res1<-do.call(fr3PGDN,sitka)%>%
+     res1<-do.call(SoNWaL,sitka)%>%
        filter(Year>=2015)
      res1$week<-c(1:53)
      res<-pull(res1%>%
@@ -1023,13 +1028,13 @@ quickPlot<-function(flxdata_daily,output,grouping="month"){
   
   
   
-  ggpubr::ggarrange(gpp1,gpp2,gpp3,gpp4,gpp5)
+  ggpubr::ggarrange(gpp1,gpp2,gpp3,gpp4,gpp5, ncol=2, nrow=3)
   
 }
 
 
 
-diagPlots<-function(out,flxdata_daily,nm,param_scaler){
+diagPlots<-function(out,flxdata_daily,nm,param_scaler=NULL){
   lm_eqn <- function(m){
     
     eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
@@ -1053,9 +1058,9 @@ diagPlots<-function(out,flxdata_daily,nm,param_scaler){
   names(codM)<-nm
   
   sitka<-getParms(waterBalanceSubMods=T, timeStp =  52)
-  sitka[nm]<-codM[nm]*param_scaler
+  sitka[nm]<-if(is.null(param_scaler)==T) codM[nm] else codM[nm]*param_scaler 
   
-  output<-do.call(fr3PGDN,sitka)
+  output<-do.call(SoNWaL,sitka)
   ff<-output%>%
     filter(Year>2014&Year<2100)%>%
   group_by(Year,Month)%>%
@@ -1100,7 +1105,7 @@ diagPlots<-function(out,flxdata_daily,nm,param_scaler){
     xlab("Simulated")+
     xlim(0.22,0.32)+
     ylim(0.22,0.32)+
-    ggtitle(expression(paste("SWC"," [%]",sep="")))+
+    ggtitle(expression(paste("SWC",sep="")))+
     geom_abline(intercept =0 , slope = 1, lty="dashed")+
     theme(axis.title=element_text(size=10),
           axis.text=element_text(size=10))
@@ -1130,7 +1135,7 @@ diagPlots<-function(out,flxdata_daily,nm,param_scaler){
   g3 <- g3 + geom_text(x = 0.288, y = 0.225, label = lm_eqn(mod3), parse = TRUE,size=3)
   g4 <- g4 + geom_text(x = -0.25, y = -5.5, label = lm_eqn(mod4), parse = TRUE,size=3)
   
-  ggpubr::ggarrange(g1,g2,g3,g4)
+  return(list(g1,g2,g3,g4))
   
 }
 
@@ -1178,7 +1183,7 @@ diagPlotsPine<-function(outP,nm){
   pine<-getParmsPine(waterBalanceSubMods=T, timeStp =  52)
   pine[nm]<-codM[nm]
   
-  output<-do.call(fr3PGDN,pine)
+  output<-do.call(SoNWaL,pine)
   ff<-output%>%
     filter(Year>1995&Year<2100)%>%
     group_by(Year,Month)%>%

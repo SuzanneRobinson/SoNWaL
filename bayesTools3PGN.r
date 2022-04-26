@@ -1,6 +1,6 @@
 ## Load necessary packages
-library(fr3PGDN,quietly=TRUE)
-library(BayesianTools,quietly=TRUE)
+library(SoNWaL)
+library(BayesianTools)
 library(tidyverse)
 
 #get climate data

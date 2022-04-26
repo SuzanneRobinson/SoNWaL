@@ -4,7 +4,7 @@ createPriors_sitka<-function(sitka,sd=F){
   nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
         "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
         "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
-        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC","kF")
+        "Nf","Navm","Navx","klmax","krmax","komax","hc","qir","qil","qh","qbc","el","er","SWconst0","SWpower0","Qa","Qb","MaxIntcptn","k","startN","startC","Q10")
   
   
   
@@ -64,7 +64,7 @@ createPriors_sitka<-function(sitka,sd=F){
     0.4,
     1,
     10,
-    0) #kF
+    1.1) 
   
   f.increase <-
     c(
@@ -74,8 +74,8 @@ createPriors_sitka<-function(sitka,sd=F){
       1,#K_s
       1.5,#V_nr
       2,#sigma_zR
-      2,#E_S1
-      2,#E_S2
+      1,#E_S1
+      1,#E_S2
       6, #shared_area
       2, #maxRootDepth
       1, #K_drain
@@ -123,7 +123,8 @@ createPriors_sitka<-function(sitka,sd=F){
       0.6,
       15,
       1200,
-      1
+      10
+      
     )
   
   ##Need to check what priors we are using!
@@ -136,13 +137,15 @@ createPriors_sitka<-function(sitka,sd=F){
   
   pMinima[50]<--95 #needs manual adjusting as negative value
   
-  pMaxima[56]<-1
-  pMinima[56]<-0.001
+  #pMaxima[56]<-1
+  #pMinima[56]<-0.001
+  sdVals[55]<-20
   
-  pValues<-pValues[-c(7,8)]
-  sdVals<-sdVals[-c(7,8)]
-  pMaxima<-pMaxima[-c(7,8)]
-  pMinima<-pMinima[-c(7,8)]
+  
+ # pValues<-pValues[-c(7,8)]
+#  sdVals<-sdVals[-c(7,8)]
+#  pMaxima<-pMaxima[-c(7,8)]
+#  pMinima<-pMinima[-c(7,8)]
   
   
   sc<-rowMeans( abs( cbind(pMinima,pMaxima) ) )

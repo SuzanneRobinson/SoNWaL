@@ -1,5 +1,5 @@
 ## Load necessary packages
-library(fr3PGDN)
+library(SoNWaL)
 library(BayesianTools)
 library(tidyverse)
 library(dplyr)

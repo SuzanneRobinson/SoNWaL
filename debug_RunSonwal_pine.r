@@ -3,7 +3,7 @@ library(tidyverse)
 library(lubridate)
 library(RNetCDF)
 library(zoo)
-library(fr3PGDN)
+library(SoNWaL)
 library(BayesianTools)
 library(dplyr)
 library(coda)
@@ -49,4 +49,10 @@ resultsPine2<-plotResultsPine(outP)
 
 pineDiags<-diagPlotsPine(outP=outP,nm = nm )
 
+BayesianTools::tracePlot(outP, start=50000)
+BayesianTools::marginalPlot(outP,start=50000)
+
+priorSamp<-outP$setup$prior$sampler(35000)
+MCMCvis::MCMCtrace(getSample(outP,coda = T,thin=1,start=100),wd="C:\\Users\\aaron.morris", 
+                   post_zm=F,iter=10000,priors = priorSamp)
 

@@ -11,7 +11,7 @@ library("ggplot2")
 library("httr")
 library("furrr")
 library("viridis")
-library("fr3PGDN")
+library("SoNWaL")
 library("tibble")
 library("miscTools")
 library("parallel")
@@ -37,4 +37,21 @@ plan(multisession, workers = 8)
 future_map(c(31), ~spat_dat_scape(chunk=.x,output_dir,save_file),.progress = T)
 
 
-####
+
+
+
+#### cleanup split run
+
+files <- list.files(path = "/work/scratch-nopw/alm/chessSpatial",
+                    pattern = "\\.RDS$",
+                    full.names = F,
+                    recursive = T)
+
+for (i in c(1:175)){
+  files <- list.files(path = "/work/scratch-nopw/alm/chessSpatial_60_01",
+                      pattern = paste0("_",i,"_"),
+                      full.names = F,
+                      recursive = T)
+  if(length(files)!=103) print(i)
+}
+

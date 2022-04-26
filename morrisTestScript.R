@@ -81,7 +81,7 @@ likelihoodFunc <- function(p){
 sitka$weather[sitka$weather$Year>=2015,6]<-sitka$weather[sitka$weather$Year>=2015,6]*p
     NlogLik <- tryCatch(
     {
-      output<-do.call(fr3PGDN,sitka)%>%
+      output<-do.call(SoNWaL,sitka)%>%
       filter(Year>=2015)%>%
         mutate(meanNPP = mean(NPP)*7.14)
                
@@ -178,7 +178,7 @@ for(i in c(1:nrow(parSamp))){
   sitka<-getParms(waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
   sitka[nm]<-codM[nm]
   
-  output<-do.call(fr3PGDN,sitka)
+  output<-do.call(SoNWaL,sitka)
 
   ff<-data.frame(mean=mean(output$LAI),max=max(output$LAI))
   resi<-rbind(resi,ff)

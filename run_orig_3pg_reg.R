@@ -1,5 +1,5 @@
 ## Load necessary packages
-library(fr3PGDN,quietly=TRUE)
+library(SoNWaL,quietly=TRUE)
 library(BayesianTools,quietly=TRUE)
 library(tidyverse)
 library(dplyr)
@@ -96,7 +96,7 @@ runModReg<-function(g,dg=T){
     #problems with 0 vpd without hydro sub-models
     paramListX$weather[paramListX$weather$VPD==0,]$VPD<-0.01
     #run model
-    output <- do.call(fr3PGDN, paramListX)
+    output <- do.call(SoNWaL, paramListX)
     if(dg==T) return(output%>%filter(Year>=sY&Year<=eY)%>%group_by(Year)%>%summarise(dg=mean(dg))) else return(output%>%filter(Year>=sY&Year<=eY)%>%group_by(Year,Month)%>%summarise(dg=mean(GPP)))
     
   }

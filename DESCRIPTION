@@ -1,13 +1,11 @@
-Package: fr3PGDN
+Package: SoNWaL
 Type: Package
-Title: The Physiological Principles for Predicting Growth Model -
-        Nitrogen (3PGN)
+Title: 3PG-SoNWaL (Physiological Principles of Predicting Growth under Soil Nutrient and Water Limitation)
 Version: 2.0
 Date: 2020-06-02
-Author: Georgios Xenakis based on the version by Manuel Arias-Rodil. With contribution by Tom Locatelli
-Maintainer: Georgios Xenakis <georgios.xenakis@forestresearch.gov.uk>
+Author: Aaron Morris developed from the fr3PGN package by Georgios Xenakis
+Maintainer: Aaron Morris <aaron.morris@forestresearch.gov.uk>
 Depends: R (>= 3.5)
-Description: An implementation of the popular 3-PG model by Landsberg & Waring (1997). This version includes the soil organic matter and nitrogen submodel described by Xenakis et al. 2008. The major upgrade in version is is that the old user defined Fertility Rating (FR) is now replaced by a new nutrient modifier directly calculated from available nitrogen pools from the soil submodel. This version also includes subroutine simulating broadleave leaf area index (on/off phenology)
+Description: Package for running SoNWaL
 License: GPL-3
-NeedsCompilation: no
-Packaged: 2020-10-02 08:06:10 UTC; george
+RoxygenNote: 7.1.1

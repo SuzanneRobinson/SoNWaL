@@ -33,6 +33,8 @@ UpdateASW <-
     CanEvap <- (MinCond + (MaxCond - MinCond) * (min(1, LAI/LAIgcx)))
     CanEvap <- ifelse(CanEvap == 0, 1e-04, CanEvap)
     BLcond <- parms[["BLcond"]]
+    
+    # 5 is 50% reduction in VPD for canopy
     VPD<-weather[["VPD"]] * exp(LAI * (-log(2)) / 5)
 
     Delta = 145 #Rate of change of saturation specific humidity with air temperature. (Pa/K−1)
@@ -76,13 +78,18 @@ UpdateASW <-
       evapRes <- soilEvap(parms, weather, state, interRad,h, throughFall,pseudo=pseudo)
       state[["potentialEvap"]]<-evapRes[[1]]
       
+      
+      rainCoef<-parms[["Q10"]]
+      RainAbs<- Rain# ((1-(exp(max(state[["volSWC_rz"]],volSWC_wp) * (-log(rainCoef)) / volSWC_wp))))*Rain
+      
+      
 if(pseudo==T){
       evapSoil<-min(evapRes[[2]], (state[["SWC_rz"]]))
       #soil evaporation Minus monthly rainfall and irrigation gives cumulative E_S value - does not include drainage as that is loss from bottom of profile, this is top layer evaporation until drying at surface
       E_S <- max(evapRes[[1]]+evapRes[[2]] -throughFall - MonthIrrig,0) 
       state[["E_S"]] <- E_S}
 if (pseudo==F){
-     evapSoil<-min(evapRes[[1]], (state[["SWC_rz"]]))
+     evapSoil<-min(evapRes[[1]], Rain+(state[["SWC_rz"]]))
      #soil evaporation Minus monthly rainfall and irrigation gives cumulative E_S value - does not include drainage as that is loss from bottom of profile, this is top layer evaporation until drying at surface
      E_S <- max(evapSoil -throughFall - MonthIrrig,0) 
      state[["E_S"]] <- E_S
@@ -110,13 +117,14 @@ if (pseudo==F){
       #volume of water moving from root zone to non-root zone is diff between current state of root zone SWC and updated root zone SWC
       rz_nrz_recharge<-state[["SWC_rz"]]-SWC_rz
 
+  
       
       #update SWC by adding drainage from root zone and removing drainage out from non-root zone
       state[["SWC_nr"]] <- min(max(state[["SWC_nr"]] + rz_nrz_drain - nrz_out_drain + rz_nrz_recharge, 0),
                                volSWC_sat*vnr*1000)
       
       #Update root zone SWC with the addition of rainfall, irrigation, minus evap and drainage into non-root zone
-      state[["SWC_rz"]] <- min(max(SWC_rz + Rain + MonthIrrig - rIntercptEvap - evapSoil-Transp - rz_nrz_drain,0),
+      state[["SWC_rz"]] <- min(max(SWC_rz + RainAbs + MonthIrrig - rIntercptEvap - evapSoil-Transp - rz_nrz_drain,0),
                                volSWC_sat*z_r*1000)
 
       #to get total evaptranspiration use evapRes not E_S as this is modified by rainfall and so is amount soil has lost but not amount "evaporating" from soil

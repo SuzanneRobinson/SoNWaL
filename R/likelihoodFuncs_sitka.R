@@ -56,9 +56,11 @@ LL_sitka<- function(p){
   
    NlogLik <- tryCatch(
     {
-      output<-   do.call(fr3PGDN,sitka)
+      output<-   do.call(SoNWaL,sitka)
       modelled <-sampleOutput(output,.GlobalEnv$startYear,.GlobalEnv$endYear,swc=sitka$waterBalanceSubMods)
       NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,flogL(data=.GlobalEnv$observed,sims=modelled,data_s=.GlobalEnv$dev))
+     # NlogLik  <-   ifelse(any(is.na(modelled)==T),-Inf,sum(dnorm(modelled, .GlobalEnv$observed, .GlobalEnv$dev,log=T)))
+      
       NlogLik<-ifelse(max(output$LAI)>10,-Inf,NlogLik)
       NlogLik<-ifelse(min(output$totN)<1,-Inf,NlogLik)
       NlogLik<-ifelse(sitka$fieldCap<sitka$wiltPoint,-Inf,NlogLik)

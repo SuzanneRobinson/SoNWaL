@@ -32,7 +32,7 @@ spat_split_hist <-function(data_dir,
                       pattern = "\\.nc$", 
                       full.names = TRUE,
                       recursive = T)
-  file_Names <- sub("\\/.*", "",list.files(path = data_dir, 
+  file_names <- sub("\\/.*", "",list.files(path = data_dir, 
                                           pattern = "\\.nc$", 
                                           full.names = F, 
                                           recursive = T))
@@ -87,10 +87,10 @@ spat_split_hist <-function(data_dir,
       
       if (coreNum > 1) {
         plan(multisession, workers = coreNum - 1)
-        future_map(numChunks, ~ splitter(j = .x), 
+        future_map(num_Chunks, ~ splitter(j = .x), 
                    .progress = T)
       } else {
-        map(numChunks, ~ splitter(j = .x), 
+        map(num_Chunks, ~ splitter(j = .x), 
             .progress = T)
     }
     
@@ -299,3 +299,41 @@ spat_dat_hist <- function(chunk = 1, output_dir,save_file) {
 #ggplot(data=regClm)+
 #  geom_line(aes(x=doy,y=precip,col=siteName))
 #
+
+ data.frame(lon = c(-3.488368,-238439, -329229),
+                        lat = c(53.0561,54.01876, 54.67536))
+
+ site_locs <- data.frame(lon=
+c(54.67536,
+54.018758,
+51.097886,
+52.221398,
+51.962955,
+52.852497,
+53.056101,
+52.846386,
+51.675991,
+51.580907,
+51.759179,
+51.945555,
+51.903267,
+55.380781,
+58.099751,
+56.66524),
+lat=
+c(-3.2922868,
+  -2.3843855,
+  -3.112056,
+  -3.7814199,
+  -3.6890579,
+  -3.6990238,
+  -3.4883681,
+  -3.8829362,
+  -3.5916353,
+  -3.7223068,
+  -3.6936558,
+  -4.2178236,
+  -3.8602517,
+  -5.6133599,
+  -4.4234889,
+  -3.4785394))

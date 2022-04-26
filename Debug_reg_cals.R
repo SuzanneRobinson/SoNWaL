@@ -1,6 +1,6 @@
 ## Load necessary packages
-library(fr3PGDN,quietly=TRUE)
-library(BayesianTools,quietly=TRUE)
+library(SoNWaL)
+library(BayesianTools)
 library(tidyverse)
 library(dplyr)
 library(coda)
@@ -112,7 +112,7 @@ priorVals<-createPriors_sitka_rg(paramList)
        filter(paramListX$weather, Year >= paramListX$weather$plantingYear[1])
      
      #run model
-     output <- do.call(fr3PGDN, paramListX)
+     output <- do.call(SoNWaL, paramListX)
         if(dg==T) return(output%>%filter(Year>=sY&Year<=eY)%>%group_by(Year)%>%summarise(dg=mean(dg))) else return(output%>%filter(Year>=sY&Year<=eY)%>%group_by(Year,Month)%>%summarise(dg=mean(GPP)))
 
    }
@@ -202,5 +202,5 @@ priorVals<-createPriors_sitka_rg(paramList)
   
     g2<-future_mapply( runModReg,g[c(1:13)],MoreArgs = list(dg=T),SIMPLIFY = F)
 
-    ggarrange(plotlist = g2)
+    ggpubr::ggarrange(plotlist = g2)
     

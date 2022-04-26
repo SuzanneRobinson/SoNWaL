@@ -8,7 +8,7 @@
 ############################################# 
 #########Morris sensitivity analysis#########
 
-library(fr3PGDN)
+library(SoNWaL)
 library(BayesianTools)
 library(tidyverse)
 library(dplyr)
