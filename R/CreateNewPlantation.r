@@ -1,3 +1,7 @@
+#' CreateNewPlantation initiate plantation
+#' @param state model state
+#' @param parms model parameters
+#' @return updated models state
 CreateNewPlantation <-
 function (state, parms, fma) 
 {

@@ -1,3 +1,8 @@
+#' DoThinning thin stand
+#' @param state model state
+#' @param parms model parameters
+#' @presc dataframe of thinning prescription
+#' @return updated models state
 DoThinning <-
 function (state, parms, fma, presc) 
 {

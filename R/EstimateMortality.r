@@ -1,3 +1,8 @@
+#' EstimateMortality
+#' @param state current model state
+#' @param parms model parameters
+#' @return updated model state
+#' @export
 EstimateMortality <-
 function (state, parms) 
 {

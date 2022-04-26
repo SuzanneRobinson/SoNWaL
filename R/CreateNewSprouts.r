@@ -1,3 +1,7 @@
+#' CreateNewSprouts initiate new sprouts
+#' @param state model state
+#' @param parms model parameters
+#' @return updated models state
 CreateNewSprouts <-
 function (state, parms, newsprouts) 
 {

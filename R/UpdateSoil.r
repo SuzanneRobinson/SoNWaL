@@ -1,3 +1,11 @@
+#' UpdateSoil update soils state
+#' @param state current model state
+#' @param site site data
+#' @param parms model parameters
+#' @param weather weather data
+#' @param general.info some useful meta-data (legacy variable - can probably remove)
+#' @return updated model state
+#' @export
 UpdateSoil <-
   function(state, parms, site, general.info, weather){
     GPP <- state[["GPP"]]

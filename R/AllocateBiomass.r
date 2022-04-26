@@ -1,3 +1,10 @@
+#' AllocateBiomass
+#' @param state current model state
+#' @param site site data
+#' @param parms model parameters
+#' @param weather weather data
+#' @return updated model state
+#' @export
 AllocateBiomass <-
 function (state, site, parms, weather) #requires weather too for current month, and leaffall and leafgrow from parms, and WlDormant from state
   {

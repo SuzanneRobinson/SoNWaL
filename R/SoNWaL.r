@@ -1,3 +1,6 @@
+#' SoNWaL function to run SoNWaL process based model
+#' @return dataframe of SoNWaL output
+#' @export
 SoNWaL <-
 function (weather, presc, t = 0, N = 2500, Wl = 0.01, WlDormant = 0, Wr = 0.01, Wsbr = 0.1, 
               Wlitt = 0, YrC= 18.2, YlC= 6.5, OC= 122.77, YrN= 0, YlN= 1.52, ON= 6.9,

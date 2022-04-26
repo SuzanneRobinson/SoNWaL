@@ -1,3 +1,9 @@
+#' PredictVariablesInterest.3PG predict key 3pg variables and update states
+#' @param state current state of model
+#' @param parms model parameters
+#' @param cod.pred whether to use allometric predictions of dbh etc.
+#' @return updated model state and variables
+#' @export
 PredictVariablesInterest.3PG <-
 function (state, parms, cod.pred, month) #leafgrow and leaffall from parms, current.month from weather.i (or from initial.month if the function is run for initialisation)
 {

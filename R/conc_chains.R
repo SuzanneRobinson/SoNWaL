@@ -2,6 +2,7 @@
 #' @param mcmcReg regional mcmc output
 #' @param plot whether to plot distributions
 #' @return concChains concatonate chains
+#' @export
 conc_chains<-function(mcmcReg,plot=F,clm_df_reg){
 
   #concatonate chains

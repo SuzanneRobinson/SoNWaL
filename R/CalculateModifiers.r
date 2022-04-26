@@ -1,3 +1,10 @@
+#' CalculateModifiers
+#' @param state current model state
+#' @param site site data
+#' @param parms model parameters
+#' @param weather weather data
+#' @return updated model state
+#' @export
 CalculateModifiers <-
 function (state, weather, site, parms, general.info) 
 {

@@ -1,15 +1,17 @@
 
-# read in list of CHESS-scape spatial
-# climate data with grid coordinates from spatSplit
-# function output and merge all climate vars into one
-# table associated with each grid cell ##
-##'@param chunk chunk number, 1:39 covers whole of
-##'scotland, can only go as high as files available from spatSplit
-##'@param output_dir names of directory where files
-##'(outputs from spatSplit) to go merge are located
-##'@param save_file location to save merged files
-##'@return tibble of site id key with associated dataframe
-##'of longitudinal climate data
+#' spat_dat_scape
+#' @description read in list of CHESS-scape spatial
+#' climate data with grid coordinates from spatSplit
+#' function output and merge all climate vars into one
+#' table associated with each grid cell
+#'@param chunk chunk number, 1:39 covers whole of
+#'scotland, can only go as high as files available from spatSplit
+#'@param output_dir names of directory where files
+#'(outputs from spatSplit) to go merge are located
+#'@param save_file location to save merged files
+#'@return tibble of site id key with associated dataframe
+#'of longitudinal climate data
+#'@export
 spat_dat_scape <- function(chunk = 1, output_dir, save_file) {
   library(stringr)
   library(dplyr)
@@ -75,8 +77,9 @@ return(print("manip complete"))
 
 
 
-# spatial splitting function - split spatial
-# CHESS-scape data into chunks
+#'spat_split_scape 
+#'@description spatial splitting function - split spatial
+#' CHESS-scape data into chunks
 #'@param data_dir directory which stores the CHESS spatial
 #'data (under a filename called CHESS) - also should include
 #'a folder for the full time series to be written into called fullTS
@@ -90,6 +93,7 @@ return(print("manip complete"))
 #'grid cells going down the UK, 1:39 covers scotland,
 #'higher values cover the rest of UK
 #'@return climate data with coordinates
+#'@export
 spat_split_scape <- function(data_dir,
                            save_file,
                            output_dir,
@@ -177,10 +181,12 @@ core_num <- parallel::detectCores()
 #########################################################add soil data##################################################################
 
 
-# convert xy vals from CHESS to lat lon
+#' chess_xy_latlon 
+#' @description convert xy vals from CHESS to lat lon
 #' @param x CHESS x coord
 #' @param y CHESS y coord
-#' @return dataframe of lat lon 
+#' @return dataframe of lat lon
+#' @export
 chess_xy_latlon<-function(x,y){
   proj4string <- "+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +datum=OSGB36 +units=m +no_defs"
   xy<-data.frame(x=x,y=y)
@@ -189,10 +195,12 @@ chess_xy_latlon<-function(x,y){
 }
 
 
-# use regression models to predict some unkown soil texture parameters from known parameters
+#' soil_regr
+#' @description use regression models to predict some unkown soil texture parameters from known parameters
 #' @param simDat current known parameters/variables
 #' @param mcmcReg output from MCMC for fitting regional models
 #' @return simDat but with predicted soil texture params, es1,es2,swconst,swpower
+#' @export
 soil_regr<-function(simDat,concChains){
 # data from landsberg & sands book
   texT<-data.frame(sand=c(30 ,33,42, 82, 92, 52, 60, 65, 7, 7, 10, 20),
@@ -235,10 +243,12 @@ return(simDat)
 
 
 
-# add soil data from Astley (BGS data)
+#' add_BGS_dat 
+#' @description add soil data from Astley (BGS data)
 #' @param spat_chunk spatial chunk to add soil data to
 #' @param soil_dat location of BGS soil data files
 #' @return updated spat_chunk dataframe with additional soil data
+#' @export
 add_BGS_dat<-function(spat_chunk, soil_dat){
   
   #identify if climate data is  present for each grid cell
@@ -247,7 +257,8 @@ add_BGS_dat<-function(spat_chunk, soil_dat){
   spat_chunk<-spat_chunk%>%
     tibble::add_column(chess_xy_latlon(spat_chunk$x,spat_chunk$y))
   
-  # function to extract soil data from EU maps and match with closest grid ref of climate
+  #' ext_eu_soil
+  #' @description function to extract soil data from EU maps and match with closest grid ref of climate
   #' @param map_location file location for eu map (wp,sp,cond etc.)
   #' @param spat_chunk spatial chunk file containing grid square locations, climate and metadata
   #' @param val_name name to use for extracted data

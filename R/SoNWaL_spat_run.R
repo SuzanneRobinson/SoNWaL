@@ -8,6 +8,7 @@
 #' @param site site data
 #' @param clm climate data
 #' @param param_draw parameter draws
+#' @export
 SoNWaL_spat_run <-
   function(site,
            clm,

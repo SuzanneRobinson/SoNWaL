@@ -22,6 +22,7 @@ library(stringr)
 #'@param variable whether to process all CHESS climate variables or select individual ones to process (e.g. precip, temp etc. )
 #'@param numChunks function creates chunks of 10,000 grid cells going down the UK, 1:39 covers scotland, higher values cover the rest of UK
 #'@return climate data with coordinates
+#'@export
 spat_split_hist <-function(data_dir, 
                         save_file, 
                         output_dir, 
@@ -107,6 +108,7 @@ spat_split_hist <-function(data_dir,
 #'@param output_dir names of directory where files (outputs from spatSplit) to go merge are located
 #'@param save_file location to save merged files
 #'@return tibble of site id key with associated dataframe of longitudinal climate data
+#'@export
 spat_dat_hist <- function(chunk = 1, output_dir,save_file) {
   library(stringr)
   library(dplyr)

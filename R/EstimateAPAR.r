@@ -1,3 +1,11 @@
+#' EstimateAPAR
+#' @param state current model state
+#' @param site site data
+#' @param parms model parameters
+#' @param weather weather data
+#' @param general.info general metadata
+#' @return updated model state
+#' @export
 EstimateAPAR <-
 function (state, weather, parms, general.info) 
 {

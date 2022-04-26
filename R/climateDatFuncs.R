@@ -1,8 +1,9 @@
-##################get climate data for calibration################
-###needs updating and cleaning when we finalise data, currently just aggregates some daily data
-################################################################################
 
-
+#' getClmPine get climate data for finnish scots pine using PREDICT database
+#' @param timeStep time step to get data for ("weekly", "monthly" or "daily")
+#' @return climate data
+#' @export
+#' 
 getClmPine<-function(timeStep="monthly"){
   
   ## 1996-2012
@@ -90,9 +91,11 @@ getClmPine<-function(timeStep="monthly"){
 }
 
 
-
-##################get climate data for calibration################
-###needs updating and cleaning when we finalise data, currently just aggregates some daily data
+#' getClimDatX get climate data for Harwood - sitka spruce calibrations
+#' @param timeStep time step to get data for ("weekly", "monthly" or "daily")
+#' @param climDir directory where climate data is stored
+#' @return climate data
+#' @export
 getClimDatX<-function(timeStep="monthly",climDir){
   library(dplyr)
   library(lubridate)
@@ -100,15 +103,10 @@ getClimDatX<-function(timeStep="monthly",climDir){
 
   clm_df_full<-read.csv(paste0(climDir,"clm_df_full.csv"))
   clm_df_daily<-read.csv(paste0(climDir,"weather_day_basfor.csv"))
-  #clm_df_daily2<-read.csv(paste0(climDir,"weather_day.csv"))
-  # clm_df_daily2[which(clm_df_daily2$Year>2014 & clm_df_daily2$Year <2019),]<-clm_df_daily[,-13]
-  #clm_df_daily<-clm_df_daily2
   
   #Add date
   
   clm_df_daily<- rbind(do.call("rbind", replicate(22, (clm_df_daily[1:730,]), simplify = FALSE)),clm_df_daily[732:1461,])
-  #clm_df_daily<-rbind(clm_df_daily[732:1461,],do.call("rbind", replicate(11, clm_df_daily, simplify = FALSE)))
-  #clm_df_daily<-filter(clm_df_daily,DOY!=366)
   
   clm_df_daily$Year<-rep(1973:2018,each=365)
   
@@ -166,4 +164,3 @@ getClimDatX<-function(timeStep="monthly",climDir){
   #if(timeStep=="pseudo") return (clm_df_daily)
   
 }
-################################################################################

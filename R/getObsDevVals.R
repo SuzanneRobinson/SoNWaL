@@ -1,3 +1,11 @@
+#' observedVals get observed data and standard deviations for Harwood calibration
+#' @param timeStep time step to get observed data for
+#' @param data Harwood data
+#' @param sY start year for returned observed data
+#' @param eY end year for returned observed data
+#' @param swc whether to include soil water content in observed data
+#' @return vector of observed values
+#' @export
 observedVals<-function(timeStep,data,sY=2015,eY=2018, swc=F){
   
   data<-filter(data,year>=sY&year<=eY)

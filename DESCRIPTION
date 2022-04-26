@@ -1,7 +1,7 @@
 Package: SoNWaL
 Type: Package
 Title: 3PG-SoNWaL (Physiological Principles of Predicting Growth under Soil Nutrient and Water Limitation)
-Version: 2.0
+Version: 1.0
 Date: 2020-06-02
 Author: Aaron Morris developed from the fr3PGN package by Georgios Xenakis
 Maintainer: Aaron Morris <aaron.morris@forestresearch.gov.uk>
@@ -9,3 +9,26 @@ Depends: R (>= 3.5)
 Description: Package for running SoNWaL
 License: GPL-3
 RoxygenNote: 7.1.1
+Imports: 
+    tidyr,
+    tidyverse,
+    purrr,
+    BayesianTools,
+    sensitivity,
+    dplyr,
+    future,
+    ncdf4,
+    raster,
+    ggplot2,
+    httr,
+    furrr,
+    viridis,
+    SoNWaL,
+    tibble,
+    miscTools,
+    parallel,
+    sf,
+    rgdal,
+    raster,
+    lubridate,
+    coda

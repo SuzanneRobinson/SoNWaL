@@ -1,10 +1,11 @@
 
-# calc relative humidity
+#' relative_humidity_calc calc relative humidity
 #' @param Tmean mean temp K
 #' @param Tref reference temperature (often 273.16)
 #' @param p  pressure
 #' @param spec_hum specific humidity
 #' @return relative humidity
+#' @export
 relative_humidity_calc<-function(Tmean,Tref=273.16,pp,spec_hum){
   TmeanK<-Tmean+273.15
   

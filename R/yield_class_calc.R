@@ -1,6 +1,8 @@
 
-
-##calculate yield class
+#' yield_class_calc: calculate yield class using MAI and CAI from SoNWaL output
+#' @param out SoNWaL output
+#' @return yield class
+#' @export
 yield_class_calc <- function(out) {
   #calculate mean annual incrememnt
   MAI <- (aggregate(out$MAI ~ out$Year, FUN = mean))

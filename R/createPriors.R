@@ -1,4 +1,7 @@
-
+#' createPriors create priors for MCMC calibration for sitka
+#' @param sitka current sitka parameters to base priors on
+#' @return dataframe of priors
+#' @export
 createPriors_sitka<-function(sitka,sd=F){
   
   nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",

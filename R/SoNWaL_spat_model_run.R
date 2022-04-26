@@ -1,13 +1,9 @@
 
-# execute run of SoNWaL for spatial grid cell with single parameter set
+#' SoNWaL_spat_model_run execute run of SoNWaL for spatial grid cell with single parameter set
 #' @param params vector of parameter set to run model with
 #' @param clm climate data to run model with
 #' @return dataframe with model outputs, columns are output variables, rows are time-steps
-
-# execute run of SoNWaL for spatial grid cell with single parameter set
-#' @param params vector of parameter set to run model with
-#' @param clm climate data to run model with
-#' @return dataframe with model outputs, columns are output variables, rows are time-steps
+#' @export
 SoNWaL_spat_model_run <- function(params,clm, scape=T) {
   #get default parameters
   baseParms <- getParms(timeStp = 52, waterBalanceSubMods = T)

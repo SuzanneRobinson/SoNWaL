@@ -12,6 +12,7 @@
 # climate data and site specific data for each of the 13 regional sites
 #'@param p matrix of parameter proposals for each chain, matrix: ncols = parameter number, nrows = number of internal chains
 #'@return vector of likelihood values equal to number of rows in input p matrix
+#'@export
 NLL_Reg_sitka_mixedP <- function(p) {
   #Sometimes number of rows in p matrix is less than number of chains (uncertain if algorithm design or bug)
   #this means that sometimes it comes in as a single row, basically a vector and needs transposing when converting to dataframe (or it does for the way i've done things)

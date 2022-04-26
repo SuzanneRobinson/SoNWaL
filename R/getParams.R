@@ -1,5 +1,6 @@
-
-###get parameters
+#' getParms get baseline parameters for sitka spruce
+#' @return list of parameters and values
+#' @export
 getParms<-function(weather=clm_df_full,
                    ## ~~ Initial pools ~~ ##
                    Wl = 0.01,

@@ -3,22 +3,13 @@
 #   _\ \/ _ \/ / /  | |/ |/ / _ `/ __/ -_) __/ / /__/ _ \/ _ \/ __/ -_) _ \/ __/  #
 #  /___/\___/_/_/   |__/|__/\_,_/\__/\__/_/    \___/\___/_//_/\__/\__/_//_/\__/   #
 
+#'soilWC soil water content calculator
 #'@description Calculates soil water content for rooting zone
 #'@param parms global 3PG parameter values
 #'@param weather global weather values
 #'@param state state values
-
-#Internal function variable descriptions
-#'@param t length of time-step
-#'@param V_nr volume of non-rooting zone
-#'@param V_rz volume of rooting zone
-#'@param A shared area
-#'@param z_r depth (or volume?) of rooting zone
-#'@param sigma_zR area/depth explored by 1kg of root biomass
-#'@param SWC_nr0 SWC of non-rooting zone at time 0
-#'@param SWC_rz0 SWC of rooting zone at time 0
-
 #'@return SWC_rz SWC of rooting zone
+#'@export
 
 soilWC<-function(parms,weather,state,K_s,SWC,soilVol){
   
@@ -63,14 +54,13 @@ soilWC<-function(parms,weather,state,K_s,SWC,soilVol){
 
 
 
+#'drainageFunc calculate volume of water draining out of soil
 #'@description Calculates drainage out of a soil zone
 #'@param parms global 3PG parameter values
 #'@param weather global weather values
 #'@param SWC soil water content of zone to drain
-#Internal function variable descriptions
-#'@param t length of time-step
-#'@return amount of drainage
-
+#'@return drainage
+#'@export
 drainageFunc<-function(parms,weather,SWC,soilVol,K_drain){
   
   #size of time-step. This is for monthly time steps
@@ -94,20 +84,16 @@ drainageFunc<-function(parms,weather,SWC,soilVol,K_drain){
 #   /___/\___/_/_/ /___/|___/\_,_/ .__/\___/_/  \_,_/\__/_/\___/_//_/ # 
 #                               /_/                                   # 
 
+#'
 #'@description Calculates soil evaporation
 #'@param parms global parameter values
 #'@param weather global weather values
 #'@param state state values
 #'@param t_S1 duration of phase 1 evaporation
 #'@param e_S1 potential rate of evaporation, equal to wet surface evaporation - could be driven by temp?
-#- calc from penman montieth - also see landsdown book and discussion on methods by Choudhury, Zhang etc.
-#'@param E_S1 threshold - based on soil structure
-#'@param E_S2 how quickly evaporation rate declines with accumulated phase 2 evaporation - based on soil structure
-#'@param E_S0 initial condition based on E_S
-#'@return E_S Accumulated soil evaporation during the time step 
-#Calc using penman monteith eq. g_c is infinite - could be better modified by soil dryness etc.
-
-
+#'@param pseudo whether to use pseudo time-steps 
+#'@return soil evaportation data
+#'@export
 soilEvap <-
   function(parms,
            weather,
@@ -189,7 +175,12 @@ soilEvap <-
 
 
 
-##Soil water growth modifier
+#' SWGmod soil water modifier (see landsberg and sands)
+#' @param SWconst
+#' @param SWpower
+#' @param MoistRatio
+#' @return soil water modifier
+#' @export
 SWGmod<-function(SWconst,SWpower,MoistRatio){
   f_theta<-(1-(1-MoistRatio)^SWpower)/(1+((1-MoistRatio)/SWconst)^SWpower)
 #  f_theta<-(1-(1-MoistRatio)^SWpower)/(1+(1-2*SWconst^SWpower)*((1-MoistRatio)/SWconst)^SWpower)
