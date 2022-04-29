@@ -1,6 +1,6 @@
 # calculate vulnerability
 
-hzYrsLoc<-"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\hazardData\\hazYrs_V2_1961-1990.RDS"
+hzYrsLoc<-"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\hazardData\\hazYrs_V2_2051-2080.RDS"
 outSpatLoc<-"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\spatial\\rcp65\\SoNWal_spatOut_04_04_22.RDS"
 outSpatHzLoc<-"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\CHESSscape\\daily\\huss\\chess-scape_rcp60_bias-corrected_01_huss_uk_1km_daily_20800901-20800930.nc"
 prHazLoc<-"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\hazardData\\pHaz_2051-2080.rds"
@@ -96,8 +96,8 @@ g2<-ggplot() +
         legend.title = element_text(color="black"))+
   ggtitle(sub('\\..*', '', sub('.*hazYrs_V2_', '', hzYrsLoc)))
 
-g1<-ggplot() +
-  geom_tile(data = outSpatHz2080 , aes(x = x, y = y, fill =  prHz))+
+g3<-ggplot() +
+  geom_tile(data = outSpatHz , aes(x = x, y = y, fill =  prHz))+
  # geom_tile(data=outSpatHzXMask,aes(x = x, y = y),fill = "grey")+
   theme_bw()+
   theme(
@@ -116,8 +116,7 @@ g1<-ggplot() +
   theme(legend.background = element_rect(fill = "white"),legend.text=element_text(color="black"),
         plot.title = element_text(color = "black"),
         legend.title = element_text(color="black"))+
-  ggtitle("1961-1990")
-
+  ggtitle("2051-2080")+
   ggtitle(sub('\\..*', '', sub('.*hazYrs_V2_', '', hzYrsLoc)))
 
 
@@ -137,7 +136,7 @@ g4<-ggplot() +
     panel.background = element_rect(fill="white",color = NA),
     panel.grid.minor = element_blank())+
   coord_equal() + 
-  scale_fill_viridis_c(limits=c(-1,3.5),expression(paste("Vulnerability",sep="")),na.value="white", option="turbo")+ 
+  scale_fill_viridis_c(limits=c(-2,3.5),expression(paste("Vulnerability",sep="")),na.value="white", option="turbo")+ 
   theme(legend.background = element_rect(fill = "white"),legend.text=element_text(color="black"),
         plot.title = element_text(color = "black"),
         legend.title = element_text(color="black"))+

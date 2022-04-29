@@ -7,24 +7,13 @@
 add_BGS_dat(spat_chunk, soil_dat)
 }
 \arguments{
-\item{spat_chunk}{spatial chunk file containing grid square locations, climate and metadata}
+\item{spat_chunk}{spatial chunk to add soil data to}
 
 \item{soil_dat}{location of BGS soil data files}
-
-\item{map_location}{file location for eu map (wp,sp,cond etc.)}
-
-\item{val_name}{name to use for extracted data}
-
-\item{max_distance}{if closest grid square in soil data to climate data is empty (e.g. water, no data) 
-how far to look for next grid square before defaulting to NA}
-
-\item{rast}{is the input file one of the eu raster files or astleys bgs data}
 }
 \value{
 updated spat_chunk dataframe with additional soil data
 }
 \description{
 add soil data from Astley (BGS data)
-
-function to extract soil data from EU maps and match with closest grid ref of climate
 }

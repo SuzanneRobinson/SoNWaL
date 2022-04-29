@@ -100,14 +100,12 @@ spat_split_scape <- function(data_dir,
                            dates=c(1960:1990),
                            variable="all",
                            num_chunks=c(1:10)) {
+  
   files <- list.files(path = data_dir,
                       pattern = "\\.nc$",
                       full.names = TRUE,
                       recursive = T)
-  file_names <- sub("\\.*", "", list.files(path = data_dir,
-                                          pattern = "\\.nc$",
-                                          full.names = F,
-                                          recursive = T))
+
 
   file_names <- sub(".*/", "", list.files(path = data_dir,
                                          pattern = "\\.nc$",
@@ -134,7 +132,7 @@ spat_split_scape <- function(data_dir,
       paste0(data_dir, "/", variable_names[i], "/",
              file_names[grepl(variable_names[i], file_names) == T])
 
-    if (variable == "tas") {
+    if (unique(variable_names)[i] == "tas") {
       files_tmp <- grep("tasmax", files_tmp, invert = TRUE, value = TRUE)
       files_tmp <- grep("tasmin", files_tmp, invert = TRUE, value = TRUE)
     }
@@ -257,47 +255,6 @@ add_BGS_dat<-function(spat_chunk, soil_dat){
   spat_chunk<-spat_chunk%>%
     tibble::add_column(chess_xy_latlon(spat_chunk$x,spat_chunk$y))
   
-  #' ext_eu_soil
-  #' @description function to extract soil data from EU maps and match with closest grid ref of climate
-  #' @param map_location file location for eu map (wp,sp,cond etc.)
-  #' @param spat_chunk spatial chunk file containing grid square locations, climate and metadata
-  #' @param val_name name to use for extracted data
-  #' @param max_distance if closest grid square in soil data to climate data is empty (e.g. water, no data) 
-  #' how far to look for next grid square before defaulting to NA
-  #' @param rast is the input file one of the eu raster files or astleys bgs data
-  ext_eu_soil<-function(data_location, spat_chunk, val_name, max_distance, rast =T){
-    
-    if(rast ==T){
-    eu_soil_dat<-raster(data_location)
-    eu_soil_dat<-raster::crop(eu_soil_dat, extent(eu_soil_dat, 1000,
-                                                  2500, 3200, 3900))
-    sr<-"+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
-    eu_soil_dat<-projectRaster(eu_soil_dat, crs = sr)
-    eu_soil_dat<-data.frame(eu_soil_dat=getValues(eu_soil_dat),coordinates(eu_soil_dat))
-     
-    } else 
-    {
-      eu_soil_dat<- readRDS(data_location)
-    }
-    
-    eu_soil_dat<-eu_soil_dat%>%
-      rename(any_of(c("lon" = "x", "lat" = "y", "lon" = "long", "fc" = "FC", "wp" = "WP", "soil_depth" = "depth")))
-    
-    closest_vals<-purrr::map2_dfr(spat_chunk$lat, spat_chunk$lon, 
-                                  ~na.omit(spatialrisk::points_in_circle(eu_soil_dat, .y, .x, 
-                                                                         lon = lon, 
-                                                                         lat = lat, 
-                                                                         radius = 1e5))[1,])
-
-    closest_vals[is.na(closest_vals$distance_m) ==T,]<-0
-    if(rast ==T) closest_vals[,1][closest_vals$distance_m>max_distance]<-NA
-    if(rast ==T) names(closest_vals)[1]<-val_name
-    if(rast ==F) closest_vals[closest_vals$distance_m > max_distance, !names(closest_vals) %in% c("lon","lat")]<-NA
-    closest_vals[closest_vals$lat==0,]<-NA
-    
-    return(closest_vals)
-  }
-  
   # extract eu map soil data
   closest_vals_wp<-ext_eu_soil(soil_dat[1],
                                  spat_chunk,"wp_map", 1000)
@@ -333,7 +290,47 @@ add_BGS_dat<-function(spat_chunk, soil_dat){
 }
 
 
-
+#' ext_eu_soil
+#' @description function to extract soil data from EU maps and match with closest grid ref of climate
+#' @param map_location file location for eu map (wp,sp,cond etc.)
+#' @param spat_chunk spatial chunk file containing grid square locations, climate and metadata
+#' @param val_name name to use for extracted data
+#' @param max_distance if closest grid square in soil data to climate data is empty (e.g. water, no data) 
+#' how far to look for next grid square before defaulting to NA
+#' @param rast is the input file one of the eu raster files or astleys bgs data
+#' @export
+ext_eu_soil<-function(data_location, spat_chunk, val_name, max_distance, rast =T){
+  
+  if(rast ==T){
+    eu_soil_dat<-raster(data_location)
+    eu_soil_dat<-raster::crop(eu_soil_dat, extent(eu_soil_dat, 1000,
+                                                  2500, 3200, 3900))
+    sr<-"+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+    eu_soil_dat<-projectRaster(eu_soil_dat, crs = sr)
+    eu_soil_dat<-data.frame(eu_soil_dat=getValues(eu_soil_dat),coordinates(eu_soil_dat))
+    
+  } else 
+  {
+    eu_soil_dat<- readRDS(data_location)
+  }
+  
+  eu_soil_dat<-eu_soil_dat%>%
+    rename(any_of(c("lon" = "x", "lat" = "y", "lon" = "long", "fc" = "FC", "wp" = "WP", "soil_depth" = "depth")))
+  
+  closest_vals<-purrr::map2_dfr(spat_chunk$lat, spat_chunk$lon, 
+                                ~na.omit(spatialrisk::points_in_circle(eu_soil_dat, .y, .x, 
+                                                                       lon = lon, 
+                                                                       lat = lat, 
+                                                                       radius = 1e5))[1,])
+  
+  closest_vals[is.na(closest_vals$distance_m) ==T,]<-0
+  if(rast ==T) closest_vals[,1][closest_vals$distance_m>max_distance]<-NA
+  if(rast ==T) names(closest_vals)[1]<-val_name
+  if(rast ==F) closest_vals[closest_vals$distance_m > max_distance, !names(closest_vals) %in% c("lon","lat")]<-NA
+  closest_vals[closest_vals$lat==0,]<-NA
+  
+  return(closest_vals)
+}
 
 
 

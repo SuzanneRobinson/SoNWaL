@@ -23,7 +23,6 @@ Imports:
     httr,
     furrr,
     viridis,
-    SoNWaL,
     tibble,
     miscTools,
     parallel,

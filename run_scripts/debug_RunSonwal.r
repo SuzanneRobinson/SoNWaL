@@ -6,12 +6,12 @@
 
 ## Load necessary packages
 library(SoNWaL)
-library("tidyverse")
-library("lubridate")
-library("coda")
-library("BayesianTools")
-library("miscTools")
-library("ggpubr")
+library(tidyverse)
+library(lubridate)
+library(coda)
+library(BayesianTools)
+library(miscTools)
+library(ggpubr)
 ## Years of data to use for calibration
 startYear = 2015
 endYear = 2018

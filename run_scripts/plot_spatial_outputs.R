@@ -32,12 +32,12 @@ readComb<-function(file){
   return(ff)
 }
 ans = rbindlist(lapply(filenames, readComb),fill=T)
-saveRDS(ans,"/home/users/aaronm7/SoNWal_spatOut_25_04_22.RDS")
+saveRDS(ans,"/home/users/aaronm7/SoNWal_spatOut_27_04_22.RDS")
 
 
 ###plot SoNWaL spatial outputs###
 
-outSpat<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\spatial\\historical\\SoNWal_spatOut_25_04_22.RDS")
+outSpat<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\spatial\\historical\\SoNWal_spatOut_27_04_22.RDS")
 #soilDataLocs<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\soilDataLocs.RDS")
 #outSpat<-merge(lkList,outSpat,by.x="fName",by.y="fName")
 library(grid)
@@ -68,7 +68,7 @@ for(i in c(1:length(years))){
   #basOut3<-filter(basOut3,y<8.5e+05)
   
   g2<-ggplot() +
-    geom_raster(data = outSpatY , aes(x = x, y = y, fill = ((GPP_value))))+
+    geom_raster(data = outSpatY , aes(x = x, y = y, fill = ((yc_value))))+
     theme_bw()+
     ggtitle("YC range")+
     theme(
@@ -83,10 +83,10 @@ for(i in c(1:length(years))){
       panel.background = element_rect(fill="white", color = NA),
       panel.grid.minor = element_blank())+
     coord_equal() + 
-    scale_fill_viridis_c(limit=c(0,35), expression(paste("Yield Class   ",sep="")),option = "turbo",na.value="white")+ 
+    scale_fill_viridis_c(limit=c(0,35), expression(paste("Yield Class   ", sep="")), option = "turbo", na.value = "white")+ 
     theme(legend.background = element_rect(fill = "white"),legend.text=element_text(color="black",size=15),
-          plot.title = element_text(color = "black",size=20),
-          legend.title = element_text(color="black",size=20))
+          plot.title = element_text(color = "black", size=20),
+          legend.title = element_text(color="black", size=20))
   
   g2<-ggplot() +
     geom_raster(data = outSpatY , aes(x = x, y = y, fill = ((LAI_value))))+
