@@ -11,6 +11,11 @@ function (state, site, parms, weather) #requires weather too for current month, 
     current.month <- weather[["Month"]]
     leaf.grow <- parms[["leaf.grow"]]
     leaf.fall <- parms[["leaf.fall"]]
+    
+    ## add dormancy based on cumulative temperature
+    
+    
+    
     #WlDormant <- state[["WlDormant"]]
     m0 <- parms[["m0"]]
     pRx <- parms[["pRx"]]
@@ -31,8 +36,8 @@ function (state, site, parms, weather) #requires weather too for current month, 
     difWl <- NPP * pF
     difWr <- NPP * pR
     difWsbr <- NPP * pS
-    gammaFx <- parms[["gammaFx"]]#*12/parms[["timeStp"]] #adjust to get time step rates from monthly rates?
-    gammaF0 <- parms[["gammaF0"]]#*12/parms[["timeStp"]]
+    gammaFx <- parms[["gammaFx"]] # adjusted for time-step later in code
+    gammaF0 <- parms[["gammaF0"]]
     tgammaF <- parms[["tgammaF"]]
     
     

@@ -1102,3 +1102,4 @@ getParms_xen<-function(weather=clm_df_full,
        K_drain_nrz=K_drain_nrz
   )
 }
+

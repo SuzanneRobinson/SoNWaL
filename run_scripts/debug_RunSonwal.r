@@ -5,7 +5,7 @@
 ######################
 
 ## Load necessary packages
-library(SoNWaL)
+library(fr3PGDN)
 library(tidyverse)
 library(lubridate)
 library(coda)
@@ -101,7 +101,7 @@ sitka[nm]<-codM[nm]#*param_scaler
 
 
 output<-do.call(SoNWaL,sitka)
-ff<-filter(output,Year>2014&Year<2100)
+ff<-filter(output,Year>2014&Year<2019)
 plot(ff$Rs*7.4)
 plot(output$Nav)
 plot(output$LAI)

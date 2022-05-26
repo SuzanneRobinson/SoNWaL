@@ -39,7 +39,6 @@ future_map(c(31), ~spat_dat_scape(chunk=.x,output_dir,save_file),.progress = T)
 
 
 
-
 #### cleanup split run
 
 files <- list.files(path = "/work/scratch-nopw/alm/chessSpatial",

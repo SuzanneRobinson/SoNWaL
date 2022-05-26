@@ -21,7 +21,7 @@ saveRDS(ans,"/home/users/aaronm7/BASFOR_spatOut_04_04.RDS")
 library(data.table)
 library(stringr)
 #SoNWal combine function
-fileLocs<-"/work/scratch-nopw/alm/spatOutput"
+fileLocs<-"/gws/nopw/j04/uknetzero/aarons_files/chess_manips/spatOutput_85_01/"
 filenames<-list.files(path = fileLocs, pattern = "\\.RDS$", full.names = F, 
                       recursive = T)
 readComb<-function(file){
@@ -32,12 +32,13 @@ readComb<-function(file){
   return(ff)
 }
 ans = rbindlist(lapply(filenames, readComb),fill=T)
-saveRDS(ans,"/home/users/aaronm7/SoNWal_spatOut_27_04_22.RDS")
+saveRDS(ans,"/home/users/aaronm7/SoNWal_spatOut_85_01.RDS")
 
 
 ###plot SoNWaL spatial outputs###
 
-outSpat<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\spatial\\historical\\SoNWal_spatOut_27_04_22.RDS")
+outSpatHist<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\spatial\\historical\\SoNWal_spatOut_27_04_22.RDS")
+outSpat<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\spatial\\rcp65\\SoNWal_spatOut_04_04_22.RDS")
 #soilDataLocs<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\soilDataLocs.RDS")
 #outSpat<-merge(lkList,outSpat,by.x="fName",by.y="fName")
 library(grid)
@@ -46,12 +47,12 @@ outSpat<-outSpat[is.na(outSpat$Year)==F,]
 #lkListSon<-readRDS("lkListSon.RDS")
 #outSpat$id<-lkListSon$fName
 outSpat$GPPcsum <- ave(outSpat$GPP_value*365, outSpat$grid_id, FUN=cumsum)
-outSpat$suit<-ifelse(outSpat$yc_value>summary(outSpat$yc_value)[5],"Highly Suitable", "Suitable")
-outSpat$suit<-ifelse(outSpat$yc_value<summary(outSpat$yc_value)[4], "Unsuitable",outSpat$suit)
-outSpat$suitU<-ifelse(outSpat$yc_q95>summary(outSpat$yc_value)[5],"Highly Suitable", "Suitable")
-outSpat$suitU<-ifelse(outSpat$yc_q95<summary(outSpat$yc_value)[4], "Unsuitable",outSpat$suit)
-outSpat$suitL<-ifelse(outSpat$yc_q05>summary(outSpat$yc_value)[5],"Highly Suitable", "Suitable")
-outSpat$suitL<-ifelse(outSpat$yc_q05<summary(outSpat$yc_value)[4], "Unsuitable",outSpat$suit)
+outSpat$suit<-ifelse(outSpat$yc_value>summary(outSpatHist$yc_value)[5],"Highly Suitable", "Suitable")
+outSpat$suit<-ifelse(outSpat$yc_value<summary(outSpatHist$yc_value)[4], "Unsuitable",outSpat$suit)
+outSpat$suitU<-ifelse(outSpat$yc_q95>summary(outSpatHist$yc_value)[5],"Highly Suitable", "Suitable")
+outSpat$suitU<-ifelse(outSpat$yc_q95<summary(outSpatHist$yc_value)[4], "Unsuitable",outSpat$suit)
+outSpat$suitL<-ifelse(outSpat$yc_q05>summary(outSpatHist$yc_value)[5],"Highly Suitable", "Suitable")
+outSpat$suitL<-ifelse(outSpat$yc_q05<summary(outSpatHist$yc_value)[4], "Unsuitable",outSpat$suit)
 
 outSpat$YCrange<-outSpat$yc_q95-outSpat$yc_q05
 

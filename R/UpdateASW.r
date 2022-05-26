@@ -88,7 +88,7 @@ UpdateASW <-
       
       
       rainCoef<-parms[["Q10"]]
-      RainAbs<- Rain# ((1-(exp(max(state[["volSWC_rz"]],volSWC_wp) * (-log(rainCoef)) / volSWC_wp))))*Rain
+      RainAbs<- Rain#((1-(exp(max(state[["volSWC_rz"]],volSWC_wp) * (-log(rainCoef)) / volSWC_wp))))*Rain
       
       
 if(pseudo==T){

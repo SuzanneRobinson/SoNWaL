@@ -140,7 +140,7 @@ plotResultsPine <- function(outP,ShortTS=F){
     geom_point(data=obsDat,aes(x=timestamp,y=GPP),colour="red",size=2)+
       geom_ribbon(aes(x=obsDat$timestamp,ymin=predNeg,ymax=predPos),alpha=0.5,fill="orange")+
     scale_x_datetime(limits=c(as.POSIXct("1996-01-01",tz="GMT"),as.POSIXct("2015-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("GPP [gC"," ",cm^-2,"]",sep="")))+
+    labs(x="Year",y=expression(paste("GPP [gC"," ",m^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
@@ -155,7 +155,7 @@ plotResultsPine <- function(outP,ShortTS=F){
     geom_point(data=obsDat,aes(x=timestamp,y=NEE),colour="red",size=2)+
       geom_ribbon(aes(x=obsDat$timestamp,ymin=predNegNEE,ymax=predPosNEE),alpha=0.5,fill="orange")+
     scale_x_datetime(limits=c(as.POSIXct("1996-01-01",tz="GMT"),as.POSIXct("2015-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("NEE [gC"," ",cm^-2,"]",sep="")))+
+    labs(x="Year",y=expression(paste("NEE [gC"," ",m^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
@@ -394,7 +394,7 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
     geom_ribbon(aes(ymin=predNeg,ymax=predPos,x=dataX$timestamp),fill="orange",alpha=0.3)+
     ## geom_ribbon(data=data,aes(x=timestamp,ymin=gpp-gpp.sd,ymax=gp+gpp.sd),alpha=0.3)+
     scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("GPP [gC"," ",cm^-2,"]",sep="")))+
+    labs(x="Year",y=expression(paste("GPP [gC"," ",m^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
@@ -404,7 +404,7 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
     geom_point(data=dataX,aes(x=timestamp, y=cumGppObs),colour="black",size=2)+
     geom_ribbon(data=dataX,aes(ymin=simCGppNeg,ymax=simCGppPos,x=dataX$timestamp),fill="orange",alpha=0.3)+
     scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("Cumulative GPP [gC"," ",cm^-2,"]",sep="")))+
+    labs(x="Year",y=expression(paste("Cumulative GPP [gC"," ",m^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
@@ -414,7 +414,7 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
     geom_point(data=dataX,aes(x=timestamp, y=cumNppObs),colour="black",size=2)+
     geom_ribbon(data=dataX,aes(ymin=simCNppNeg,ymax=simCNppPos,x=dataX$timestamp),fill="orange",alpha=0.3)+
         scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("Cumlative NPP [gC"," ",cm^-2,"]",sep="")))+
+    labs(x="Year",y=expression(paste("Cumlative NPP [gC"," ",m^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
@@ -462,7 +462,7 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
     geom_point(data=dataX,aes(x=df2$timestamp, y=neeOb),colour="black",size=2)+
     geom_ribbon(aes(ymin=predNegNEE,ymax=predPosNEE,x=dataX$timestamp),fill="orange",alpha=0.3)+
     scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("NEE [gC"," ",cm^-2,"]",sep="")))+
+    labs(x="Year",y=expression(paste("NEE [gC"," ",m^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
@@ -476,7 +476,7 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
     geom_point(data=dataX,aes(x=df2$timestamp, y=recoOb),colour="black",size=2)+
     geom_ribbon(aes(ymin=predNegreco,ymax=predPosreco,x=dataX$timestamp),fill="orange",alpha=0.3)+
     scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("Reco [gC"," ",cm^-2,"]",sep="")))+
+    labs(x="Year",y=expression(paste("Reco [gC"," ",m^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
@@ -491,7 +491,7 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
     geom_point(data=dataX,aes(x=df2$timestamp, y=rsOb),colour="black",size=2)+
     geom_ribbon(aes(ymin=predNegRs,ymax=predPosRs,x=dataX$timestamp),fill="orange",alpha=0.3)+
     scale_x_datetime(limits=c(as.POSIXct("2015-01-01",tz="GMT"),as.POSIXct("2019-01-01",tz="GMT")))+    
-    labs(x="Year",y=expression(paste("Rs [gC"," ",cm^-2,"]",sep="")))+
+    labs(x="Year",y=expression(paste("Rs [gC"," ",m^-2,"]",sep="")))+
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
@@ -650,7 +650,6 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
   
   return(list(gpp1,swcPlot,NEEPlot,etrans,recoPlot,rsPlot,gppC,nppC, pLAI,pStemNo,pDBH,pWr,ptotC,ptotN,ggAlphaAn))
 }
-
 
 
 
