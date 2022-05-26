@@ -2,6 +2,14 @@
 
 #' NPPfunc
 #' @description takes hazard years, NPP_values and grid square data to return good and bad hazard years
+#' @param hzYrs list of hazard years
+#' @param NPP_value 
+#' @param hazPeriod 
+#' @grid_id grid identification 
+#' @param x x value
+#' @param y y value
+#' @param yc_value yield class
+#' @export
 NPPfunc<-function(hzYrs,NPP_value,hazPeriod, grid_id, x, y, yc_value){
   
   hzYY<-as.numeric(unlist(hzYrs))
@@ -12,16 +20,9 @@ NPPfunc<-function(hzYrs,NPP_value,hazPeriod, grid_id, x, y, yc_value){
     goodNPP<-NPP_value
     badNPP<-NA
   }
-  prHz<-length(hzYY)/30
-  return(cbind(grid_id = grid_id,badNPP=badNPP, goodNPP =goodNPP,prHz=prHz, x=x, y=y, 
+  return(cbind(grid_id = grid_id,badNPP=badNPP, goodNPP =goodNPP, x=x, y=y, 
                NPP = NPP_value, yc_value=yc_value))
 }
-
-dx<-(select(outSpatHz, hzYrs, NPP_value, hazPeriod, grid_id, x, y, yc_value))
-dx<-dx[is.na(dx$NPP_value)==F,]
-dx<-filter(dx, hazPeriod !=0)
-
-vuln_years<-as.data.frame(do.call(pmap(dx,NPPfunc)))
 
 
 
@@ -31,8 +32,8 @@ uqFunc<-function(badNPP,goodNPP, grid_id){
   badNPP<-as.numeric(badNPP)
   goodNPP<-as.numeric(goodNPP)
   
-  nH<-length(na.omit(goodNPP))
-  n <- length(goodNPP)
+  nH<-length(na.omit(badNPP)) #number hazard years
+  n <- length(badNPP)
   
   z<-as.numeric(na.omit(c(goodNPP,badNPP)))
   
@@ -42,6 +43,10 @@ uqFunc<-function(badNPP,goodNPP, grid_id){
   
   z_H<-na.omit(badNPP)
   z_nH<-na.omit(goodNPP)
+  
+  pH <- nH / n
+  V<- Ez_notH - Ez_H
+  R<- Ez_notH - Ez
   
   a <- 1 + nH
   b <- 1 + n - nH
@@ -53,5 +58,5 @@ uqFunc<-function(badNPP,goodNPP, grid_id){
   s_V <- sqrt( s_Ez_notH^2 + s_Ez_H^2 )
   s_R <- sqrt( s_Ez_notH^2 + s_Ez^2 - 2 * s_Ez_notH^2 * (1-nH/n) )
   s_R<-if(is.na(s_R)==T) 0 else s_R
-  return(data.frame(s_R = s_R, s_V = s_V, s_pH = s_pH, grid_id = grid_id))
+  return(data.frame(pH = pH, R = R, V = V, s_R = s_R, s_V = s_V, s_pH = s_pH, grid_id = grid_id))
 }

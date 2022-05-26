@@ -2,7 +2,6 @@
 
 library(multidplyr)
 outSpatHist<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\spatial\\historical\\SoNWal_spatOut_27_04_22.RDS")
-
 hzYrsLoc<-"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\hazardData\\hazYrs_V2_2051-2080.RDS"
 outSpatLoc<-"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\spatial\\rcp65\\SoNWal_spatOut_60_01.RDS"
 outSpatHzLoc<-"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_met_data\\CHESSscape\\daily\\huss\\chess-scape_rcp60_bias-corrected_01_huss_uk_1km_daily_20800901-20800930.nc"
@@ -20,15 +19,25 @@ timePer<-as.numeric(sub('-.*', '', sub('.*hazYrs_V2_', '', hzYrsLoc)))-1
 outSpat<-readRDS(outSpatLoc)
 
 
-outSpatHz<-#as.data.frame(raster::coordinates(raster::brick(outSpatHzLoc))) %>%
+# get year values as 0-30, add lists of hazard years and select required data
+dx<-
   tibble(hzYrs) %>%
   left_join(outSpat) %>%
-  mutate(hazPeriod=ifelse(Year-timePer > 0, Year - timePer, 0)) 
+  mutate(hazPeriod=ifelse(Year-timePer > 0, Year - timePer, 0)) %>%
+  select(hzYrs, NPP_value, hazPeriod, grid_id, x, y, yc_value) %>%
+  filter(!is.na(NPP_value)) %>%
+  filter(hazPeriod !=0)
 
 
+# calc good and bad years - return dataframe
+vuln_years<-pmap(dx,NPPfunc) %>%
+  do.call(rbind,.)%>%
+  as.data.frame(.)
+
+# calculate uncertainty of risk
 uncertainty_vals<-vuln_years%>%
   group_by(grid_id) %>%
-  group_map(~uqFunc(.x$goodNPP, .x$badNPP, .y)) %>%
+  group_map(~uqFunc(.x$badNPP, .x$goodNPP, .y)) %>%
   bind_rows()
 
 
@@ -40,12 +49,12 @@ outSpatHz<-outSpatHzTmp%>%
             badYears=mean(as.numeric(badNPP), na.rm=T), 
             x=first(as.numeric(x)), 
             y=first(as.numeric(y)), 
-            s_R=first(s_R),
-            s_V=first(s_V),
+            s_R=first(s_R*7.14),
+            s_V=first(s_V*7.14),
+            Vuln = first(V*7.14),
+            Risk = first(R*7.14),
            YC = mean(as.numeric(yc_value), na.rm = T),
-            prHz=first(as.numeric(prHz)))%>%
-  mutate(vuln=(((goodYears * 7.14) - (badYears * 7.14))))%>%
-  mutate(risk = vuln * prHz)
+            prHz=first(as.numeric(pH)))
 
 
 
@@ -87,7 +96,7 @@ g1<-ggplot() +
 
 
 g2<-ggplot() +
-  geom_tile(data = outSpatHz , aes(x = x, y = y, fill =  risk+(2*s_R)))+
+  geom_tile(data = outSpatHz , aes(x = x, y = y, fill =  Risk))+
  geom_tile(data=outSpatHzXMask,aes(x = x, y = y),fill = "grey")+
   theme_bw()+
   theme(
