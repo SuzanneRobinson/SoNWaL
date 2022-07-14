@@ -33,7 +33,7 @@ soil_dat<-c(
   "C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\ths_fao_octop.tif",
   "C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\NZplus\\spatialData\\soildataNZero2.RDS")
 
-simDatLoc<-"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\NZplus\\misc_data\\AH_Harwood_CHESS_dat\\clm_hist_wide.RDS"
+simDatLoc<-"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\NZplus\\misc_data\\AH_Harwood_CHESS_dat\\clm_rcp45_01_wide.RDS"
 
 #simDat<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\NZplus\\misc_data\\AH_Harwood_CHESS_dat\\clm_hist_wide.RDS")
 
@@ -57,7 +57,7 @@ codM<-colMedians(paramsFile)
 #codM<-as.data.frame(t(codM)) 
 #param_scaler<-createPriors_sitka(sitka=getParms(E_S1=1,E_S2 = 1))[[2]]
 #codM<-codM*param_scaler
-scape<-F
+scape<-T
 
 baseParms<-getParms(weather=as.data.frame(clm_df_reg),
                     waterBalanceSubMods =T, #Whether to run model using updated water balance submodels

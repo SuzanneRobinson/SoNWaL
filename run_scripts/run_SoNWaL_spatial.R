@@ -41,7 +41,7 @@ soil_dat<-c(
 fileLocs<-"/work/scratch-nopw/alm/chessSpatial/"
 
 #location of MCMC results file
-paramsFile<-("/home/users/aaronm7/regCals/weekly_24_T.RDS")
+paramsFile<-("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\final_results\\sitka\\HD\\weekly\\mcmcOut\\weekly_3_final_T.RDS")
 
 # list spatial climate files
 files <- list.files(path = fileLocs, pattern = "\\.RDS$", full.names = TRUE, 
@@ -57,8 +57,9 @@ simDat<-readRDS(files[chunk])
 
 # read in the mcmc results file to sample from the posterior
 param_drawX<-readRDS(paramsFile)
-param_drawX<-mergeChains(getSample(param_drawX, start = 100, coda = TRUE, thin = 1,numSamples = 500 ))#,colMedians(getSample(param_drawX, start = 1000, coda = TRUE, thin = 1 )[[2]])))
-param_drawX<-conc_chains(param_drawX,  clm_df_reg=clm_df_reg)
+param_drawX<-mergeChains(getSample(param_drawX, start = 100, coda = TRUE, thin = 1,numSamples = 10 ))#,colMedians(getSample(param_drawX, start = 1000, coda = TRUE, thin = 1 )[[2]])))
+param_drawX<-as.data.frame(param_drawX)
+#param_drawX<-conc_chains(param_drawX,  clm_df_reg=clm_df_reg)
 param_draw<-as_tibble(1:nrow(param_drawX))
 param_draw$pars<- tibble(list(split(param_drawX, 1:NROW(param_drawX))))%>%
   unnest_legacy()
@@ -72,12 +73,23 @@ simDat<-add_BGS_dat(simDat, soil_dat)
 mcmcReg<-readRDS(paramsFile)
 # concatonate chains which were fit for individual sites
 concChains<-conc_chains(mcmcReg,  clm_df_reg=clm_df_reg)
+
 # predict some soil variables from Astleys data, landsberg and sands data and biosoil survey
 simDat<-soil_regr(simDat,concChains)
 
+simDat<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\simDatExamp.RDS")
+
+#add hazard years
+hzYrsLoc<-"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\hazardData\\hazYrs_V2_2051-2080.RDS"
+hzYrs<-do.call(rbind,readRDS(hzYrsLoc))%>%nest_by(x,y)
+names(hzYrs)<-c("x","y","hzYrs")
+simDat<-simDat %>% left_join(hzYrs, by=c("x" = "x", "y" = "y"))
+
+
+
 # run spatial sonwal function - note fc, wp are either from astleys data "fc", "wp" or
 # from european map data "fc_map", "wp_map", sp is always from european map data
-outTemp<-mapply(SoNWaL_spat_run, site = simDat$site, clm = simDat$clm,
+outTemp<-mapply(SoNWaL_spat_run, site = simDat$site, clm = simDat$clm, hzYrs = simDat$hzYrs,
                 wp=simDat$wp_map,fc=simDat$fc_map,sp=simDat$sp, plant_year =1961,
                 cond=simDat$soil_cond,carbon = simDat$SOC,soil_depth=simDat$soil_depth,N0=simDat$no,C0=simDat$co,
                 grid_id=as.list(simDat$grid_id),MoreArgs = list(param_draw=param_draw),SIMPLIFY = F)
@@ -97,7 +109,7 @@ clm = simDat$clm[[1]]
 wp=simDat$wp_map
 fc=simDat$fc_map
 sp=simDat$sp
-plant_year =1961
+plant_year =2020
 cond=simDat$soil_cond
 carbon = simDat$SOC
 soil_depth=simDat$soil_depth

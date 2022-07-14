@@ -5,6 +5,8 @@ library(tidyverse)
 library(dplyr)
 library(coda)
 library(miscTools)
+library(lubridate)
+library(raster)
 
 #read in arguments from batch file
 #args=(commandArgs(TRUE))
@@ -32,6 +34,20 @@ args[1]<-timeStep
 #  summarise(across(NEE:LE_uStar_f, ~ mean(.x, na.rm=T)), Month = first(Month), Date = first(date))
 #
 #convFac<-1800*12*1e-6
+
+soil_dat<-c(
+  "C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\wp_fao.tif",
+  "C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\fc_fao.tif",
+  "C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\ks_fao_octop.tif",
+  "C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\ths_fao_octop.tif",
+  "C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\NZplus\\spatialData\\soildataNZero2.RDS")
+
+simDatLoc<-"C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\NZplus\\misc_data\\AH_Harwood_CHESS_dat\\clm_hist_wide.RDS"
+mcmcReg<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\reg_cals\\weekly_24_T.RDS")
+
+clm_df_reg<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\PRAFOR_3PG\\data\\regionalClmDat.RDS")
+
+paramsFile<-conc_chains(mcmcReg,  clm_df_reg=clm_df_reg)
 
 
 ah_flux<-read.csv("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\NZplus\\AH_flux\\AliceHolt_daily_EC_data.csv")[-1,]
@@ -116,6 +132,18 @@ sampleOutputOak<-function(df,sY,eY,swc=T){
 }
 
 
+# sivia likelihood calculation
+flogL <- function(sims,data,data_s)
+{ 
+  Ri         <- (sims - data) / data_s
+  i0         <- which( abs(Ri)<1.e-08 )
+  
+  logLi      <- log(1-exp(-0.5*Ri^2)) - log(Ri^2) - 0.5*log(2*pi) - log(data_s)
+  logLi[i0]  <- -0.5*log(2*pi) - log(2*data_s[i0])
+  
+  sum(logLi)
+}
+
 ## Likelihood function
 LL_oak<- function(p){
   p<-p*.GlobalEnv$param_scaler
@@ -141,6 +169,9 @@ priorVals<-createPriors_oak(oak=getParmsOak(E_S1=1,E_S2 = 1))[[1]]
 param_scaler<-createPriors_oak(oak=getParmsOak(E_S1=1,E_S2 = 1))[[2]]
 
 
+startYear=1999
+endYear = 2018
+
 nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","shared_area","maxRootDepth","K_drain",
       "pFS2","pFS20","aS","nS","pRx","pRn","gammaFx","gammaF0","tgammaF","Rttover","mF","mR",
       "mS","SLA0","SLA1","tSLA","alpha","Y","m0","MaxCond","LAIgcx","CoeffCond","BLcond",
@@ -150,7 +181,7 @@ nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","s
 likelihoodFunc<-LL_oak
 
 #run in loop and write to file every 100k in case of errors or problems with JASMIN - allows for easy restarting of mcmc chain if something goes wrong
-  iters=100000
+  iters=5000
   #Initiate bayesian setup
   settings = list(
     iterations = iters,
@@ -165,10 +196,10 @@ likelihoodFunc<-LL_oak
   #on JASMIN I found you need to create bayesian setup even if re-starting a chain, I think as this initiates the cluster needed to run in parallel  
   BS3PGDN <- createBayesianSetup(likelihood = likelihoodFunc, prior = priorVals, names = nm, parallel = 8, catchDuplicates = F )
 
-    out<- runMCMC(bayesianSetup =out, sampler = "DEzs", settings = settings)
+    out<- runMCMC(bayesianSetup =BS3PGDN, sampler = "DEzs", settings = settings)
   
 
-    codM<-as.data.frame(out$chain[[1]])
+    codM<-as.data.frame(out$chain[[7]])
 
     codM<-tail(as.data.frame(codM),1)
     names(codM)<-nm

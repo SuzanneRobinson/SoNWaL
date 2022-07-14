@@ -91,16 +91,16 @@ priorVals<-createPriors_sitka(sitka=getParms())[[1]]
 #BayesianTools::tracePlot(out)
 
 
-sitka<-getParms(waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
+param_list<-getParms(waterBalanceSubMods=T, timeStp = if (timeStep == "monthly") 12 else if (timeStep == "weekly") 52 else 365)
 #sitka$E_S1<-2
 #sitka$weather<-clm_df_pine
 param_scaler<-createPriors_sitka(sitka=getParms(E_S1=1,E_S2 = 1))[[2]]
 
-sitka[nm]<-codM[nm]#*param_scaler
+param_list[nm]<-codM[nm]#*param_scaler
 
 
 
-output<-do.call(SoNWaL,sitka)
+output<-do.call(SoNWaL,param_list)
 ff<-filter(output,Year>2014&Year<2019)
 plot(ff$Rs*7.4)
 plot(output$Nav)

@@ -14,6 +14,7 @@ SoNWaL_spat_run <-
            clm,
            param_draw,
            grid_id,
+           hzYrs,
            soil_depth,
            wp,
            fc,
@@ -56,8 +57,8 @@ SoNWaL_spat_run <-
       
       
     # return empty cell output if there is no climate data (no land mass)
-    if (is.na(clm[1, 2]) == T) {
-      print("no climate data")
+    if (is.na(clm[1, 2]) == T || is.na(carbon)==T) {
+      print("no climate or soil data")
       return (tibble::as_tibble(
         data.frame(
           Year = NA,
@@ -119,7 +120,13 @@ SoNWaL_spat_run <-
             NA,
           LAI_q95 = NA,
           LAI_value = NA,
-          LAI_var = NA
+          LAI_var = NA,
+          pH = NA,
+          R = NA,
+          V = NA,
+          s_R = NA,
+          s_V = NA,
+          s_pH =NA
         )
       )) 
       } else {
@@ -127,11 +134,31 @@ SoNWaL_spat_run <-
 
       site_out <-
         tryCatch({
+          
+          print(grid_id)
 
-          param_draw %>%
+          ##!! NEW BIT OF CODE FOR UNCERTAINTY!!##
+          # run model for all parameter draws
+          res<-param_draw %>%
             dplyr::mutate(sim = mapply(SoNWaL_spat_model_run, pars, MoreArgs = list(clm,scape=scape),SIMPLIFY = F)) %>%
             dplyr::select(mcmc_id, sim) %>%
-            tidyr::unnest_legacy() %>%
+            tidyr::unnest_legacy()%>%
+            mutate(hazPeriod=ifelse(Year-timePer > 0, Year - timePer, 0))%>%
+            mutate(goodBad=ifelse(hazPeriod %in% as.vector(unlist(hzYrs)), "bad", "good"))
+          
+          # get good and bad years for NPP  
+          vulnYrs<-filter(res, hazPeriod > 0) %>%
+            group_by(Year)%>%
+            summarise(hazPeriod=first(hazPeriod), NPP = mean(NPP), goodBad = first(goodBad))%>%
+            dplyr::select(hazPeriod,NPP,goodBad)%>%
+            mutate(goodNPP=ifelse(goodBad=="good",NPP,NA),badNPP=ifelse(goodBad=="bad",NPP,NA))
+          
+          # calculate uncertainty of risk
+          uncertainty_vals<-uqFunc(vulnYrs$badNPP, vulnYrs$goodNPP, numDraws = nrow (param_draw))
+          ##########################################################
+          
+          
+          res%>%
             group_by(Year, mcmc_id) %>%
             dplyr::summarise(
               grid_id = grid_id,
@@ -176,49 +203,49 @@ SoNWaL_spat_run <-
               yc_q05 = quantile(yc, 0.05, na.rm = T),
               yc_q95 = quantile(yc, 0.95, na.rm = T),
               yc_value = quantile(yc, 0.5, na.rm = T),
-              yc_var = quantile(yc, na.rm = T),
+              yc_var = var(yc, na.rm = T),
               
               GPP_q05 = quantile(GPP, 0.05, na.rm = T),
               GPP_q95 = quantile(GPP, 0.95, na.rm = T),
               GPP_value = quantile(GPP, 0.5, na.rm = T),
-              GPP_var = quantile(GPP, na.rm = T),
+              GPP_var = var(GPP, na.rm = T),
               
               NPP_q05 = quantile(NPP, 0.05, na.rm = T),
               NPP_q95 = quantile(NPP, 0.95, na.rm = T),
               NPP_value = quantile(NPP, 0.5, na.rm = T),
-              NPP_var = quantile(NPP, na.rm = T),
+              NPP_var = var(NPP, na.rm = T),
               
               NEE_q05 = quantile(NEE, 0.05, na.rm = T),
               NEE_q95 = quantile(NEE, 0.95, na.rm = T),
               NEE_value = quantile(NEE, 0.5, na.rm = T),
-              NEE_var = quantile(NEE, na.rm = T),
+              NEE_var = var(NEE, na.rm = T),
               
               GPPsum_q05 = quantile(GPPsum, 0.05, na.rm = T),
               GPPsum_q95 = quantile(GPPsum, 0.95, na.rm = T),
               GPPsum_value = quantile(GPPsum, 0.5, na.rm = T),
-              GPPsum_var = quantile(GPPsum, na.rm = T),
+              GPPsum_var = var(GPPsum, na.rm = T),
               
               NPPsum_q05 = quantile(NPPsum, 0.05, na.rm = T),
               NPPsum_q95 = quantile(NPPsum, 0.95, na.rm = T),
               NPPsum_value = quantile(NPPsum, 0.5, na.rm = T),
-              NPPsum_var = quantile(NPPsum, na.rm = T),
+              NPPsum_var = var(NPPsum, na.rm = T),
               
               NEEsum_q05 = quantile(NEEsum, 0.05, na.rm = T),
               NEEsum_q95 = quantile(NEEsum, 0.95, na.rm = T),
               NEEsum_value = quantile(NEEsum, 0.5, na.rm = T),
-              NEEsum_var = quantile(NEEsum, na.rm = T),
+              NEEsum_var = var(NEEsum, na.rm = T),
               
               Reco_q05 = quantile(Reco, 0.05, na.rm = T),
               Reco_q95 = quantile(Reco, 0.95, na.rm = T),
               Reco_value = quantile(Reco, 0.5, na.rm = T),
-              Reco_var = quantile(Reco, na.rm = T),
+              Reco_var = var(Reco, na.rm = T),
               
               LAI_q05 = quantile(LAI, 0.05, na.rm = T),
               LAI_q95 = quantile(LAI, 0.95, na.rm = T),
               LAI_value = quantile(LAI, 0.5, na.rm = T),
-              LAI_var = quantile(LAI, na.rm = T)
-              
-            )
+              LAI_var = var(LAI, na.rm = T)
+            ) %>%
+            mutate(pH = uncertainty_vals$pH, R = uncertainty_vals$R, V = uncertainty_vals$V, s_R = uncertainty_vals$s_R, s_V = uncertainty_vals$s_V, s_pH = uncertainty_vals$s_pH )
         },
         #add na values where there is no data, in the sea etc.
         error = function(cond) {
@@ -286,7 +313,13 @@ SoNWaL_spat_run <-
                   NA,
                 LAI_q95 = NA,
                 LAI_value = NA,
-                LAI_var = NA
+                LAI_var = NA,
+                pH = NA,
+                R = NA,
+                V = NA,
+                s_R = NA,
+                s_V = NA,
+                s_pH =NA
                 
               )
             )

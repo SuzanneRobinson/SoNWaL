@@ -28,12 +28,13 @@ NPPfunc<-function(hzYrs,NPP_value,hazPeriod, grid_id, x, y, yc_value){
 
 #' uqFunc
 #' @description takes good and bad years and grid ID, calculates risk uncertainty etc.
-uqFunc<-function(badNPP,goodNPP, grid_id){
+#' @export
+uqFunc<-function(badNPP,goodNPP,numDraws){
   badNPP<-as.numeric(badNPP)
   goodNPP<-as.numeric(goodNPP)
   
-  nH<-length(na.omit(badNPP)) #number hazard years
-  n <- length(badNPP)
+  nH<-round(length(na.omit(badNPP))/numDraws) #number hazard years needs to be yearly not weekly
+  n <- 30#round(length(badNPP)) # total number of years should be 30?
   
   z<-as.numeric(na.omit(c(goodNPP,badNPP)))
   
@@ -58,5 +59,5 @@ uqFunc<-function(badNPP,goodNPP, grid_id){
   s_V <- sqrt( s_Ez_notH^2 + s_Ez_H^2 )
   s_R <- sqrt( s_Ez_notH^2 + s_Ez^2 - 2 * s_Ez_notH^2 * (1-nH/n) )
   s_R<-if(is.na(s_R)==T) 0 else s_R
-  return(data.frame(pH = pH, R = R, V = V, s_R = s_R, s_V = s_V, s_pH = s_pH, grid_id = grid_id))
+  return(data.frame(pH = pH, R = R, V = V, s_R = s_R, s_V = s_V, s_pH = s_pH))
 }

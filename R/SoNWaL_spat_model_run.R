@@ -26,7 +26,7 @@ SoNWaL_spat_model_run <- function(params,clm, scape=T) {
     clm$Tmin<-clm$tas-(clm$dtr/2)
     clm$RH<-relative_humidity_calc(Tmean=clm$tas-273.15,pp=clm$psurf,spec_hum=clm$huss)
     
-    clm<-clm%>%dplyr::select(RH,psurf,precip,rlds,rsds,sfcWind,tas,Tmax,Tmin,pyear)
+    clm<-clm%>%dplyr::select(RH,huss,precip,rlds,rsds,sfcWind,tas,Tmax,Tmin,pyear)
     
     names(clm) <-
       c(

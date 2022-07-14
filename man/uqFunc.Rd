@@ -4,7 +4,7 @@
 \alias{uqFunc}
 \title{uqFunc}
 \usage{
-uqFunc(badNPP, goodNPP, grid_id)
+uqFunc(badNPP, goodNPP, numDraws)
 }
 \description{
 takes good and bad years and grid ID, calculates risk uncertainty etc.

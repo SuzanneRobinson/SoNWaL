@@ -21,7 +21,7 @@ saveRDS(ans,"/home/users/aaronm7/BASFOR_spatOut_04_04.RDS")
 library(data.table)
 library(stringr)
 #SoNWal combine function
-fileLocs<-"/gws/nopw/j04/uknetzero/aarons_files/chess_manips/spatOutput_85_01/"
+fileLocs<-"/gws/nopw/j04/uknetzero/aarons_files/chess_manips/spatOutput_85_01_unc/"
 filenames<-list.files(path = fileLocs, pattern = "\\.RDS$", full.names = F, 
                       recursive = T)
 readComb<-function(file){
@@ -32,7 +32,7 @@ readComb<-function(file){
   return(ff)
 }
 ans = rbindlist(lapply(filenames, readComb),fill=T)
-saveRDS(ans,"/home/users/aaronm7/SoNWal_spatOut_85_01.RDS")
+saveRDS(ans,"/home/users/aaronm7/SoNWal_spatOut_85_01_unc.RDS")
 
 
 ###plot SoNWaL spatial outputs###

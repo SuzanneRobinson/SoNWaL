@@ -261,19 +261,16 @@ add_BGS_dat<-function(spat_chunk, soil_dat){
   
   closest_vals_fc<-ext_eu_soil(soil_dat[2],
                             spat_chunk,"fc_map", 1000)
-  print("soilDat_read in")
   closest_vals_cond<-ext_eu_soil(soil_dat[3],
                                  spat_chunk,"soil_cond", 1000) %>%
     mutate(soil_cond=10^soil_cond/10)#convert from log10 cm/day
-  print("sat point read in")
-  
+
   closest_vals_sat<-ext_eu_soil(soil_dat[4],
                                  spat_chunk,"sp", 1000)
   
   closest_vals<-ext_eu_soil(soil_dat[5],
                             spat_chunk,"NA", 1000, F)
-  print("cond read in")
-  
+
 # use closest value known if center of grid square is in the sea or data is missing, over 1km however may be too far?
   
   spat_chunk<-spat_chunk%>%
