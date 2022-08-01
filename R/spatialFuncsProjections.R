@@ -199,7 +199,7 @@ chess_xy_latlon<-function(x,y){
 #' @param mcmcReg output from MCMC for fitting regional models
 #' @return simDat but with predicted soil texture params, es1,es2,swconst,swpower
 #' @export
-soil_regr<-function(simDat,concChains){
+soil_regr<-function(simDat){
 # data from landsberg & sands book
   texT<-data.frame(sand=c(30 ,33,42, 82, 92, 52, 60, 65, 7, 7, 10, 20),
                  clay =c(50, 34 ,18, 6, 5, 42, 28 ,10, 6, 47, 34, 20),
@@ -209,17 +209,9 @@ soil_regr<-function(simDat,concChains){
 )
 
 
-# models for predicting approximate drainage values 
- mod_K_drain<-lm(K_drain~wiltPoint+fieldCap+V_nr,data=concChains)
- mod_K_s<-lm(K_s~satPoint+wiltPoint+fieldCap+V_nr,data=concChains)
-
 # models for predicting constant and power fertility modifiers from soil texture (driven by clay content)
 modCo<-lm(co~clay,data=texT)
 modNo<-lm(no~clay,data=texT)
-
-# predict drainage values from mapped soil data
- #simDat$K_drain<-as.vector(predict(mod_K_drain,data.frame(wiltPoint=simDat$wp/(simDat$depth*10),fieldCap=simDat$fc/(simDat$depth*10),V_nr=simDat$depth/100)))
- #simDat$K_s<-as.vector(predict(mod_K_s,data.frame(satPoint=simDat$sp,wiltPoint=simDat$wp/(simDat$soil_depth*10),fieldCap=simDat$fc/(simDat$soil_depth*10),V_nr=simDat$soil_depth/100)))
 
 # predict fertility modifiers from mapped soil data
 simDat$co <- as.vector(predict(modCo, data.frame(sand = simDat$Tsand, clay=simDat$Tclay, silt=simDat$Tsilt)))

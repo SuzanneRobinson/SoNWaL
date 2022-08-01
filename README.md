@@ -221,9 +221,9 @@ dev<-observedVals(timeStep =  "monthly",data=flxdata_daily,
 
 -   e.g. if your observed data is a vector of 3 years of GPP, NPP and NEE in weekly time-steps, this would be a vector 468 values in length (3 X 52 X 3), and your simulated data should also match this and be in the same order.
 
--   We then obtain a likelihood value for each simulated value against it's corresponding observed value, here we use a probability distribution proposed by Sivia, which reduced the weighting of outliers often found in flux data.
+-   We then obtain a likelihood value for each simulated value against it's corresponding observed value, here we use a probability distribution proposed by Sivia, which reduces the weighting of outliers often found in flux data.
 
--   To run the likelihood function within bayesian tools, we have a single input *p*, this contains the list of proposed parameters which are updated by the MCMC algorithm at each iteration and for which we want to obtain a likelihood value for
+-   To run the likelihood function within bayesian tools, we have a single input *p*, this contains the list of proposed parameters which are updated by the MCMC algorithm at each iteration and for which we want to obtain a likelihood value for. **The output of SoNWaL is in tons per hectare per time step for flux data, so will need to be converted to whatever your observed data is, here the harwood data is in grams per m2 per day. in the sampleOutput function, tons per hectare per time step is converted using the modif coefficient, evapotranspiration is also converted to daily values. Depending on your observed data you will need to make sure the simulated data is converted to matching units!**
 
 ``` likelihood
 
@@ -234,7 +234,7 @@ dev<-observedVals(timeStep =  "monthly",data=flxdata_daily,
 #' @param swc whether to included soil water data in calibration
 #' @return return vector of simulated data
 sampleOutput<-function(sim,sY,eY,swc=T){
-  #convert to average grams per m2 per day depending on timestep of model
+  #convert to average grams per m2 per day depending on timestep of model (using output length to quickly get time-step)
   modif<- if(nrow(sim)<1000) 1.6 else  7.142857
   nDays<- if(nrow(sim)<1000) 30 else  7
   

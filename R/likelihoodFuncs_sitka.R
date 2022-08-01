@@ -1,34 +1,27 @@
 
 # Extract simulated data for use in likelihood function for shorter time-steps
 # monthly data is in tons per hectare per month which matches 3pg output so no need to convert
-sampleOutput<-function(df,sY,eY,swc=T){
-  #convert to average grams per m2 per day depending on timestep of model
-  modif<- if(nrow(df)<1000) 1.6 else  7.142857
-  nDays<- if(nrow(df)<1000) 30 else  7
+sampleOutput<-function(sim,sY,eY,swc=T){
+  #convert to average grams per m2 per day depending on timestep of model (using output length to quickly get time-step)
+  modif<- if(nrow(sim)<1000) 1.6 else  7.142857
+  nDays<- if(nrow(sim)<1000) 30 else  7
   
-  df<- filter(df,Year>=sY&Year<=eY)
-
-  df<-df%>%
-    mutate(GPP=GPP*modif)%>%
-    mutate(NPP=NPP*modif)%>%
-    mutate(NEE=NEE*modif)%>%
-    mutate(Rs=Rs*modif)%>%
-    mutate(Reco=Reco*modif)
+  sim<- filter(sim,Year>=sY&Year<=eY)
   
+  m<-sim%>%
+    mutate(GPP=GPP*modif, NPP=NPP*modif, NEE=NEE*modif, Rs=Rs*modif, Reco=Reco*modif, swc = volSWC_rz, EvapTransp = EvapTransp/nDays)%>%
+    group_by(Year, Month) %>%
+    summarise_all(mean)
   
-  m<-c(aggregate(df$Rs~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$GPP~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$NEE~ df$Month+df$Year,FUN=mean)[,3],
-       aggregate(df$EvapTransp/nDays~ df$Month+df$Year,FUN=mean)[,3],
-       filter(df,Year==2015&Month==8)$LAI[1],
-       filter(df,Year==2018&Month==8)$LAI[1],
-       filter(df,Year==2018&Month==8)$N[1],
-       filter(df,Year==2018&Month==8)$dg[1],
-       filter(df,Year==2015&Month==7)$totC[1],
-       filter(df,Year==2015&Month==7)$totN[1],
-      if(swc==T) {aggregate(df$volSWC_rz~ df$Month+df$Year,FUN=mean)[,3]}
-  )
-  m
+  m<-c( m$Rs, m$GPP, m$NEE, m$EvapTransp,
+        filter(sim,Year==2015&Month==8)$LAI[1],
+        filter(sim,Year==2018&Month==8)$LAI[1],
+        filter(sim,Year==2018&Month==8)$N[1],
+        filter(sim,Year==2018&Month==8)$dg[1],
+        filter(sim,Year==2015&Month==7)$totC[1],
+        filter(sim,Year==2015&Month==7)$totN[1],
+        m$swc)
+  
   return(m)
 }
 

@@ -7,7 +7,7 @@
 getClmPine<-function(timeStep="monthly"){
   
   ## 1996-2012
-  NinetySixtoEnd <- getData(site=sites[site],dataset="CLIMATE_LOCAL")
+  NinetySixtoEnd <- getData(site="hyytiala",dataset="CLIMATE_LOCAL")
   ## 2001-2005
   twentyZeroOnetoZeroFive <- filter(NinetySixtoEnd, year %in% seq(2001,2005))
   ## 2001-2010
@@ -100,62 +100,46 @@ getClimDatX<-function(timeStep="monthly",climDir){
   library(dplyr)
   library(lubridate)
   
-
-  clm_df_full<-read.csv(paste0(climDir,"clm_df_full.csv"))
+  # read in daily data
   clm_df_daily<-read.csv(paste0(climDir,"weather_day_basfor.csv"))
   
-  #Add date
-  
+  #back fill data
   clm_df_daily<- rbind(do.call("rbind", replicate(22, (clm_df_daily[1:730,]), simplify = FALSE)),clm_df_daily[732:1461,])
   
-  clm_df_daily$Year<-rep(1973:2018,each=365)
-  
-  clm_df_full$date<-as.Date(paste(clm_df_full$Year,"-",clm_df_full$Month,"-01",sep=""))
-  clm_df_full$week<-week(clm_df_full$date)
-  clm_df_daily$Date<-as.Date(clm_df_daily$DOY, origin = paste0(clm_df_daily$Year,"-01-01"))
-  clm_df_daily$week<-week(clm_df_daily$Date)
-  clm_df_daily$month<-month(clm_df_daily$Date)
+  clm_df_daily<- clm_df_daily%>%
+    mutate(Year = rep(1973:2018,each=365),
+           Date = as.Date(DOY, origin = paste0(Year,"-01-01")),
+           week = week(Date),
+           month = month(Date),
+           FrostHours = ifelse(Tmin<=0,1,0),
+           rainDays = ifelse(Rain>0,1,0))
+
   clm_df_daily[which(clm_df_daily$DOY==365&clm_df_daily$week==1),"week"]<-52
-  
-  modDat<-filter(clm_df_daily,Year>2014)
-  predDat<-filter(clm_df_daily,Year<=2014)
-  
-  
-  
-  mod1<-lm(SolarRad~Tmax+Tmean+Rain,data=modDat[-c(1275,2103,615),])
-  
-  # predDat$SolarRad<-predict(mod1,newdata = predDat)
-  
-  
-  clm_df_daily<-rbind(predDat,modDat)
-  
   clm_df_daily$SolarRad[clm_df_daily$SolarRad<0]<-0
   
-  
+  # predict some variables such as VPD
   clm_df_daily <- PredictWeatherVariables(weather = clm_df_daily)
-  clm_df_daily$FrostHours<-ifelse(clm_df_daily$Tmin<=0,1,0)
-  clm_df_daily$rainDays<-ifelse(clm_df_daily$Rain>0,1,0)
-  
+
+  # aggregate data depending on time-step
   clm_df_weekly<-clm_df_daily%>%
     group_by(Year,week)%>%
     summarise(Year=median(Year),Month=median(month(Date)),Tmax=max(Tmax),Tmin=min(Tmin),
               Tmean=mean(Tmean),Rain=sum(Rain),SolarRad=mean(SolarRad)
-              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100),rainDays=sum(rainDays))
-  
+              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),rainDays=sum(rainDays))
   
   
   clm_df_full<-clm_df_daily%>%
     group_by(Year,month)%>%
     summarise(Year=median(Year),Month=median(month(Date)),Tmax=max(Tmax),Tmin=min(Tmin),
               Tmean=mean(Tmean),Rain=sum(Rain),SolarRad=mean(SolarRad)
-              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100),rainDays=sum(rainDays))
+              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),rainDays=sum(rainDays))
   
   
   clm_df_daily<-clm_df_daily%>%
     group_by(Year,DOY)%>%
     summarise(Year=median(Year),week=median(week),Month=median(month(Date)),Tmax=max(Tmax),Tmin=min(Tmin),
               Tmean=mean(Tmean),Rain=sum(Rain),SolarRad=mean(SolarRad)
-              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),SWC=mean(SWC/100),rainDays=sum(rainDays))
+              ,FrostDays=sum(FrostHours),MonthIrrig=mean(DayIrrig), VPD=mean(VPD),RH=mean(RH),rainDays=sum(rainDays))
   
   
   if(timeStep=="monthly") return (clm_df_full)

@@ -137,7 +137,6 @@ SoNWaL_spat_run <-
           
           print(grid_id)
 
-          ##!! NEW BIT OF CODE FOR UNCERTAINTY!!##
           # run model for all parameter draws
           res<-param_draw %>%
             dplyr::mutate(sim = mapply(SoNWaL_spat_model_run, pars, MoreArgs = list(clm,scape=scape),SIMPLIFY = F)) %>%
@@ -146,9 +145,9 @@ SoNWaL_spat_run <-
             mutate(hazPeriod=ifelse(Year-timePer > 0, Year - timePer, 0))%>%
             mutate(goodBad=ifelse(hazPeriod %in% as.vector(unlist(hzYrs)), "bad", "good"))
           
-          # get good and bad years for NPP  
+          # get good and bad years for NPP - used for quantifying risk uncertainty for PRAFOR project
           vulnYrs<-filter(res, hazPeriod > 0) %>%
-            group_by(Year)%>%
+            dplyr::group_by(mcmc_id, Year)%>%
             summarise(hazPeriod=first(hazPeriod), NPP = mean(NPP), goodBad = first(goodBad))%>%
             dplyr::select(hazPeriod,NPP,goodBad)%>%
             mutate(goodNPP=ifelse(goodBad=="good",NPP,NA),badNPP=ifelse(goodBad=="bad",NPP,NA))

@@ -42,8 +42,6 @@ NLL_Reg_sitka_mixedP <- function(p) {
   
   names(px) <- nm_all
   
-  #create vector of -Inf vals to return if the model run function fails
-  # fail <- rep(-Inf, nrow(px))
   #Get list of site names from the paramList$weather dataframe
   siteLst <- (unique(paramList$weather$site))
   #Update dataframe with each chains proposed param values repeated for each site

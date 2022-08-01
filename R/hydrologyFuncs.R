@@ -131,14 +131,6 @@ soilEvap <-
     rainDays <- max(weather[["rainDays"]], 1)
     rain <- throughFall / rainDays
     
-  #  e0 <-
-  #    max(h * (
-  #      soilCond * (Delta * interRad + soilBoundaryCond * Pa * Cp * ((VPD * 1000))) /
-  #        (lambda * ((gamma + Delta) * soilCond + gamma * soilBoundaryCond
-  #        ))
-  #    ), 0)
-  #  e0 <- e0 * 365 / parms[["timeStp"]]
-  #  E_S0 = state[["E_S"]]
     
     #whether to use pseudo time-steps for soil evaporation (more useful if using longer overall time-steps such as monthly)
     if (pseudo == T) {
@@ -164,7 +156,6 @@ soilEvap <-
       e0 <-max(h * (soilCond * (Delta * interRad + soilBoundaryCond * Pa * Cp * ((VPD * 1000))) /(lambda * ((gamma + Delta) * soilCond + gamma * soilBoundaryCond))), 0)
       e0 <- e0 * 365 / parms[["timeStp"]]
       
-      ##ARE ES_1 AND ES_2 RELATIVE AND DIMENSIONLESS IN SOME WAY?
       E_S0 = state[["E_S"]]
       
       E_S <- E_S0 + ifelse(E_S0 <= E_S1, e0, e0 / (1 + (E_S0 - E_S1) / E_S2))

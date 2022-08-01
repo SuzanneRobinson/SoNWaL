@@ -22,7 +22,6 @@ plotResultsPine <- function(outP,ShortTS=F){
   pine[.GlobalEnv$nm]<-codM[.GlobalEnv$nm]
   df<-do.call(SoNWaL,pine)
   
-  ##if plyr is loaded before dplyr can cause problems with groupby
   dt=12
   df <- df[c(2:nrow(df)),]
   if(nrow(df)>600) df$week<-c(1:52) else df$week<-1
@@ -221,22 +220,7 @@ plotResultsPine <- function(outP,ShortTS=F){
     theme(axis.title=element_text(size=14),
           axis.text=element_text(size=14))
   
-#  
-#  predPosC  <- intvsS[,10]$`89%`
-#  predNegC  <- intvsS[,10]$`11%`
-#  predmC  <- intvsS[,10]$`50%`# - 2 * 0.3
-#  obsDat$totC<-NA
-#  obsDat$totC[12]<-totC
-#  
-#  totCplot<-ggplot()+theme_bw()+
-#    geom_line(data=obsDat,aes(x=timestamp,y=predmC),colour="black",size=1)+
-#    geom_point(data=obsDat,aes(x=timestamp,y=totC),colour="red",size=2)+
-#    geom_ribbon(aes(x=obsDat$timestamp,ymin=predNegC,ymax=predPosC),alpha=0.5,fill="orange")+
-#    scale_x_datetime(limits=c(as.POSIXct("1996-01-01",tz="GMT"),as.POSIXct("2015-01-01",tz="GMT")))+    
-#    labs(x="Year",y=expression(paste("NEE [gC"," ",cm^-2,"]",sep="")))+
-#    theme(axis.title=element_text(size=14),
-#          axis.text=element_text(size=14))
-#  
+
   
   
   gpp1<-ggpubr::ggarrange(gpp,nee,swc,LAI,dbhplot,Nplot)
@@ -244,15 +228,6 @@ plotResultsPine <- function(outP,ShortTS=F){
   return(list(gpp1))
 }
 
-
-## Function to find the yield class of the stand based on stand dominant height (assuming it is the same as top height)
-YC.finder <- function(HT,AGE) 
-{
-  YC.site = ((HT/(1-exp(-0.033329*AGE))^1.821054)-14.856317)/1.425397
-  if(YC.site>24) 24
-  else if (YC.site<4) 4
-  else unlist(sub("\\]","",unlist(strsplit(as.character(cut(YC.site,breaks=c(6,8,10,12,14,16,18,20,22,24),right=T)),split="\\,"))[2]))
-}
 
 ############################################################################################
 
@@ -269,8 +244,6 @@ plotResultsNewMonthly <- function(df,outSample,ShortTS=F,numSamps=500){
   sitka[.GlobalEnv$nm]<-codM[.GlobalEnv$nm]
   df<-do.call(SoNWaL,sitka)
   
-  ##if plyr is loaded before dplyr can cause problems with groupby
-  dt=12
   df <- df[c(2:nrow(df)),]
   if(nrow(df)>600) df$week<-c(1:53) else df$week<-1
   df <- df%>%mutate(timestamp = as.POSIXct(paste(sprintf("%02d",Year),sprintf("%02d",Month),sprintf("%02d",1),sep="-"),tz="GMT")) 

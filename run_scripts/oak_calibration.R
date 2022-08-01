@@ -67,7 +67,7 @@ ah_flux<-ah_flux%>%
 ah_menst <- ah_menst %>%
   filter(species == "OK") %>% 
   group_by(year) %>%
-  summarise (dbh_cm = mean(as.numeric(dbh), na.rm = T), dbh_sd = sd(as.numeric(dbh), na.rm = T), height = mean(as.numeric(total.height), na.rm = T)) %>%
+  summarise (dbh_cm = mean(as.numeric(dbh), na.rm = T), dbh_sd = sd(as.numeric(dbh)*0.3, na.rm = T), height = mean(as.numeric(total.height), na.rm = T)) %>%
   filter(year<2019)
 
 coefVar = 0.25
@@ -90,7 +90,7 @@ oak<-getParmsOak(weather=clm_df_full,
 #######################################################
 
 
-baseParms<-getIndvClm(scape, "AH", soil_dat, simDatLoc, oak)
+baseParms<-getIndvClm(scape=F, "AH", soil_dat, simDatLoc, oak)
 weather<-baseParms$weather
 weather$Year<-weather$Year-30
 weather<-filter(weather,Year<1961)
@@ -180,37 +180,52 @@ nm<-c("wiltPoint","fieldCap","satPoint","K_s","V_nr","sigma_zR","E_S1","E_S2","s
 
 likelihoodFunc<-LL_oak
 
+
 #run in loop and write to file every 100k in case of errors or problems with JASMIN - allows for easy restarting of mcmc chain if something goes wrong
-  iters=5000
+for (i in c(1:15)){
+  iters=50000
   #Initiate bayesian setup
   settings = list(
     iterations = iters,
-    startValue = 7, # internal chain number 
+    startValue = 7, # internal chain number
     nrChains = 1, # Number of chains
+    pSnooker = 0.5,
     burnin = round(iters/100*10), #10% burnin
     parallel = T,
-    consoleUpdates = 10,
     message = TRUE)
   
+  #check if files already exist and restart the chain or start from initial
+  if(file.exists(paste0("/home/users/aaronm7/",timeStep,"_oak_",chainNum,"_",args[4],".RDS"))==TRUE){
+    print("previous file exists, restarting chain")
+    out<-readRDS(paste0("/home/users/aaronm7/",timeStep,"_oak_",chainNum,"_",args[4],".RDS"))
+  }
   
-  #on JASMIN I found you need to create bayesian setup even if re-starting a chain, I think as this initiates the cluster needed to run in parallel  
+  #on JASMIN I found you need to create bayesian setup even if re-starting a chain, I think as this initiates the cluster needed to run in parallel
   BS3PGDN <- createBayesianSetup(likelihood = likelihoodFunc, prior = priorVals, names = nm, parallel = 8, catchDuplicates = F )
-
-    out<- runMCMC(bayesianSetup =BS3PGDN, sampler = "DEzs", settings = settings)
   
+  #check if a run already exists and if so restart it
+  out<-suppressWarnings(if(file.exists(paste0("/home/users/aaronm7/",timeStep,"_oak_",chainNum,"_",args[4],".RDS"))==TRUE) runMCMC(bayesianSetup =out, sampler = "DEzs", settings = settings) else runMCMC(bayesianSetup =BS3PGDN, sampler = "DEzs", settings = settings))
+  #Save output
+  saveRDS(out,file=paste0(timeStep,"_oak_",chainNum,"_",args[4],".RDS"))
+  
+  #stop cluster before restarting the loop otherwise JASMIN sometimes throws an error
+  stopParallel(BS3PGDN)
+  rm(BS3PGDN)
+  
+  
+}
 
-    codM<-as.data.frame(out$chain[[7]])
-
-    codM<-tail(as.data.frame(codM),1)
-    names(codM)<-nm
     
-    
+#    
     baseParms[nm]<-codM[nm]*param_scaler
     
     
     output<-do.call(SoNWaL,baseParms)
     ff<-filter(output,Year>=2013&Year<2019)
+    ff<-ff%>%group_by(Year, Month)%>%
+      summarise(GPP=mean(GPP),NEE=mean(NEE), dg = mean(dg), Rs = mean(Rs), swc = mean(volSWC_rz))
     plot(ff$Rs*7.4)
     plot(ff$Nav)
     plot(ff$GPP*7.14)
 plot(output$dg)    
+

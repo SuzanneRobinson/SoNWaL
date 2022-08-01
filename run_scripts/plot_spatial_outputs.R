@@ -38,7 +38,7 @@ saveRDS(ans,"/home/users/aaronm7/SoNWal_spatOut_85_01_unc.RDS")
 ###plot SoNWaL spatial outputs###
 
 outSpatHist<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\spatial\\historical\\SoNWal_spatOut_27_04_22.RDS")
-outSpat<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\spatial\\rcp65\\SoNWal_spatOut_04_04_22.RDS")
+outSpat<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\output\\spatial\\rcp26\\SoNWal_spatOut_26_01_unc.RDS")
 #soilDataLocs<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\PRAFOR\\models\\spatial_soil_data\\soilDataLocs.RDS")
 #outSpat<-merge(lkList,outSpat,by.x="fName",by.y="fName")
 library(grid)
@@ -64,12 +64,15 @@ for(i in c(1:length(years))){
   outSpat<-as.data.frame(outSpat)
   outSpatY<-as.data.frame(outSpat%>%dplyr::filter(Year==years[i]|is.na(Year)==T))
   outSpatY<-outSpatY[!(is.na(outSpatY$Year) == T & is.na(outSpatY$Wsbr_q05) == F ), ]
-  fg2<-data.frame(Year=years[i],Total_GPP=sum(outSpatY$GPP_value*7.14,na.rm=T),Total_NPP=sum(outSpatY$NPP_value*7.14,na.rm=T),Total_NEE=sum(outSpatY$NEE_value*7.14,na.rm=T),AVG_LAI=mean(outSpatY$LAI_value,na.rm=T))
+ # fg2<-data.frame(Year=years[i],Total_GPP=sum(outSpatY$GPP_value*7.14,na.rm=T),Total_NPP=sum(outSpatY$NPP_value*7.14,na.rm=T),Total_NEE=sum(outSpatY$NEE_value*7.14,na.rm=T),AVG_LAI=mean(outSpatY$LAI_value,na.rm=T))
+  
+  #outSpatY$R<-ifelse(outSpatY$pH==0,0,outSpatY$R)
+  
   #basOut3<-filter(basOut3,y>8e+05)
   #basOut3<-filter(basOut3,y<8.5e+05)
   
-  g2<-ggplot() +
-    geom_raster(data = outSpatY , aes(x = x, y = y, fill = ((yc_value))))+
+  g1<-ggplot() +
+    geom_raster(data = outSpatY , aes(x = x, y = y, fill = ((R*7.14))))+
     theme_bw()+
     ggtitle("YC range")+
     theme(
@@ -84,7 +87,7 @@ for(i in c(1:length(years))){
       panel.background = element_rect(fill="white", color = NA),
       panel.grid.minor = element_blank())+
     coord_equal() + 
-    scale_fill_viridis_c(limit=c(0,35), expression(paste("Yield Class   ", sep="")), option = "turbo", na.value = "white")+ 
+    scale_fill_viridis_c(limits=c(-2,2),expression(paste("risk   ", sep="")), option = "turbo", na.value = "white")+ 
     theme(legend.background = element_rect(fill = "white"),legend.text=element_text(color="black",size=15),
           plot.title = element_text(color = "black", size=20),
           legend.title = element_text(color="black", size=20))

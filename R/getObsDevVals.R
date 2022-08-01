@@ -21,9 +21,6 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018, swc=F){
     
   }
   
-  
-  
-  
   #add missing swc values, can cause problems otherwise
   mod1<-lm(swc~npp+nee+reco,data=data)
   
@@ -41,9 +38,9 @@ observedVals<-function(timeStep,data,sY=2015,eY=2018, swc=F){
   
   
   observed <- c(pull(data%>% 
-                                  dplyr::group_by(year,grp) %>%
-                                  dplyr::summarise(rs=mean(rs))%>%
-                                  dplyr::select(rs)),      
+                       dplyr::group_by(year,grp) %>%
+                       dplyr::summarise(rs=mean(rs))%>%
+                       dplyr::select(rs)),      
                 pull(data%>% 
                        dplyr::group_by(year,grp) %>%
                        dplyr::summarise(gpp=mean(gpp))%>%
