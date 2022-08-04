@@ -103,7 +103,7 @@ out<-merge(out,grF,by.x="grid_id",by.y = "grid_id")
 
 saveRDS(out,paste0("/work/scratch-nopw/alm/spatOutput/","SoNWal_",fileName))
 
-
+hzYrs = simDat$hzYrs
 site = simDat$site
 clm = simDat$clm[[1]]
 wp=simDat$wp_map

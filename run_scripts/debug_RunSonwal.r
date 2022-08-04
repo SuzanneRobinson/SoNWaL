@@ -5,7 +5,7 @@
 ######################
 
 ## Load necessary packages
-library(fr3PGDN)
+library(SoNWaL)
 library(tidyverse)
 library(lubridate)
 library(coda)
@@ -146,44 +146,4 @@ ggsave(paste0(fileNm,timeStep,"_",iters,".png"),width = 400,
 
 
 
-ff<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\NZplus\\misc_data\\AH_Harwood_CHESS_dat\\clm_rcp85_06.RDS")
-fft<-ff%>%filter(clm_var=="tas")%>%
-  mutate(month=lubridate::month(date))%>%
-  filter(site=="Harwood")
-
-
-fftt<-fft%>%group_by(year,month)%>%summarise(meant=mean(value-273.15))
-
-fftt<-filter(fftt,year==2020)
-
-
-
-ff2<-readRDS("C:\\Users\\aaron.morris\\clm_df_shift.RDS")%>%
-  na.omit()%>%
-  group_by(month)%>%
-  summarise(meant=mean(value,na.rm=T))
-
-fftt$date_source<-"ncdf dates"
-ff2$date_source<-"file dates"
-ffX<-rbind(fftt,ff2)
-ffX$monthN<-rep(c("jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"),2)
-
-
-ggplot(data=ffX,aes(x=month,y=meant,col=date_source))+
-  geom_line()+
-  geom_point()+
-  ylab("Temp C")+
-  theme_bw()
-
-
-clmDat<-readRDS("C:\\Users\\aaron.morris\\OneDrive - Forest Research\\Documents\\Projects\\dataFR\\TimberQuality\\bm_clm_TO_04_04_22.RDS")
-
-
-ff<-clmDat %>% 
-  spread (clm_var, value) %>% 
-  mutate(RH = relative_humidity_calc(Tmean = (tas - 273.15), # Note conversion from K to C
-                                     p = psurf, 
-                                     spec_hum = huss)) %>% 
-  mutate(VPD = RHtoVPD(RH = RH, TdegC = (tas - 273.15),  # Note conversion from K to C
-                       Pa = (psurf/1000))) -> climDat2 # Note conversion from kPa to Pa
 

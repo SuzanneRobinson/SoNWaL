@@ -72,7 +72,7 @@ for(i in c(1:length(years))){
   #basOut3<-filter(basOut3,y<8.5e+05)
   
   g1<-ggplot() +
-    geom_raster(data = outSpatY , aes(x = x, y = y, fill = ((R*7.14))))+
+    geom_raster(data = outSpatY , aes(x = x, y = y, fill = ((yc_value))))+
     theme_bw()+
     ggtitle("YC range")+
     theme(
@@ -87,10 +87,11 @@ for(i in c(1:length(years))){
       panel.background = element_rect(fill="white", color = NA),
       panel.grid.minor = element_blank())+
     coord_equal() + 
-    scale_fill_viridis_c(limits=c(-2,2),expression(paste("risk   ", sep="")), option = "turbo", na.value = "white")+ 
+    scale_fill_viridis_c(limits=c(0,35),expression(paste("risk   ", sep="")), option = "turbo", na.value = "white")+ 
     theme(legend.background = element_rect(fill = "white"),legend.text=element_text(color="black",size=15),
           plot.title = element_text(color = "black", size=20),
           legend.title = element_text(color="black", size=20))
+
   
   g2<-ggplot() +
     geom_raster(data = outSpatY , aes(x = x, y = y, fill = ((LAI_value))))+
@@ -114,7 +115,7 @@ for(i in c(1:length(years))){
   
   
   g3<-ggplot() +
-    geom_raster(data = outSpatY , aes(x = x, y = y, fill = ((NPP_q05*7.14))))+
+    geom_raster(data = outSpatY , aes(x = x, y = y, fill = ((NPP_val*7.14))))+
     theme_bw()+
     theme(axis.title.x=element_blank(),
           axis.text.x=element_blank(),
