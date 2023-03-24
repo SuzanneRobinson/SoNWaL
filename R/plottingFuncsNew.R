@@ -412,7 +412,6 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
     group_by(Year,Month)%>%
     summarise(swc=mean(SWC))
   
-  
   swcPlot<-ggplot()+theme_bw()+
     geom_line(data=dataX,aes(x=timestamp,y=predmSWC),colour="purple",size=1)+
     geom_point(data=dataX,aes(x=df2$timestamp, y=newSWC$swc),colour="black",size=2)+
