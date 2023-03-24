@@ -18,7 +18,7 @@ endYear = 2018
 timeStep<-"weekly"
 
 #Directory where climate data is stored (default is "data" in SonWal folder)
-climDir<-("/home/george/Documents/GitHub/PRAFOR_3PG/data/")
+climDir<-("data\\")
 
 ## read in and format climate data
 clm_df_full<-data.frame(getClimDatX("weekly",climDir))%>%
@@ -56,7 +56,7 @@ clm_df_full<-data.frame(getClimDatX("weekly",climDir))%>%
 
 
 ## Read Harwood data for Sitka spruce and mutate timestamp to POSIXct
-  flxdata_daily <- read.csv("/home/george/Documents/GitHub/PRAFOR_3PG/data/harwood_daily.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
+  flxdata_daily <- read.csv("data\\harwood_daily.csv")%>%mutate(timestamp=as.POSIXct(timestamp))
   
 #################################
 ## load in default parameters  ##
@@ -76,15 +76,18 @@ sitka<-getParms(weather=clm_df_full,
   
   
 ##update with some example calibrated parameters (parameters are sample from full MCMC chain of Harwood fitting)
-exampParams<-as.data.frame(readRDS("/home/george/Documents/GitHub/PRAFOR_3PG/data/exampParams.RDS"))
+exampParams<-as.data.frame(readRDS("data//exampParams.RDS"))
 exParms<-miscTools::colMedians(as.data.frame(exampParams))
 names(exParms)<-nm
 sitka[nm]<-exParms[nm]
 #run SoNWal
 output<-do.call(SoNWaL,sitka)
 
+# view some of the outputs, output contains time series for over 100 variables, only the first 10 shown here
+print(head(output[, c(1:10)]))
+
 ##plotting QUICK PLOT - DOES NOT INCLUDE UNCERTAINTY! BUT QUICK :) -grouping aggregates the data, can be either "week" or "month"
-## quickPlot(flxdata_daily,output,grouping="month")
+quickPlot(flxdata_daily,output,grouping="month")
 
 ## #full plots - much slower but gives credible intervals and uncertainty of observed data - num samps is how many samples from posterior to use (>=500 ideal but 50-100 will give a pretty solid output for a quick checking)
 ## results<-plotResultsNewMonthly(output,ShortTS=T,out=exampParams,numSamps = 50)
