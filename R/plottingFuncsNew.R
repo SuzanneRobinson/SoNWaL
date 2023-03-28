@@ -407,10 +407,14 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
   predPosSWC  <- intvsS[,3]$`89%`  + 2  * sapply( 1:length(sdMin$sdswc), function(i) max( 0.05* abs(sdMin$sdswc[i]),0.01))
   predNegSWC  <- intvsS[,3]$`11%` - 2   * sapply( 1:length(sdMin$sdswc), function(i) max( 0.05* abs(sdMin$sdswc[i]),0.01))
   predmSWC  <-   intvsS[,3]$`50%` # - 2 2 * sd(dataX$gpp)
-  newSWC<-clm_df_full%>%
-    filter(Year>=2015)%>%
-    group_by(Year,Month)%>%
-    summarise(swc=mean(SWC))
+#  newSWC<-clm_df_full%>% suzie- debug attempt swapped in to read in flux data
+#    filter(Year>=2015)%>%
+#    group_by(Year,Month)%>%
+#    summarise(swc=mean(SWC))
+  newSWC <- flxdata%>%
+    filter(year>=2015)%>%
+    group_by(year,month)%>%
+    summarise(swc=mean(swc))
   
   swcPlot<-ggplot()+theme_bw()+
     geom_line(data=dataX,aes(x=timestamp,y=predmSWC),colour="purple",size=1)+
@@ -473,6 +477,9 @@ intvsS<-mapply(getIntv,paramName,MoreArgs = list(modLst=outRes))
   
   dfLeaf<-df2%>%group_by(Year,Month) %>%
     dplyr::summarise(LAI=mean(LAI),t.proj=median(t.proj))
+# suzie- getting error: non-numeric argument to binary operator- issue with the dt
+  dt=12
+# suzie re-defined dt as 12 this allows the plotting function to run ** need to check why?
   leaf<-data.frame(rbind(
     c(dplyr::filter(dfLeaf,Year==2015&Month==8)$Year+dplyr::filter(dfLeaf,Year==2015&Month==8)$Month/dt,dplyr::filter(dfLeaf,Year==2015&Month==8)$t.proj,5.7),
     c(dplyr::filter(dfLeaf,Year==2018&Month==8)$Year+dplyr::filter(dfLeaf,Year==2018&Month==8)$Month/dt,dplyr::filter(dfLeaf,Year==2018&Month==8)$t.proj,5.56)
