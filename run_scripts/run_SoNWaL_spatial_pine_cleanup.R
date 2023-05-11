@@ -31,7 +31,7 @@ print(args)
 chunk=as.numeric(args[1])
 print(chunk)
 
-rcp=85
+rcp=60
 
 
 fileLocs<-paste0("/gws/nopw/j04/uknetzero/aarons_files/chess_manips/spatial_chunks_",rcp,"_01/")
