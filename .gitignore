@@ -187,3 +187,7 @@ po/*~
 
 
 .Rhistory
+.Rproj.user
+.Rdata
+.DS_Store
+.quarto
